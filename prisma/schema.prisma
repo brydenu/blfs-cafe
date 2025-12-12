@@ -1,0 +1,105 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- USERS & AUTH ---
+model User {
+  id            Int       @id @default(autoincrement())
+  email         String    @unique
+  passwordHash  String
+  firstName     String
+  lastName      String?
+  phone         String?
+  role          String    @default("customer") // 'admin', 'customer'
+  createdAt     DateTime  @default(now())
+  orders        Order[]
+}
+
+// --- MENU & INVENTORY ---
+model Product {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  category    String   // 'coffee', 'tea', 'other'
+  isActive    Boolean  @default(true)
+  basePrice   Decimal  @default(0.00) // Price is 0 for now, but good to have the column
+  
+  // Relations
+  orderItems  OrderItem[]
+}
+
+model Ingredient {
+  id          Int      @id @default(autoincrement())
+  name        String
+  category    String   // 'milk', 'syrup', 'topping', 'sweetener'
+  inStock     Boolean  @default(true)
+  isActive    Boolean  @default(true)
+
+  // Relations
+  modifiers   OrderItemModifier[]
+}
+
+// --- ORDERS ---
+model Order {
+  id          Int       @id @default(autoincrement())
+  status      String    @default("queued") // 'queued', 'in_progress', 'completed', 'picked_up', 'cancelled'
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+  pickedUpAt  DateTime?
+  
+  // Guest Info (if user is null)
+  guestName   String?
+  guestPhone  String?
+
+  // Relations
+  userId      Int?
+  user        User?     @relation(fields: [userId], references: [id])
+  items       OrderItem[]
+}
+
+model OrderItem {
+  id                 Int       @id @default(autoincrement())
+  isDecaf            Boolean   @default(false)
+  specialInstructions String?  // Specific notes like "Draw a cat on the cup"
+  
+  // Relations
+  orderId            Int
+  order              Order     @relation(fields: [orderId], references: [id])
+  productId          Int
+  product            Product   @relation(fields: [productId], references: [id])
+  modifiers          OrderItemModifier[]
+}
+
+model OrderItemModifier {
+  id            Int         @id @default(autoincrement())
+  quantity      Int         @default(1)
+  optionValue   String?     // e.g. "Extra Hot", "Light Ice"
+
+  // Relations
+  orderItemId   Int
+  orderItem     OrderItem   @relation(fields: [orderItemId], references: [id])
+  ingredientId  Int
+  ingredient    Ingredient  @relation(fields: [ingredientId], references: [id])
+}
+
+// --- SCHEDULE & LOGIC ---
+model StoreHour {
+  id          Int     @id @default(autoincrement())
+  dayOfWeek   Int     // 0=Sun, 1=Mon...
+  openTime    String  // Format "08:00"
+  closeTime   String  // Format "17:00"
+  isClosed    Boolean @default(false)
+}
+
+model CalendarEvent {
+  id          Int      @id @default(autoincrement())
+  date        DateTime @unique // Specific date like 2025-12-25
+  isClosed    Boolean  @default(true)
+  reason      String?  // 'PTO', 'Sick', 'Holiday'
+  note        String?
+}
