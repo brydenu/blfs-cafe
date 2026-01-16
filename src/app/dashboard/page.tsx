@@ -1,9 +1,10 @@
-import { auth, signOut } from "@/auth";
+import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { redirect } from "next/navigation";
 import LiveOrderWidget from "./LiveOrderWidget";
 import RecentOrderTracker from "./RecentOrderTracker"; 
 import Link from "next/link";
+import SignOutButton from "./SignOutButton";
 
 export const dynamic = 'force-dynamic';
 
@@ -100,19 +101,7 @@ export default async function DashboardPage() {
                 Hi, {user.firstName || "Friend"}!
             </h1>
             
-            <form
-              action={async () => {
-                "use server";
-                await signOut({ redirectTo: "/" });
-              }}
-            >
-              <button 
-                type="submit"
-                className="bg-[#003355] hover:bg-[#002a4d] border border-white/10 text-white px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-lg hover:scale-105 cursor-pointer"
-              >
-                Sign Out
-              </button>
-            </form>
+            <SignOutButton />
         </header>
 
         {/* --- ROW 1: ACTION BUTTONS (Blue) --- */}
