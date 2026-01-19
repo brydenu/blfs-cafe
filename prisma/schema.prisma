@@ -91,6 +91,7 @@ model Ingredient {
   category    String  // 'milk', 'syrup', 'topping', 'decaf'
   priceMod    Decimal @default(0.00)
   isAvailable Boolean @default(true)
+  isShowing   Boolean @default(true) // Visibility in UI (for seasonal flavors)
   rank        Int     @default(0) // Higher numbers = Higher priority in UI
 
   modifiers   Modifier[]
@@ -140,6 +141,10 @@ model OrderItem {
   // --- ADDED THIS LINE ---
   status              String  @default("queued") // 'queued', 'completed'
   
+  // Customization fields
+  personalCup         Boolean @default(false)
+  caffeineType        String? // 'Normal', 'Decaf', 'Half-Caff'
+  
   // Relationship to Ingredients (Syrups, etc.)
   modifiers Modifier[]
 }
@@ -180,4 +185,17 @@ model PasswordResetToken {
   createdAt DateTime @default(now())
 
   @@unique([email, token])
+}
+
+// --- SCHEDULE ---
+
+model Schedule {
+  id                   Int     @id @default(autoincrement())
+  dayOfWeek            Int     @unique // 0=Sunday, 6=Saturday
+  openTime1            String  // HH:mm format - first period start
+  closeTime1           String  // HH:mm format - first period end
+  openTime2            String? // HH:mm format - second period start, nullable
+  closeTime2           String? // HH:mm format - second period end, nullable
+  isSecondPeriodActive Boolean @default(false) // enable/disable second period
+  isOpen               Boolean @default(true) // enable/disable entire day
 }

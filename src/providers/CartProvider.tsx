@@ -13,6 +13,11 @@ export type CartItem = {
   milkName: string;
   syrupDetails: string[];
   modifiers: Record<number, number>;
+  milkId?: number; // For editing support
+  personalCup?: boolean;
+  caffeineType?: string; // "Normal" | "Decaf" | "Half-Caff"
+  notes?: string;
+  basePrice?: number; // For total calculation
 };
 
 type CartContextType = {

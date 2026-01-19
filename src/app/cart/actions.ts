@@ -43,7 +43,9 @@ export async function placeOrder(items: CartItem[]) {
             temperature: item.temperature,
             milkName: item.milkName,
             recipientName: item.recipientName,
-            specialInstructions: "", // Optional legacy field
+            specialInstructions: item.notes || "", // Use notes field
+            personalCup: item.personalCup || false,
+            caffeineType: item.caffeineType || null,
             status: 'queued', // Ensure status starts as queued
             modifiers: {
               create: Object.entries(item.modifiers).map(([ingId, qty]) => ({

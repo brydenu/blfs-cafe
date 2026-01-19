@@ -49,7 +49,7 @@ export default function TicketCard({ item }: { item: any }) {
   const secondaryName = (item.orderOwnerName !== primaryName) ? `Ordered by ${item.orderOwnerName}` : null;
 
   // --- PARSED VALUES ---
-  const activeShots = item.parsedShots || 0;
+  const activeShots = item.parsedShots || item.shots || 0;
   
   // Helper to resolve Milk Name from 3 potential sources:
   // 1. Modifiers (Ingredient Table)
@@ -91,10 +91,16 @@ export default function TicketCard({ item }: { item: any }) {
          </div>
 
          {/* SHOT BOX */}
-         {item.product.category === 'coffee' && (
-             <div className="bg-gray-900 border-2 border-gray-600 rounded-xl w-20 h-20 flex flex-col items-center justify-center shrink-0 shadow-inner">
+         {(item.product.category === 'coffee' || activeShots > 0) && (
+             <div className="bg-gray-900 border-2 border-gray-600 rounded-xl w-20 h-20 flex flex-col items-center justify-center shrink-0 shadow-inner relative">
                 <span className="text-4xl font-black text-white leading-none">{activeShots}</span>
                 <span className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mt-1">Shots</span>
+                {/* Caffeine Type Badge */}
+                {item.caffeineType && item.caffeineType !== "Normal" && (
+                    <span className="absolute -top-1 -right-1 bg-orange-600 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-wider">
+                        {item.caffeineType === "Decaf" ? "Decaf" : "Half-Caff"}
+                    </span>
+                )}
              </div>
          )}
       </div>
@@ -103,12 +109,22 @@ export default function TicketCard({ item }: { item: any }) {
       <div className="p-5 flex-1 flex flex-col gap-4">
          
          <div className="border-b border-gray-700 pb-3">
-             <h3 className="text-2xl font-extrabold text-[#32A5DC] leading-tight">
-                 {item.product.name}
-             </h3>
-             <p className={`text-lg font-bold mt-1 ${item.temperature?.includes('Iced') ? 'text-blue-300' : 'text-orange-300'}`}>
-                 {item.temperature}
-             </p>
+             <div className="flex items-start justify-between gap-2">
+                 <div className="flex-1">
+                     <h3 className="text-2xl font-extrabold text-[#32A5DC] leading-tight">
+                         {item.product.name}
+                     </h3>
+                     <p className={`text-lg font-bold mt-1 ${item.temperature?.includes('Iced') ? 'text-blue-300' : 'text-orange-300'}`}>
+                         {item.temperature}
+                     </p>
+                 </div>
+                 {/* Personal Cup Badge */}
+                 {item.personalCup && (
+                     <span className="bg-green-600 text-white text-xs font-black px-2 py-1 rounded-full uppercase tracking-wider shrink-0">
+                         Personal Cup
+                     </span>
+                 )}
+             </div>
          </div>
 
          {/* --- CUSTOMIZATIONS LIST --- */}

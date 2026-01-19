@@ -1,0 +1,4 @@
+{"location":"test-db-connection.ts:7","message":"Script started","data":{"hasDotEnv":false},"timestamp":1768761941475,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"test-db-connection.ts:12","message":"DATABASE_URL check","data":{"exists":true,"length":99,"prefix":"postgresql://postgres:dbLEAF28","hasPostgres":true,"hasSsl":false,"hasRds":true},"timestamp":1768761941491,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"test-db-connection.ts:18","message":"Creating PrismaClient","data":{"timestamp":1768761941492},"timestamp":1768761941492,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"test-db-connection.ts:23","message":"Attempting connection","data":{"timestamp":1768761941494},"timestamp":1768761941494,"sessionId":"debug-session","runId":"run1","hypothesisId":"C"}

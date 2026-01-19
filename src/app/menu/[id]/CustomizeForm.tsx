@@ -11,9 +11,11 @@ interface CustomizeFormProps {
   product: Product;
   ingredients: Ingredient[];
   defaultName: string;
+  defaultDisplayName?: string;
+  userLastName?: string | null;
 }
 
-export default function CustomizeForm({ product, ingredients, defaultName }: CustomizeFormProps) {
+export default function CustomizeForm({ product, ingredients, defaultName, defaultDisplayName, userLastName }: CustomizeFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { addToCart, removeFromCart } = useCart();
@@ -47,7 +49,15 @@ export default function CustomizeForm({ product, ingredients, defaultName }: Cus
   const rules = getProductRules();
 
   // --- INGREDIENTS FILTER ---
-  const milks = ingredients.filter(i => i.category === 'milk');
+  const milks = ingredients
+    .filter(i => i.category === 'milk')
+    .sort((a, b) => {
+      // Put "Whole" first
+      if (a.name === "Whole") return -1;
+      if (b.name === "Whole") return 1;
+      // Keep other milks in original order
+      return 0;
+    });
   const sweeteners = ingredients.filter(i => i.category === 'sweetener');
   const toppings = ingredients.filter(i => i.category === 'topping');
   const allSyrups = ingredients.filter(i => i.category === 'syrup');
@@ -56,10 +66,25 @@ export default function CustomizeForm({ product, ingredients, defaultName }: Cus
   const otherSyrups = allSyrups.filter(i => i.rank === 0).sort((a, b) => a.name.localeCompare(b.name));
 
   // --- STATE ---
-  // Name defaults to User Name (defaultName), UNLESS we are editing an existing item that had a custom name
+  // Determine if guest user
+  const isGuest = defaultName === "Guest";
+  // Determine order mode
+  const orderMode = mode || 'single';
+  const isGroupOrder = orderMode === 'multi';
+  
+  // Name field logic: Guest always empty, Group always empty, Single locked with user name
+  const shouldLockName = !isGuest && !isGroupOrder;
+  const [isNameEditable, setIsNameEditable] = useState(!shouldLockName);
+  const [nameError, setNameError] = useState("");
+  
+  // Name defaults based on mode - use defaultDisplayName for solo orders
+  const displayName = defaultDisplayName || defaultName;
   const [recipientName, setRecipientName] = useState(() => {
       if (initialConfig.recipientName) return initialConfig.recipientName;
-      return defaultName;
+      // Guest or group: start empty
+      if (isGuest || isGroupOrder) return "";
+      // Single order: use formatted display name (firstName + lastInitial)
+      return displayName;
   });
   
   const [baseTemp, setBaseTemp] = useState<"Hot" | "Iced">(() => {
@@ -88,6 +113,11 @@ export default function CustomizeForm({ product, ingredients, defaultName }: Cus
 
   const [modifiers, setModifiers] = useState<Record<number, number>>(initialConfig?.modifiers || {});
   const [openSection, setOpenSection] = useState<string | null>(initialConfig.modifiers ? 'syrups' : null);
+  
+  // New customization fields
+  const [personalCup, setPersonalCup] = useState(initialConfig?.personalCup || false);
+  const [caffeineType, setCaffeineType] = useState(initialConfig?.caffeineType || "Normal");
+  const [notes, setNotes] = useState(initialConfig?.notes || initialConfig?.specialInstructions || "");
 
   // --- HANDLERS ---
   const handleModifierChange = (id: number, increment: boolean) => {
@@ -100,6 +130,12 @@ export default function CustomizeForm({ product, ingredients, defaultName }: Cus
   };
 
   const processOrder = (redirectPath: string) => {
+    // Validate name field - always required
+    if (!recipientName.trim()) {
+      setNameError("Please add a name to the order");
+      return;
+    }
+    
     let milkName = "No Milk";
     if (selectedMilk !== -1 && selectedMilk !== null) {
       const m = milks.find(x => x.id === selectedMilk);
@@ -119,14 +155,17 @@ export default function CustomizeForm({ product, ingredients, defaultName }: Cus
       productId: product.id,
       productName: product.name,
       productCategory: product.category,
-      recipientName: recipientName || defaultName, 
+      recipientName: recipientName || (shouldLockName ? defaultName : ""), 
       shots: shots,
       temperature: `${baseTemp}${tempLevel !== 'Standard' ? ` - ${tempLevel}` : ''}`,
       milkName: milkName,
       syrupDetails: syrupDetails,
       modifiers: modifiers,
       // Pass config back so it can be re-edited later
-      milkId: selectedMilk || undefined
+      milkId: selectedMilk || undefined,
+      personalCup: personalCup,
+      caffeineType: shots > 0 ? caffeineType : undefined,
+      notes: notes
     };
 
     if (editId) {
@@ -151,12 +190,48 @@ export default function CustomizeForm({ product, ingredients, defaultName }: Cus
     </div>
   );
 
+  // Quantity Selector for Toppings (None, Light, Medium, Extra)
+  const QuantitySelector = ({ currentValue, onChange, ingredientId }: { currentValue: number, onChange: (value: number) => void, ingredientId: number }) => {
+    const options = [
+      { label: "None", value: 0 },
+      { label: "Light", value: 1 },
+      { label: "Medium", value: 2 },
+      { label: "Extra", value: 3 }
+    ];
+
+    return (
+      <div className="flex bg-gray-100 p-1 rounded-lg gap-1">
+        {options.map((opt) => (
+          <button
+            key={opt.value}
+            onClick={() => onChange(opt.value)}
+            className={`flex-1 py-1.5 px-2 rounded text-xs font-bold transition-all ${
+              currentValue === opt.value
+                ? 'bg-white text-[#004876] shadow-sm'
+                : 'text-gray-600 hover:text-gray-800 cursor-pointer'
+            }`}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div className="w-full max-w-3xl mx-auto bg-white rounded-3xl shadow-2xl overflow-hidden mb-20 relative z-10">
       
       {/* Header */}
       <div className="bg-gray-50 p-8 flex flex-col items-center justify-center border-b border-gray-100">
-        <span className="text-6xl mb-4 filter drop-shadow-md">{product.category === 'coffee' ? '☕' : product.category === 'tea' ? '🍵' : '🥤'}</span>
+        {product.imageUrl ? (
+          <img 
+            src={product.imageUrl} 
+            alt={product.name}
+            className="w-24 h-24 mb-4 object-cover rounded-lg drop-shadow-md"
+          />
+        ) : (
+          <span className="text-6xl mb-4 filter drop-shadow-md">{product.category === 'coffee' ? '☕' : product.category === 'tea' ? '🍵' : '🥤'}</span>
+        )}
         <h1 className="text-3xl font-extrabold text-[#004876] text-center">
             {editId ? `Edit ${product.name}` : product.name}
         </h1>
@@ -167,8 +242,41 @@ export default function CustomizeForm({ product, ingredients, defaultName }: Cus
         
         {/* Name Input */}
         <section className="animate-fade-in">
-            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 block">Who is this drink for?</label>
-            <input type="text" value={recipientName} onChange={(e) => setRecipientName(e.target.value)} className="w-full p-4 rounded-xl border-2 border-gray-200 text-lg font-bold text-[#004876] focus:border-[#32A5DC] outline-none bg-gray-50 focus:bg-white transition-all placeholder-gray-300" placeholder="Name on cup..." />
+            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-2">
+                Who is this drink for?<span className="text-red-500 ml-1">*</span>
+            </label>
+            <input 
+                type="text" 
+                value={recipientName} 
+                onChange={(e) => {
+                    setRecipientName(e.target.value);
+                    if (nameError) setNameError(""); // Clear error when typing
+                }}
+                disabled={!isNameEditable}
+                required
+                className={`w-full p-4 rounded-xl border-2 text-lg font-bold text-[#004876] focus:border-[#32A5DC] outline-none transition-all placeholder-gray-300 ${
+                    nameError 
+                        ? 'border-red-300 bg-red-50' 
+                        : isNameEditable 
+                            ? 'border-gray-200 bg-gray-50 focus:bg-white' 
+                            : 'border-gray-100 bg-gray-100 cursor-not-allowed opacity-75'
+                }`}
+                placeholder="Enter name (required)..."
+            />
+            {shouldLockName && !isNameEditable && (
+                <p className="text-xs text-gray-500 mt-1 flex items-center gap-2">
+                    <span>Ordering for someone else?</span>
+                    <button
+                        onClick={() => setIsNameEditable(!isNameEditable)}
+                        className="text-xs font-bold text-[#32A5DC] hover:text-[#288bba] transition-colors cursor-pointer underline"
+                    >
+                        Change Name
+                    </button>
+                </p>
+            )}
+            {nameError && (
+                <p className="text-red-500 text-sm font-medium mt-1">{nameError}</p>
+            )}
         </section>
 
         {/* Temperature & Shots */}
@@ -190,19 +298,56 @@ export default function CustomizeForm({ product, ingredients, defaultName }: Cus
                       );
                     })}
                   </div>
-                  <select value={tempLevel} onChange={(e) => setTempLevel(e.target.value)} className="w-full p-3 rounded-xl border border-gray-200 bg-white text-gray-700 font-medium focus:ring-2 focus:ring-[#32A5DC] outline-none cursor-pointer">
+                  <select value={tempLevel} onChange={(e) => setTempLevel(e.target.value)} className="w-full p-3 pl-3 pr-10 rounded-xl border border-gray-200 bg-white text-gray-700 font-medium focus:ring-2 focus:ring-[#32A5DC] outline-none cursor-pointer">
                     {baseTemp === "Hot" ? <><option value="Standard">Standard Temp</option><option value="Warm">Warm (Kids Temp)</option><option value="Extra Hot">Extra Hot</option></> : <><option value="Standard">Standard Ice</option><option value="Light Ice">Light Ice</option><option value="Extra Ice">Extra Ice</option><option value="No Ice">No Ice</option></>}
                   </select>
               </div>
             </section>
             <section>
                 <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">{rules.shotLabel}</h3>
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100 mb-3">
                     <span className="font-bold text-[#004876]">Total Shots</span>
                     <Counter count={shots} onMinus={() => setShots(Math.max(0, shots - 1))} onPlus={() => setShots(shots + 1)} colorClass="text-[#004876]" />
                 </div>
+                {/* Caffeine Type Selector */}
+                <div className="space-y-2">
+                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Caffeine Type</h4>
+                    <div className="flex bg-gray-100 p-1 rounded-xl">
+                        {(['Normal', 'Decaf', 'Half-Caff'] as const).map((opt) => (
+                            <button 
+                                key={opt}
+                                onClick={() => setCaffeineType(opt)}
+                                disabled={shots === 0}
+                                className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all ${
+                                    caffeineType === opt 
+                                        ? 'bg-white text-[#004876] shadow-md' 
+                                        : shots === 0
+                                            ? 'text-gray-300 cursor-not-allowed opacity-50'
+                                            : 'text-gray-500 hover:text-gray-700 cursor-pointer'
+                                }`}
+                            >
+                                {opt}
+                            </button>
+                        ))}
+                    </div>
+                </div>
             </section>
         </div>
+
+        <hr className="border-gray-100" />
+        
+        {/* Personal Cup Checkbox */}
+        <section>
+            <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                    type="checkbox"
+                    checked={personalCup}
+                    onChange={(e) => setPersonalCup(e.target.checked)}
+                    className="w-5 h-5 rounded border-gray-300 text-[#32A5DC] focus:ring-[#32A5DC] cursor-pointer"
+                />
+                <span className="text-sm font-bold text-[#004876]">Personal Cup</span>
+            </label>
+        </section>
 
         <hr className="border-gray-100" />
         
@@ -229,28 +374,35 @@ export default function CustomizeForm({ product, ingredients, defaultName }: Cus
             <div className="border border-gray-200 rounded-xl overflow-hidden">
                 <button onClick={() => setOpenSection(openSection === 'syrups' ? null : 'syrups')} className="w-full flex justify-between items-center p-4 bg-white hover:bg-gray-50 transition-colors cursor-pointer">
                     <span className="font-bold text-[#004876]">Add Syrups / Flavors</span>
-                    <span className="text-gray-400 text-xl">{openSection === 'syrups' ? '−' : '+'}</span>
+                    <span className="text-gray-400 text-xl transition-transform duration-200">{openSection === 'syrups' ? '−' : '+'}</span>
                 </button>
                 {openSection === 'syrups' && (
-                    <div className="p-4 bg-gray-50 border-t border-gray-100 space-y-4">
-                        {/* Popular */}
-                        <div className="grid md:grid-cols-2 gap-3">
-                            {featuredSyrups.map((item) => (
-                                <div key={item.id} className="flex justify-between items-center bg-[#32A5DC]/5 border border-[#32A5DC]/20 p-2 px-3 rounded-lg shadow-sm">
-                                    <span className="text-sm font-bold text-[#004876]">{item.name}</span>
-                                    <Counter count={modifiers[item.id] || 0} onMinus={() => handleModifierChange(item.id, false)} onPlus={() => handleModifierChange(item.id, true)} />
+                    <div className="px-4 pt-4 pb-12 bg-gray-50 border-t border-gray-100 space-y-4 accordion-expand">
+                        {/* Featured */}
+                        {featuredSyrups.length > 0 && (
+                            <>
+                                <h4 className="text-sm font-bold text-[#004876] uppercase tracking-wide">Featured</h4>
+                                <div className="grid md:grid-cols-2 gap-3">
+                                    {featuredSyrups.map((item) => (
+                                        <div key={item.id} className="flex justify-between items-center bg-[#32A5DC]/5 border border-[#32A5DC]/20 p-2 px-3 rounded-lg shadow-sm">
+                                            <span className="text-sm font-bold text-[#004876]">{item.name}</span>
+                                            <Counter count={modifiers[item.id] || 0} onMinus={() => handleModifierChange(item.id, false)} onPlus={() => handleModifierChange(item.id, true)} />
+                                        </div>
+                                    ))}
                                 </div>
-                            ))}
-                        </div>
+                            </>
+                        )}
                         {/* Other */}
-                        <div className="grid md:grid-cols-2 gap-3 mt-2">
+                        {otherSyrups.length > 0 && (
+                            <div className="grid md:grid-cols-2 gap-3 mt-2">
                               {otherSyrups.map((item) => (
                                   <div key={item.id} className="flex justify-between items-center bg-white p-2 px-3 rounded-lg shadow-sm border border-gray-100">
                                       <span className="text-sm font-medium text-gray-700">{item.name}</span>
                                       <Counter count={modifiers[item.id] || 0} onMinus={() => handleModifierChange(item.id, false)} onPlus={() => handleModifierChange(item.id, true)} colorClass="text-gray-600" />
                                   </div>
                               ))}
-                        </div>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
@@ -262,15 +414,38 @@ export default function CustomizeForm({ product, ingredients, defaultName }: Cus
                 <div key={key} className="border border-gray-200 rounded-xl overflow-hidden">
                     <button onClick={() => setOpenSection(openSection === key ? null : key)} className="w-full flex justify-between items-center p-4 bg-white hover:bg-gray-50 transition-colors cursor-pointer">
                         <span className="font-bold text-[#004876]">Add {label}</span>
-                        <span className="text-gray-400 text-xl">{openSection === key ? '−' : '+'}</span>
+                        <span className={`text-gray-400 text-xl transition-transform duration-200 ${openSection === key ? 'rotate-180' : ''}`}>{openSection === key ? '−' : '+'}</span>
                     </button>
                     {openSection === key && (
-                        <div className="p-4 bg-gray-50 border-t border-gray-100 grid md:grid-cols-2 gap-3">
+                        <div className="p-4 bg-gray-50 border-t border-gray-100 grid md:grid-cols-2 gap-3 accordion-expand">
                             {list.map((item) => (
-                                <div key={item.id} className="flex justify-between items-center bg-white p-2 px-3 rounded-lg shadow-sm">
-                                    <span className="text-sm font-medium text-gray-700">{item.name}</span>
-                                    <Counter count={modifiers[item.id] || 0} onMinus={() => handleModifierChange(item.id, false)} onPlus={() => handleModifierChange(item.id, true)} />
-                                </div>
+                                idx === 0 ? (
+                                    // Toppings: Use QuantitySelector with vertical layout
+                                    <div key={item.id} className="flex flex-col gap-2 bg-white p-3 rounded-lg shadow-sm border border-gray-100">
+                                        <span className="text-sm font-medium text-gray-700">{item.name}</span>
+                                        <QuantitySelector
+                                            currentValue={modifiers[item.id] || 0}
+                                            onChange={(value) => {
+                                                if (value === 0) {
+                                                    setModifiers(prev => {
+                                                        const copy = { ...prev };
+                                                        delete copy[item.id];
+                                                        return copy;
+                                                    });
+                                                } else {
+                                                    setModifiers(prev => ({ ...prev, [item.id]: value }));
+                                                }
+                                            }}
+                                            ingredientId={item.id}
+                                        />
+                                    </div>
+                                ) : (
+                                    // Sweeteners: Use Counter with same layout as syrups
+                                    <div key={item.id} className="flex justify-between items-center bg-white p-2 px-3 rounded-lg shadow-sm border border-gray-100">
+                                        <span className="text-sm font-medium text-gray-700">{item.name}</span>
+                                        <Counter count={modifiers[item.id] || 0} onMinus={() => handleModifierChange(item.id, false)} onPlus={() => handleModifierChange(item.id, true)} />
+                                    </div>
+                                )
                             ))}
                         </div>
                     )}
@@ -279,9 +454,23 @@ export default function CustomizeForm({ product, ingredients, defaultName }: Cus
             })}
         </section>
 
+        {/* Notes Field */}
+        <section>
+            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 block">
+                Special Instructions / Notes
+            </label>
+            <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={3}
+                className="w-full p-4 rounded-xl border-2 border-gray-200 text-sm font-medium text-[#004876] focus:border-[#32A5DC] outline-none bg-gray-50 focus:bg-white transition-all placeholder-gray-300 resize-none"
+                placeholder="Add any special instructions or notes here..."
+            />
+        </section>
+
         {/* --- ACTIONS --- */}
         <div className="pt-6 flex flex-col sm:flex-row gap-4">
-          <Link href="/cart" className="py-4 px-6 rounded-xl border-2 border-gray-200 text-gray-500 font-bold text-center hover:bg-gray-50 hover:text-gray-700 transition-all cursor-pointer">
+          <Link href="/menu" className="py-4 px-6 rounded-xl border-2 border-gray-200 text-gray-500 font-bold text-center hover:bg-gray-50 hover:text-gray-700 transition-all cursor-pointer">
             Cancel
           </Link>
           
