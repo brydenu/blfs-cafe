@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { redirect } from "next/navigation";
 import LiveOrderWidget from "./LiveOrderWidget";
 import RecentOrderTracker from "./RecentOrderTracker"; 
+import ScheduleWidget from "./ScheduleWidget";
 import Link from "next/link";
 import SignOutButton from "./SignOutButton";
 
@@ -83,6 +84,11 @@ export default async function DashboardPage() {
   const orders = rawOrders.map(serializeOrder);
   const latestOrder = latestRawOrder ? serializeOrder(latestRawOrder) : null;
 
+  // Fetch schedule data
+  const schedules = await prisma.schedule.findMany({
+    orderBy: { dayOfWeek: 'asc' }
+  });
+
   return (
     <main className="min-h-screen relative overflow-hidden flex flex-col items-center">
       
@@ -144,6 +150,9 @@ export default async function DashboardPage() {
                 </button>
             </Link>
         </div>
+
+        {/* --- SCHEDULE WIDGET (White) --- */}
+        <ScheduleWidget initialSchedules={schedules} />
 
         {/* --- ROW 4: DAILY TRACKER WIDGET (White) --- */}
         <section>

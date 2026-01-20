@@ -113,6 +113,7 @@ export async function updateSchedule(
       }
     });
     revalidatePath('/admin/schedule');
+    revalidatePath('/dashboard');
     return { success: true };
   } catch (error) {
     console.error("Failed to update schedule:", error);
