@@ -185,6 +185,14 @@ export async function handleSignOut() {
   redirect("/");
 }
 
+// --- Fetch Schedule ---
+export async function fetchSchedule() {
+  const schedules = await prisma.schedule.findMany({
+    orderBy: { dayOfWeek: 'asc' }
+  });
+  return schedules;
+}
+
 // --- Helper ---
 function serializeOrders(orders: any[]) {
   return orders.map(order => ({

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef } from "react";
 import { updateSchedule } from "../actions";
 
 interface ScheduleManagerProps {
@@ -22,31 +22,63 @@ interface ScheduleManagerProps {
 export function ScheduleManager({ dayOfWeek, dayName, dayAbbr, schedule: initialSchedule }: ScheduleManagerProps) {
   const [schedule, setSchedule] = useState(initialSchedule);
   const [isPending, startTransition] = useTransition();
+  const savingRef = useRef(false);
 
-  const handleSave = () => {
-    startTransition(() => {
-      updateSchedule(
+  const handleSave = async (scheduleToSave: typeof schedule) => {
+    if (savingRef.current) return; // Prevent duplicate saves
+    
+    savingRef.current = true;
+    try {
+      const result = await updateSchedule(
         dayOfWeek,
-        schedule.openTime1,
-        schedule.closeTime1,
-        schedule.openTime2 || null,
-        schedule.closeTime2 || null,
-        schedule.isSecondPeriodActive,
-        schedule.isOpen
+        scheduleToSave.openTime1,
+        scheduleToSave.closeTime1,
+        scheduleToSave.openTime2 || null,
+        scheduleToSave.closeTime2 || null,
+        scheduleToSave.isSecondPeriodActive,
+        scheduleToSave.isOpen
       );
-    });
+      
+      if (!result.success) {
+        console.error('Failed to save schedule:', result.message);
+        // Revert the state change on error
+        setSchedule(initialSchedule);
+      }
+    } finally {
+      savingRef.current = false;
+    }
   };
 
   const handleToggleOpen = () => {
+    if (isPending || savingRef.current) return;
+    
+    // Calculate new value
     const newValue = !schedule.isOpen;
-    setSchedule(prev => ({ ...prev, isOpen: newValue }));
-    handleSave();
+    const newSchedule = { ...schedule, isOpen: newValue };
+    
+    // Update state
+    setSchedule(newSchedule);
+    
+    // Save with the new value
+    startTransition(async () => {
+      await handleSave(newSchedule);
+    });
   };
 
   const handleToggleSecondPeriod = () => {
+    if (isPending || savingRef.current) return;
+    
+    // Calculate new value
     const newValue = !schedule.isSecondPeriodActive;
-    setSchedule(prev => ({ ...prev, isSecondPeriodActive: newValue }));
-    handleSave();
+    const newSchedule = { ...schedule, isSecondPeriodActive: newValue };
+    
+    // Update state
+    setSchedule(newSchedule);
+    
+    // Save with the new value
+    startTransition(async () => {
+      await handleSave(newSchedule);
+    });
   };
 
   const handleTimeChange = (field: 'openTime1' | 'closeTime1' | 'openTime2' | 'closeTime2', value: string) => {
@@ -115,7 +147,7 @@ export function ScheduleManager({ dayOfWeek, dayName, dayAbbr, schedule: initial
                 type="time"
                 value={schedule.openTime1}
                 onChange={(e) => handleTimeChange('openTime1', e.target.value)}
-                onBlur={handleSave}
+                onBlur={() => startTransition(async () => { await handleSave(); })}
                 disabled={isPending}
                 className="bg-gray-800 text-white text-sm px-2 py-1 rounded border border-gray-700 focus:border-[#32A5DC] focus:outline-none disabled:opacity-50"
               />
@@ -124,7 +156,7 @@ export function ScheduleManager({ dayOfWeek, dayName, dayAbbr, schedule: initial
                 type="time"
                 value={schedule.closeTime1}
                 onChange={(e) => handleTimeChange('closeTime1', e.target.value)}
-                onBlur={handleSave}
+                onBlur={() => startTransition(async () => { await handleSave(); })}
                 disabled={isPending}
                 className="bg-gray-800 text-white text-sm px-2 py-1 rounded border border-gray-700 focus:border-[#32A5DC] focus:outline-none disabled:opacity-50"
               />
@@ -156,7 +188,7 @@ export function ScheduleManager({ dayOfWeek, dayName, dayAbbr, schedule: initial
                     type="time"
                     value={schedule.openTime2 || ''}
                     onChange={(e) => handleTimeChange('openTime2', e.target.value)}
-                    onBlur={handleSave}
+                    onBlur={() => startTransition(async () => { await handleSave(); })}
                     disabled={isPending}
                     className="bg-gray-800 text-white text-sm px-2 py-1 rounded border border-gray-700 focus:border-[#32A5DC] focus:outline-none disabled:opacity-50"
                   />
@@ -165,7 +197,7 @@ export function ScheduleManager({ dayOfWeek, dayName, dayAbbr, schedule: initial
                     type="time"
                     value={schedule.closeTime2 || ''}
                     onChange={(e) => handleTimeChange('closeTime2', e.target.value)}
-                    onBlur={handleSave}
+                    onBlur={() => startTransition(async () => { await handleSave(); })}
                     disabled={isPending}
                     className="bg-gray-800 text-white text-sm px-2 py-1 rounded border border-gray-700 focus:border-[#32A5DC] focus:outline-none disabled:opacity-50"
                   />

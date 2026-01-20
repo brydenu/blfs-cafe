@@ -4,13 +4,11 @@ import { ScheduleManager } from "./ScheduleManager";
 export const dynamic = 'force-dynamic';
 
 const DAYS_OF_WEEK = [
-  { dayOfWeek: 0, name: 'Sunday', abbr: 'Sun' },
   { dayOfWeek: 1, name: 'Monday', abbr: 'Mon' },
   { dayOfWeek: 2, name: 'Tuesday', abbr: 'Tue' },
   { dayOfWeek: 3, name: 'Wednesday', abbr: 'Wed' },
   { dayOfWeek: 4, name: 'Thursday', abbr: 'Thu' },
   { dayOfWeek: 5, name: 'Friday', abbr: 'Fri' },
-  { dayOfWeek: 6, name: 'Saturday', abbr: 'Sat' },
 ];
 
 export default async function SchedulePage() {
