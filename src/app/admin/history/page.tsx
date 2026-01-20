@@ -111,8 +111,8 @@ export default async function OrderHistoryPage() {
                 <div className="flex items-start justify-between mb-4 pb-4 border-b border-gray-700">
                   <div>
                     <div className="flex items-center gap-3 mb-2">
-                      <h3 className="font-bold text-white">
-                        Order #{order.publicId.split('-')[0]}
+                      <h3 className="text-gray-400">
+                        Order ID: {order.publicId}
                       </h3>
                       <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded-full border ${getStatusColor(order.status)}`}>
                         {order.status}

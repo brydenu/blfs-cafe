@@ -27,7 +27,6 @@ export default function SettingsForm({ user }: { user: UserData }) {
   const [notifStatus, setNotifStatus] = useState<'idle' | 'loading' | 'success'>('idle');
   const [notifMsg, setNotifMsg] = useState("");
   const [notificationsEnabled, setNotificationsEnabled] = useState(user.notificationsEnabled ?? false);
-  const [notificationType, setNotificationType] = useState(user.notificationDefaultType ?? 'order-complete');
   const [emailEnabled, setEmailEnabled] = useState((user.notificationMethods as any)?.email ?? true);
 
   const handleProfileUpdate = async (formData: FormData) => {
@@ -65,7 +64,7 @@ export default function SettingsForm({ user }: { user: UserData }) {
 
     const result = await updateNotificationPreferences({
       notificationsEnabled,
-      notificationDefaultType: notificationType,
+      notificationDefaultType: 'order-complete', // Always use order-complete
       notificationMethods: { email: emailEnabled }
     });
 
@@ -252,45 +251,6 @@ export default function SettingsForm({ user }: { user: UserData }) {
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#32A5DC]/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#32A5DC]"></div>
                     </label>
                 </div>
-
-                {/* Notification Type (only show if notifications enabled) */}
-                {notificationsEnabled && (
-                    <div className="space-y-3 p-4 bg-gray-50 rounded-xl border border-gray-200">
-                        <label className="text-sm font-bold text-gray-700 block mb-2">
-                            Default notification type
-                        </label>
-                        <div className="space-y-2">
-                            <label className="flex items-center p-3 bg-white rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors">
-                                <input
-                                    type="radio"
-                                    name="notificationType"
-                                    value="order-complete"
-                                    checked={notificationType === 'order-complete'}
-                                    onChange={(e) => setNotificationType(e.target.value)}
-                                    className="w-4 h-4 text-[#32A5DC] focus:ring-[#32A5DC] focus:ring-2"
-                                />
-                                <div className="ml-3 flex-1">
-                                    <span className="text-sm font-bold text-gray-700">Notify when entire order is complete</span>
-                                    <p className="text-xs text-gray-500">You'll receive one notification when all drinks in your order are ready</p>
-                                </div>
-                            </label>
-                            <label className="flex items-center p-3 bg-white rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors">
-                                <input
-                                    type="radio"
-                                    name="notificationType"
-                                    value="per-drink"
-                                    checked={notificationType === 'per-drink'}
-                                    onChange={(e) => setNotificationType(e.target.value)}
-                                    className="w-4 h-4 text-[#32A5DC] focus:ring-[#32A5DC] focus:ring-2"
-                                />
-                                <div className="ml-3 flex-1">
-                                    <span className="text-sm font-bold text-gray-700">Notify when each drink completes</span>
-                                    <p className="text-xs text-gray-500">You'll receive a notification as each individual drink is ready</p>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-                )}
 
                 {/* Notification Methods (only show if notifications enabled) */}
                 {notificationsEnabled && (

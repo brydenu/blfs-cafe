@@ -181,8 +181,8 @@ export default function LiveOrderWidget({ initialOrders }: LiveOrderWidgetProps)
                                 <h3 className="text-gray-800 font-black text-base leading-none mb-1">
                                     {new Date(order.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                                 </h3>
-                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
-                                    #{order.publicId.split('-')[0]}
+                                <p className="text-[10px] text-gray-400 tracking-wider">
+                                    Order ID: {order.publicId}
                                 </p>
                             </div>
                             

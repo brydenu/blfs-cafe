@@ -91,7 +91,8 @@ export async function updateNotificationPreferences(data: {
   const session = await auth();
   if (!session?.user?.email) return { success: false, message: "Unauthorized" };
 
-  if (!['per-drink', 'order-complete'].includes(data.notificationDefaultType)) {
+  // Always use order-complete as the app only supports order completion notifications
+  if (data.notificationDefaultType !== 'order-complete') {
     return { success: false, message: "Invalid notification type." };
   }
 
