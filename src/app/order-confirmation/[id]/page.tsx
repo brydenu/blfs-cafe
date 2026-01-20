@@ -13,14 +13,21 @@ export default async function OrderConfirmationPage({ params }: Props) {
   // Await params for Next.js 15+
   const { id } = await Promise.resolve(params);
 
-  // 1. Fetch Order with Items
+  // 1. Fetch Order with Items and User
   const rawOrder = await prisma.order.findUnique({
     where: { publicId: id },
     include: { 
         items: {
             include: { product: true },
             orderBy: { id: 'asc' }
-        } 
+        },
+        user: {
+          select: {
+            notificationsEnabled: true,
+            notificationDefaultType: true,
+            notificationMethods: true,
+          }
+        }
     }
   });
 

@@ -18,14 +18,80 @@ export const EmailProvider: NotificationProvider = {
 
     switch (type) {
       case 'ORDER_COMPLETED':
-        subject = `Order #${data.publicId} is Ready!`;
+        // Format drink details for email
+        const formatDrinkDetails = (items: any[]) => {
+          return items.map((item: any) => {
+            const details: string[] = [];
+            
+            // Product name and temperature
+            let drinkLine = `<strong>${item.product.name}</strong>`;
+            if (item.temperature) {
+              drinkLine += ` - ${item.temperature}`;
+            }
+            
+            // Recipient name if present
+            if (item.recipientName) {
+              drinkLine += ` (for ${item.recipientName})`;
+            }
+            
+            details.push(drinkLine);
+            
+            // Shots
+            const shots = item.shots || 0;
+            if (shots > 0) {
+              details.push(`${shots} shot${shots !== 1 ? 's' : ''}`);
+            }
+            
+            // Caffeine type
+            if (item.caffeineType && item.caffeineType !== 'Normal') {
+              details.push(item.caffeineType);
+            }
+            
+            // Milk
+            if (item.milkName && item.milkName !== 'No Milk') {
+              details.push(item.milkName);
+            }
+            
+            // Modifiers (syrups, toppings, etc.)
+            if (item.modifiers && item.modifiers.length > 0) {
+              item.modifiers.forEach((mod: any) => {
+                if (mod.ingredient.category !== 'milk') {
+                  const qty = mod.quantity > 1 ? ` (${mod.quantity})` : '';
+                  details.push(`${mod.ingredient.name}${qty}`);
+                }
+              });
+            }
+            
+            // Personal cup
+            if (item.personalCup) {
+              details.push('Personal Cup');
+            }
+            
+            // Special instructions
+            if (item.specialInstructions) {
+              details.push(`Note: "${item.specialInstructions}"`);
+            }
+            
+            return details.join(' • ');
+          }).join('<br><br>');
+        };
+        
+        const drinkDetailsHtml = formatDrinkDetails(data.items || []);
+        
+        subject = `Your Order is Ready!`;
         html = `
-          <div style="font-family: sans-serif; padding: 20px;">
-            <h1 style="color: #004876;">Your Drink is Ready! ☕</h1>
-            <p>Hi ${data.name},</p>
-            <p>Your order <strong>#${data.publicId}</strong> has been completed by the barista.</p>
-            <p>Please head to the pickup counter.</p>
-            <a href="${process.env.NEXT_PUBLIC_URL}/order-confirmation/${data.publicIdFull}" style="background: #32A5DC; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Receipt</a>
+          <div style="font-family: sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;">
+            <h1 style="color: #004876; margin-bottom: 20px;">Your Order is Ready! ☕</h1>
+            <p style="font-size: 16px; margin-bottom: 20px;">Hey ${data.name},</p>
+            <p style="font-size: 16px; margin-bottom: 20px;">Your order of:</p>
+            <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #32A5DC;">
+              <div style="font-size: 15px; line-height: 1.8; color: #333;">
+                ${drinkDetailsHtml}
+              </div>
+            </div>
+            <p style="font-size: 16px; margin-bottom: 30px;">has been completed, and is waiting for you at the pickup counter.</p>
+            <p style="font-size: 16px; margin-bottom: 20px;">Thank you!</p>
+            <a href="${process.env.NEXT_PUBLIC_URL}/order-confirmation/${data.publicIdFull}" style="background: #32A5DC; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">View Order</a>
           </div>
         `;
         break;
@@ -67,7 +133,7 @@ export const EmailProvider: NotificationProvider = {
 
     try {
       await transporter.sendMail({
-        from: '"Cafe App" <no-reply@cafeapp.com>',
+        from: '"BioLife Cafe" <no-reply@cafeapp.com>',
         to,
         subject,
         html,

@@ -18,6 +18,9 @@ export default async function SettingsPage() {
       lastName: true,
       email: true,
       phone: true,
+      notificationsEnabled: true,
+      notificationDefaultType: true,
+      notificationMethods: true,
     }
   });
 

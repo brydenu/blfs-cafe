@@ -1,6 +1,7 @@
 export type NotificationType = 
   | 'ORDER_CONFIRMATION' 
   | 'ORDER_COMPLETED' 
+  | 'ITEM_COMPLETED'
   | 'PASSWORD_RESET'
   | 'WELCOME';
 

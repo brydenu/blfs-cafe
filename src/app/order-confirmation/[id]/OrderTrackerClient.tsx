@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { io } from "socket.io-client";
 import { useToast } from "@/providers/ToastProvider";
-import { cancelOrderItem } from "@/app/dashboard/actions";
+import { cancelOrderItem, updateOrderNotificationPreferences } from "@/app/dashboard/actions";
 
 export default function OrderTrackerClient({ order, ordersAhead, estimatedMinutes }: any) {
   const router = useRouter();
@@ -13,6 +13,8 @@ export default function OrderTrackerClient({ order, ordersAhead, estimatedMinute
   const [activeOrder, setActiveOrder] = useState(order);
   const [confirmingItemId, setConfirmingItemId] = useState<number | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [updatingNotif, setUpdatingNotif] = useState(false);
 
   // Update activeOrder when order prop changes
   useEffect(() => {
@@ -20,6 +22,36 @@ export default function OrderTrackerClient({ order, ordersAhead, estimatedMinute
   }, [order]);
 
   const isOrderComplete = activeOrder.status === 'completed';
+
+  // --- Update Notification Preferences Handler ---
+  const handleUpdateNotifications = async (enabled: boolean, emailEnabled?: boolean, smsEnabled?: boolean) => {
+    if (updatingNotif) return;
+    setUpdatingNotif(true);
+    
+    try {
+      const methods = {
+        email: emailEnabled ?? true,
+        sms: smsEnabled ?? false
+      };
+      
+      const result = await updateOrderNotificationPreferences(activeOrder.id, {
+        notificationsEnabled: enabled,
+        notificationMethods: methods,
+      });
+      
+      if (result.success) {
+        showToast('Notification preferences updated');
+        router.refresh();
+      } else {
+        alert(result.message || 'Failed to update notification preferences');
+      }
+    } catch (error) {
+      console.error('Error updating notification preferences:', error);
+      alert('Failed to update notification preferences');
+    } finally {
+      setUpdatingNotif(false);
+    }
+  };
 
   // --- Cancel Item Handler ---
   const handleCancelItem = async (itemId: number) => {
@@ -231,6 +263,128 @@ export default function OrderTrackerClient({ order, ordersAhead, estimatedMinute
                 })}
             </div>
         </div>
+
+        {/* Notification Preferences */}
+        {!isOrderComplete && (
+            <div className="mt-6 pt-6 border-t border-gray-200">
+                <NotificationControls
+                    order={activeOrder}
+                    onUpdate={handleUpdateNotifications}
+                    isUpdating={updatingNotif}
+                />
+            </div>
+        )}
+    </div>
+  );
+}
+
+// Notification Controls Component
+function NotificationControls({ order, onUpdate, isUpdating }: { order: any; onUpdate: (enabled: boolean, emailEnabled?: boolean, smsEnabled?: boolean) => void; isUpdating: boolean }) {
+  const [notificationsEnabled, setNotificationsEnabled] = useState(order.notificationsEnabled ?? false);
+  const [emailEnabled, setEmailEnabled] = useState((order.notificationMethods as any)?.email ?? true);
+  const [smsEnabled, setSmsEnabled] = useState((order.notificationMethods as any)?.sms ?? false);
+  const [showMethods, setShowMethods] = useState(notificationsEnabled);
+
+  const handleToggle = (enabled: boolean) => {
+    if (enabled) {
+      // When enabling notifications, automatically enable email
+      setNotificationsEnabled(true);
+      setEmailEnabled(true);
+      setShowMethods(true);
+      onUpdate(true, true, smsEnabled);
+    } else {
+      // When disabling notifications, collapse the options
+      setNotificationsEnabled(false);
+      setShowMethods(false);
+      onUpdate(false, emailEnabled, smsEnabled);
+    }
+  };
+
+  const handleEmailToggle = (enabled: boolean) => {
+    setEmailEnabled(enabled);
+    if (notificationsEnabled) {
+      // If turning off email and SMS is also off, disable notifications entirely
+      if (!enabled && !smsEnabled) {
+        setNotificationsEnabled(false);
+        setShowMethods(false);
+        onUpdate(false, false, false);
+      } else {
+        onUpdate(true, enabled, smsEnabled);
+      }
+    }
+  };
+
+  const handleSmsToggle = (enabled: boolean) => {
+    setSmsEnabled(enabled);
+    if (notificationsEnabled) {
+      // If turning off SMS and email is also off, disable notifications entirely
+      if (!enabled && !emailEnabled) {
+        setNotificationsEnabled(false);
+        setShowMethods(false);
+        onUpdate(false, false, false);
+      } else {
+        onUpdate(true, emailEnabled, enabled);
+      }
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <label className="flex items-center justify-between cursor-pointer">
+        <span className="text-sm font-bold text-[#004876]">Notify me when this order is completed</span>
+        <label className="relative inline-flex items-center cursor-pointer">
+          <input
+            type="checkbox"
+            checked={notificationsEnabled}
+            onChange={(e) => handleToggle(e.target.checked)}
+            disabled={isUpdating}
+            className="sr-only peer"
+          />
+          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#32A5DC]/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#32A5DC]"></div>
+        </label>
+      </label>
+
+      <div 
+        className={`overflow-hidden transition-all duration-300 ease-in-out ${
+          showMethods ? 'max-h-32 opacity-100' : 'max-h-0 opacity-0'
+        }`}
+      >
+        <div className="ml-4 space-y-3 pl-4 border-l-2 border-gray-200 pt-2">
+          <label className="flex items-center justify-between cursor-pointer">
+            <span className="text-sm font-bold text-gray-700">Email</span>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={emailEnabled}
+                onChange={(e) => handleEmailToggle(e.target.checked)}
+                disabled={isUpdating}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#32A5DC]/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#32A5DC]"></div>
+            </label>
+          </label>
+          
+          <label className="flex items-center justify-between cursor-not-allowed opacity-50">
+            <span className="text-sm font-bold text-gray-500">SMS</span>
+            <label className="relative inline-flex items-center cursor-not-allowed">
+              <input
+                type="checkbox"
+                checked={smsEnabled}
+                onChange={(e) => handleSmsToggle(e.target.checked)}
+                disabled={true}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-gray-200 rounded-full"></div>
+            </label>
+          </label>
+        </div>
+      </div>
+      
+      {isUpdating && (
+        <div className="text-center">
+          <div className="inline-block w-5 h-5 border-2 border-gray-300 border-t-[#32A5DC] rounded-full animate-spin"></div>
+        </div>
+      )}
     </div>
   );
 }

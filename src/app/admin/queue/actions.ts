@@ -34,19 +34,48 @@ export async function completeOrderItem(itemId: number) {
       const completedOrder = await prisma.order.update({
         where: { id: updatedItem.orderId },
         data: { status: 'completed' },
-        include: { user: true } // Need user to access email
+        include: { 
+          user: {
+            select: {
+              notificationsEnabled: true,
+              notificationDefaultType: true,
+              notificationMethods: true,
+              firstName: true,
+              email: true,
+            }
+          },
+          items: {
+            include: {
+              product: true,
+              modifiers: {
+                include: {
+                  ingredient: true
+                }
+              }
+            },
+            orderBy: { id: 'asc' }
+          }
+        }
       });
 
-      // B. TRIGGER EMAIL NOTIFICATION
+      // B. CHECK NOTIFICATION PREFERENCES AND SEND EMAIL
+      // Determine effective notification preferences (order override or user default)
+      // If order has explicit notification preference, use it; otherwise check user default
+      const effectiveNotificationsEnabled = completedOrder.notificationsEnabled !== null 
+        ? completedOrder.notificationsEnabled 
+        : (completedOrder.user?.notificationsEnabled ?? false);
+      
+      const effectiveNotificationMethods = completedOrder.notificationMethods || completedOrder.user?.notificationMethods || { email: true };
+
       // Try to find an email (User Account Email OR Guest Email)
       const recipientEmail = completedOrder.user?.email || completedOrder.guestEmail;
 
-      if (recipientEmail) {
+      if (effectiveNotificationsEnabled && recipientEmail && (effectiveNotificationMethods as any)?.email) {
         // We don't await this because we don't want to slow down the UI 
         // while the email sends. It runs in the background.
         sendNotification('ORDER_COMPLETED', recipientEmail, {
             name: completedOrder.guestName || completedOrder.user?.firstName || "Guest",
-            publicId: completedOrder.publicId.split('-')[0], // Short ID (e.g., c123)
+            items: completedOrder.items,
             publicIdFull: completedOrder.publicId // Full ID for links
         }).catch(err => console.error("Background email failed:", err));
       }
@@ -61,6 +90,7 @@ export async function completeOrderItem(itemId: number) {
 
     } else {
       // --- SCENARIO: ITEM COMPLETE (Group Order, items remaining) ---
+      // No notifications sent for individual items - only when entire order is complete
       
       // Emit "Item Completed" Socket Event
       triggerSocketEvent("order-update", { 

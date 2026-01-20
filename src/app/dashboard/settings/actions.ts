@@ -82,3 +82,35 @@ export async function updatePassword(formData: FormData) {
     return { success: false, message: "Failed to update password." };
   }
 }
+
+export async function updateNotificationPreferences(data: {
+  notificationsEnabled: boolean;
+  notificationDefaultType: string;
+  notificationMethods: { email: boolean };
+}) {
+  const session = await auth();
+  if (!session?.user?.email) return { success: false, message: "Unauthorized" };
+
+  if (!['per-drink', 'order-complete'].includes(data.notificationDefaultType)) {
+    return { success: false, message: "Invalid notification type." };
+  }
+
+  try {
+    await prisma.user.update({
+      where: { email: session.user.email },
+      data: {
+        notificationsEnabled: data.notificationsEnabled,
+        notificationDefaultType: data.notificationDefaultType,
+        notificationMethods: data.notificationMethods,
+      },
+    });
+    
+    revalidatePath("/dashboard/settings");
+    revalidatePath("/dashboard");
+
+    return { success: true, message: "Notification preferences updated successfully." };
+  } catch (error) {
+    console.error("Notification Preferences Update Error:", error);
+    return { success: false, message: "Failed to update notification preferences." };
+  }
+}
