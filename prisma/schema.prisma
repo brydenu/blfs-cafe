@@ -106,7 +106,7 @@ model Ingredient {
 
 model Order {
   id          Int      @id @default(autoincrement())
-  publicId    String   @unique @default(cuid()) // Friendly ID for tracking
+  publicId    String   @unique // Friendly ID for tracking (generated in app code)
   
   userId      String?
   user        User?    @relation(fields: [userId], references: [id])

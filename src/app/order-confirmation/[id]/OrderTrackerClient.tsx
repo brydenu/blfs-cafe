@@ -179,7 +179,7 @@ export default function OrderTrackerClient({ order, ordersAhead, estimatedMinute
                  <p className="text-[10px] text-gray-500 uppercase font-extrabold tracking-widest">
                     Items ({activeOrder.items.length})
                 </p>
-                <span className="text-[10px] text-gray-400 font-mono">#{activeOrder.publicId.split('-')[0]}</span>
+                <span className="text-[10px] text-gray-400 font-mono">#{activeOrder.publicId}</span>
             </div>
             
             <div className="divide-y divide-gray-200">
