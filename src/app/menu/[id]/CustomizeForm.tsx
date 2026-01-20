@@ -19,7 +19,7 @@ interface CustomizeFormProps {
 export default function CustomizeForm({ product, ingredients, defaultName, defaultDisplayName, userLastName }: CustomizeFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { addToCart, removeFromCart, clearCart } = useCart();
+  const { addToCart, removeFromCart, clearCart, setOrderMode } = useCart();
   const { showToast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -218,6 +218,19 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
       showToast("Network error. Please try again.");
       setIsSubmitting(false);
     }
+  };
+
+  const handleSwitchToGroupOrder = () => {
+    // Validate name field - always required
+    if (!recipientName.trim()) {
+      setNameError("Please add a name to the order");
+      return;
+    }
+
+    const newItem = createCartItem();
+    addToCart(newItem);
+    setOrderMode('multi');
+    router.push('/menu');
   };
 
   const Counter = ({ count, onMinus, onPlus, colorClass = "text-[#32A5DC]" }: any) => (
@@ -516,13 +529,21 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
           </Link>
           
           {isSoloOrder && !editId ? (
-            <button 
-              onClick={handleSoloOrder} 
-              disabled={isSubmitting}
-              className="flex-1 bg-[#004876] text-white font-bold py-4 rounded-xl shadow-lg hover:bg-[#32A5DC] transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-            >
-              {isSubmitting ? "Processing..." : "Place Order"}
-            </button>
+            <>
+              <button 
+                onClick={handleSwitchToGroupOrder}
+                className="flex-1 bg-[#32A5DC] text-white font-bold py-4 rounded-xl shadow-lg hover:bg-[#288bba] transition-all transform hover:scale-[1.02] cursor-pointer"
+              >
+                Add to Group Order
+              </button>
+              <button 
+                onClick={handleSoloOrder} 
+                disabled={isSubmitting}
+                className="flex-1 bg-[#004876] text-white font-bold py-4 rounded-xl shadow-lg hover:bg-[#32A5DC] transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              >
+                {isSubmitting ? "Processing..." : "Place Order"}
+              </button>
+            </>
           ) : (
             <button onClick={() => processOrder('/cart')} className="flex-1 bg-[#004876] text-white font-bold py-4 rounded-xl shadow-lg hover:bg-[#32A5DC] transition-all transform hover:scale-[1.02] cursor-pointer">
               {editId ? "Update Order" : "Add to Order"}

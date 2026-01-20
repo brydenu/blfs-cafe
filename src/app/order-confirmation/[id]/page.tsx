@@ -60,7 +60,7 @@ export default async function OrderConfirmationPage({ params }: Props) {
       </div>
 
       {/* Main Content */}
-      <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-8 text-center max-w-lg w-full shadow-2xl relative z-10 animate-fade-in">
+      <div className="bg-white rounded-3xl p-8 text-center max-w-lg w-full shadow-2xl relative z-10 animate-fade-in">
         
         {/* CLIENT COMPONENT: Handles Socket Listening & Live Updates */}
         <OrderTrackerClient 
@@ -72,12 +72,12 @@ export default async function OrderConfirmationPage({ params }: Props) {
         {/* Actions */}
         <div className="space-y-4 mt-8">
             <Link href="/dashboard" className="block">
-                <button className="w-full bg-[#32A5DC] hover:bg-[#288bba] text-white font-bold py-3.5 rounded-xl shadow-lg transition-all transform hover:scale-[1.02] cursor-pointer">
+                <button className="w-full bg-[#004876] hover:bg-[#32A5DC] text-white font-bold py-3.5 rounded-xl shadow-lg transition-all transform hover:scale-[1.02] cursor-pointer">
                     Track in Dashboard
                 </button>
             </Link>
             <Link href="/menu" className="block">
-                <button className="w-full bg-transparent text-blue-200 hover:text-white font-bold py-2 text-sm transition-colors cursor-pointer">
+                <button className="w-full bg-transparent text-[#32A5DC] hover:text-[#004876] font-bold py-2 text-sm transition-colors cursor-pointer">
                     Order Something Else
                 </button>
             </Link>
