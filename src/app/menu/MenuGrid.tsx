@@ -230,15 +230,15 @@ export default function MenuGrid({ products = [], favorites = [], ingredients = 
 
       {/* FILTERS */}
       <div className="flex justify-center mb-10">
-        <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-full p-1 flex gap-1 flex-wrap justify-center">
+        <div className="md:bg-white/5 md:backdrop-blur-sm md:border md:border-white/10 md:rounded-full md:p-1 flex gap-2 md:gap-1 flex-wrap justify-center">
           {categories.map((cat) => (
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
-              className={`px-6 py-2 rounded-full text-sm font-bold uppercase tracking-wide transition-all duration-200 cursor-pointer ${
+              className={`px-4 py-2 md:px-6 rounded-full text-sm font-bold uppercase tracking-wide transition-all duration-200 cursor-pointer ${
                 activeCategory === cat
-                  ? "bg-white text-[#004876] shadow-sm"
-                  : "text-blue-100 hover:text-white hover:bg-white/10"
+                  ? "bg-[#32A5DC] text-white shadow-sm md:bg-white md:text-[#004876]"
+                  : "text-blue-100 hover:text-white bg-white/5 border border-white/10 md:bg-transparent md:border-0 hover:bg-white/10"
               }`}
             >
               {cat}

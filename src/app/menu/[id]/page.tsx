@@ -72,15 +72,24 @@ export default async function ProductPage({ params, searchParams }: Props) {
   let initialConfig = null;
 
   return (
-    <main className="min-h-screen bg-[#004876] flex justify-center p-4 md:p-8">
-      <CustomizeForm 
-        product={serializedProduct} 
-        ingredients={serializedIngredients}
-        defaultName={defaultName}
-        defaultDisplayName={defaultDisplayName}
-        userLastName={userLastName}
-        initialConfig={initialConfig}
-      />
+    <main className="relative min-h-screen flex justify-center p-4 md:p-8 overflow-hidden">
+      {/* Background */}
+      <div className="absolute inset-0 z-0 bg-[#004876] fixed">
+        <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-[#32A5DC] rounded-full mix-blend-multiply filter blur-[128px] opacity-20 animate-pulse"></div>
+        <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-[#32A5DC] rounded-full mix-blend-multiply filter blur-[128px] opacity-20"></div>
+        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(#ffffff 1px, transparent 1px)', backgroundSize: '30px 30px' }}></div>
+      </div>
+
+      <div className="relative z-10 w-full">
+        <CustomizeForm 
+          product={serializedProduct} 
+          ingredients={serializedIngredients}
+          defaultName={defaultName}
+          defaultDisplayName={defaultDisplayName}
+          userLastName={userLastName}
+          initialConfig={initialConfig}
+        />
+      </div>
     </main>
   );
 }

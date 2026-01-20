@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCart, CartItem } from "@/providers/CartProvider";
 import { useToast } from "@/providers/ToastProvider";
+import { placeOrder } from "@/app/cart/actions";
 
 interface CustomizeFormProps {
   product: Product;
@@ -18,8 +19,9 @@ interface CustomizeFormProps {
 export default function CustomizeForm({ product, ingredients, defaultName, defaultDisplayName, userLastName }: CustomizeFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { addToCart, removeFromCart } = useCart();
+  const { addToCart, removeFromCart, clearCart } = useCart();
   const { showToast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // --- QUERY PARAMS ---
   const configParam = searchParams.get('config');
@@ -71,6 +73,7 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
   // Determine order mode
   const orderMode = mode || 'single';
   const isGroupOrder = orderMode === 'multi';
+  const isSoloOrder = !isGroupOrder;
   
   // Name field logic: Guest always empty, Group always empty, Single locked with user name
   const shouldLockName = !isGuest && !isGroupOrder;
@@ -129,13 +132,7 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
     });
   };
 
-  const processOrder = (redirectPath: string) => {
-    // Validate name field - always required
-    if (!recipientName.trim()) {
-      setNameError("Please add a name to the order");
-      return;
-    }
-    
+  const createCartItem = (): CartItem => {
     let milkName = "No Milk";
     if (selectedMilk !== -1 && selectedMilk !== null) {
       const m = milks.find(x => x.id === selectedMilk);
@@ -150,7 +147,10 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
       }
     });
 
-    const newItem: CartItem = {
+    // Get basePrice from product (serialized as number in page.tsx)
+    const productWithPrice = product as Product & { basePrice?: number };
+
+    return {
       internalId: editId ? editId : Date.now().toString(), // Keep ID if editing
       productId: product.id,
       productName: product.name,
@@ -165,8 +165,19 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
       milkId: selectedMilk || undefined,
       personalCup: personalCup,
       caffeineType: shots > 0 ? caffeineType : undefined,
-      notes: notes
+      notes: notes,
+      basePrice: productWithPrice.basePrice || 0
     };
+  };
+
+  const processOrder = (redirectPath: string) => {
+    // Validate name field - always required
+    if (!recipientName.trim()) {
+      setNameError("Please add a name to the order");
+      return;
+    }
+
+    const newItem = createCartItem();
 
     if (editId) {
         // EDIT MODE: Remove old, add new (Updates in place effectively)
@@ -180,6 +191,33 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
     }
 
     router.push(redirectPath);
+  };
+
+  const handleSoloOrder = async () => {
+    // Validate name field - always required
+    if (!recipientName.trim()) {
+      setNameError("Please add a name to the order");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const newItem = createCartItem();
+      const result = await placeOrder([newItem]);
+
+      if (result.success && result.orderId) {
+        clearCart();
+        router.push(`/order-confirmation/${result.orderId}`);
+      } else {
+        showToast(result.message || "Something went wrong.");
+        setIsSubmitting(false);
+      }
+    } catch (e) {
+      console.error(e);
+      showToast("Network error. Please try again.");
+      setIsSubmitting(false);
+    }
   };
 
   const Counter = ({ count, onMinus, onPlus, colorClass = "text-[#32A5DC]" }: any) => (
@@ -261,7 +299,7 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
                             ? 'border-gray-200 bg-gray-50 focus:bg-white' 
                             : 'border-gray-100 bg-gray-100 cursor-not-allowed opacity-75'
                 }`}
-                placeholder="Enter name (required)..."
+                placeholder="Please enter a name"
             />
             {shouldLockName && !isNameEditable && (
                 <p className="text-xs text-gray-500 mt-1 flex items-center gap-2">
@@ -469,14 +507,27 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
         </section>
 
         {/* --- ACTIONS --- */}
-        <div className="pt-6 flex flex-col sm:flex-row gap-4">
+        {nameError && (
+          <p className="text-red-500 text-sm font-medium text-center mb-2">{nameError}</p>
+        )}
+        <div className={`flex flex-col sm:flex-row gap-4 ${nameError ? 'pt-2' : 'pt-6'}`}>
           <Link href="/menu" className="py-4 px-6 rounded-xl border-2 border-gray-200 text-gray-500 font-bold text-center hover:bg-gray-50 hover:text-gray-700 transition-all cursor-pointer">
             Cancel
           </Link>
           
-          <button onClick={() => processOrder('/cart')} className="flex-1 bg-[#004876] text-white font-bold py-4 rounded-xl shadow-lg hover:bg-[#32A5DC] transition-all transform hover:scale-[1.02] cursor-pointer">
-            {editId ? "Update Order" : "Add to Order"}
-          </button>
+          {isSoloOrder && !editId ? (
+            <button 
+              onClick={handleSoloOrder} 
+              disabled={isSubmitting}
+              className="flex-1 bg-[#004876] text-white font-bold py-4 rounded-xl shadow-lg hover:bg-[#32A5DC] transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            >
+              {isSubmitting ? "Processing..." : "Place Order"}
+            </button>
+          ) : (
+            <button onClick={() => processOrder('/cart')} className="flex-1 bg-[#004876] text-white font-bold py-4 rounded-xl shadow-lg hover:bg-[#32A5DC] transition-all transform hover:scale-[1.02] cursor-pointer">
+              {editId ? "Update Order" : "Add to Order"}
+            </button>
+          )}
         </div>
 
       </div>
