@@ -138,8 +138,8 @@ model OrderItem {
   
   specialInstructions String? // Fallback text string
 
-  // --- ADDED THIS LINE ---
-  status              String  @default("queued") // 'queued', 'completed'
+  // Completion status
+  completed           Boolean @default(false)
   
   // Customization fields
   personalCup         Boolean @default(false)

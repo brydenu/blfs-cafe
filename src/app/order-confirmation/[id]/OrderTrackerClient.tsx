@@ -117,7 +117,7 @@ export default function OrderTrackerClient({ order, ordersAhead, estimatedMinute
             
             <div className="divide-y divide-white/5">
                 {order.items.map((item: any) => {
-                    const isItemDone = item.status === 'completed';
+                    const isItemDone = item.completed === true;
                     return (
                         <div key={item.id} className="p-4 flex items-center justify-between transition-colors hover:bg-white/5">
                             <div>

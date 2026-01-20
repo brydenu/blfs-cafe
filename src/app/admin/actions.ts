@@ -199,7 +199,7 @@ export async function getQueueDrinkCount() {
   try {
     const drinkCount = await prisma.orderItem.count({
       where: {
-        status: { not: 'completed' },
+        completed: false,
         order: {
           status: { in: ['queued', 'preparing'] }
         }

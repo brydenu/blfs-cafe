@@ -65,7 +65,7 @@ export default async function AdminQueuePage() {
   rawOrders.forEach((order) => {
     order.items.forEach(item => {
         // --- KEY CHANGE: Filter out completed items ---
-        if (item.status === 'completed') return; 
+        if (item.completed === true) return; 
 
         const legacy = parseLegacyDetails(item.specialInstructions);
         
@@ -74,15 +74,22 @@ export default async function AdminQueuePage() {
         if (temp.includes('iced')) totalIced++;
         else totalHot++;
 
-        // 2. Shots
+        // 2. Shots (count shots for any drink, regardless of category)
         const activeShots = (item.shots || 0) > 0 ? item.shots : legacy.shots;
         
-        if (item.product.category === 'coffee') {
-             const isDecafItem = item.product.name.toLowerCase().includes('decaf') || 
-                                 item.modifiers.some(m => m.ingredient.name.toLowerCase().includes('decaf'));
-             
-             if (isDecafItem) totalDecafShots += activeShots;
-             else totalCafShots += activeShots;
+        if (activeShots > 0) {
+             // Check caffeineType for accurate shot counting
+             if (item.caffeineType === 'Decaf') {
+                 totalDecafShots += activeShots;
+             } else if (item.caffeineType === 'Half-Caff') {
+                 // Half-caff: divide shots by 2, add half to each total
+                 const halfShots = activeShots / 2;
+                 totalDecafShots += halfShots;
+                 totalCafShots += halfShots;
+             } else {
+                 // Normal or null caffeineType counts as regular caff shots
+                 totalCafShots += activeShots;
+             }
         }
 
         // 3. Milk
