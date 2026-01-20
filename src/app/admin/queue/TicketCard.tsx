@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation"; // Added for manual refresh backup
 import { completeOrderItem } from "./actions"; // New Action
 
@@ -63,25 +63,53 @@ function getToppingLabel(quantity: number): string | null {
 
 export default function TicketCard({ item }: { item: any }) {
   const [loading, setLoading] = useState(false);
+  const [isPressing, setIsPressing] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
   const router = useRouter();
+  const cardRef = useRef<HTMLDivElement>(null);
 
   // Calculate time displays
   const orderTime = useMemo(() => formatOrderTime(item.orderCreatedAt), [item.orderCreatedAt]);
   const timeAgo = useMemo(() => formatTimeAgo(item.orderCreatedAt), [item.orderCreatedAt]);
 
   const handleComplete = async () => {
+    // Start exit animation immediately (optimistic UI)
+    setIsExiting(true);
+    setIsPressing(false);
     setLoading(true);
     
-    // 1. Call Server Action
-    const result = await completeOrderItem(item.id);
-    
-    if (result.success) {
-        // 2. Success: Force a refresh immediately (Backup for Socket)
+    // Wait for animation to complete before removing from DOM
+    setTimeout(async () => {
+      // Call Server Action
+      const result = await completeOrderItem(item.id);
+      
+      if (result.success) {
+        // Force a refresh after animation completes
         router.refresh(); 
-    } else {
-        // 3. Error: Alert user (Likely DB schema mismatch)
+      } else {
+        // Error: Reset state and alert
         alert("Failed to complete item. Check server console for errors.");
+        setIsExiting(false);
         setLoading(false);
+      }
+    }, 500); // Match animation duration
+  };
+
+  const handleMouseDown = () => {
+    if (!loading && !isExiting) {
+      setIsPressing(true);
+    }
+  };
+
+  const handleMouseUp = () => {
+    if (isPressing && !loading && !isExiting) {
+      setIsPressing(false);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    if (isPressing) {
+      setIsPressing(false);
     }
   };
 
@@ -114,8 +142,18 @@ export default function TicketCard({ item }: { item: any }) {
   // Check if specialInstructions looks like a system dump
   const isSystemDump = item.specialInstructions?.includes("Milk:") && item.specialInstructions?.includes("|");
 
+  // Determine animation classes
+  const pressClass = isPressing ? 'card-pressing' : '';
+  const exitClass = isExiting ? 'card-exit-liftoff' : '';
+
   return (
-    <div className="bg-gray-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col h-full border border-gray-700 relative animate-fade-in">
+    <div 
+      ref={cardRef}
+      className={`bg-gray-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col h-full border border-gray-700 relative ${pressClass} ${exitClass} ${isExiting ? 'pointer-events-none' : ''}`}
+      style={{
+        transition: isPressing ? 'none' : 'transform 0.15s ease-out'
+      }}
+    >
       
       {/* --- HEADER --- */}
       <div className="bg-gray-750 p-4 border-b border-gray-700 flex justify-between items-start">
@@ -234,22 +272,27 @@ export default function TicketCard({ item }: { item: any }) {
       </div>
 
       {/* --- FOOTER BUTTON --- */}
-      <button 
-        onClick={handleComplete}
-        disabled={loading}
-        className="w-full bg-green-600 hover:bg-green-500 active:bg-green-700 text-white font-black text-xl py-5 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer uppercase tracking-widest border-t border-green-500 flex items-center justify-center gap-2"
-      >
-        {loading ? (
-             <span className="animate-pulse">Processing...</span>
-        ) : (
-            <>
-                <span>Complete Drink</span>
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-6 h-6">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                </svg>
-            </>
-        )}
-      </button>
+      <div className="p-4 pt-2">
+        <button 
+          onMouseDown={handleMouseDown}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseLeave}
+          onClick={handleComplete}
+          disabled={loading || isExiting}
+          className="w-full bg-[#32A5DC] hover:bg-[#288bba] active:bg-[#1f7aa3] text-white font-black text-xl py-4 px-6 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg"
+        >
+          {loading || isExiting ? (
+               <span className="animate-pulse">Processing...</span>
+          ) : (
+              <>
+                  <span>Complete Drink</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-6 h-6">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                  </svg>
+              </>
+          )}
+        </button>
+      </div>
 
     </div>
   );
