@@ -193,6 +193,53 @@ export async function fetchSchedule() {
   return schedules;
 }
 
+// --- Update Order Notification Preferences ---
+export async function updateOrderNotificationPreferences(
+  orderId: number,
+  data: {
+    notificationsEnabled: boolean;
+    notificationMethods: { email: boolean; sms: boolean };
+  }
+) {
+  try {
+    const session = await auth();
+    if (!session?.user?.email) {
+      return { success: false, message: 'Not authenticated' };
+    }
+
+    // Verify the user owns this order
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email }
+    });
+
+    if (!user) {
+      return { success: false, message: 'User not found' };
+    }
+
+    const order = await prisma.order.findUnique({
+      where: { id: orderId }
+    });
+
+    if (!order || order.userId !== user.id) {
+      return { success: false, message: 'Unauthorized' };
+    }
+
+    // Update order notification preferences (this is per-order, doesn't affect user defaults)
+    await prisma.order.update({
+      where: { id: orderId },
+      data: {
+        notificationsEnabled: data.notificationsEnabled,
+        notificationMethods: data.notificationMethods,
+      }
+    });
+
+    return { success: true, message: 'Notification preferences updated' };
+  } catch (error) {
+    console.error("Failed to update order notification preferences:", error);
+    return { success: false, message: 'Failed to update preferences' };
+  }
+}
+
 // --- Helper ---
 function serializeOrders(orders: any[]) {
   return orders.map(order => ({

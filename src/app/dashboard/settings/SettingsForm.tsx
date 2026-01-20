@@ -2,13 +2,16 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { updateProfile, updatePassword } from "./actions";
+import { updateProfile, updatePassword, updateNotificationPreferences } from "./actions";
 
 interface UserData {
   firstName: string;
   lastName: string;
   email: string;
   phone: string | null;
+  notificationsEnabled: boolean;
+  notificationDefaultType: string;
+  notificationMethods: any;
 }
 
 export default function SettingsForm({ user }: { user: UserData }) {
@@ -19,6 +22,13 @@ export default function SettingsForm({ user }: { user: UserData }) {
   // --- Password State ---
   const [passStatus, setPassStatus] = useState<'idle' | 'loading' | 'success'>('idle');
   const [passMsg, setPassMsg] = useState("");
+
+  // --- Notification State ---
+  const [notifStatus, setNotifStatus] = useState<'idle' | 'loading' | 'success'>('idle');
+  const [notifMsg, setNotifMsg] = useState("");
+  const [notificationsEnabled, setNotificationsEnabled] = useState(user.notificationsEnabled ?? false);
+  const [notificationType, setNotificationType] = useState(user.notificationDefaultType ?? 'order-complete');
+  const [emailEnabled, setEmailEnabled] = useState((user.notificationMethods as any)?.email ?? true);
 
   const handleProfileUpdate = async (formData: FormData) => {
     setProfileStatus('loading');
@@ -46,6 +56,24 @@ export default function SettingsForm({ user }: { user: UserData }) {
     if (result.success) {
         (document.getElementById("passwordForm") as HTMLFormElement).reset();
         setTimeout(() => setPassStatus('idle'), 3000);
+    }
+  };
+
+  const handleNotificationUpdate = async () => {
+    setNotifStatus('loading');
+    setNotifMsg("");
+
+    const result = await updateNotificationPreferences({
+      notificationsEnabled,
+      notificationDefaultType: notificationType,
+      notificationMethods: { email: emailEnabled }
+    });
+
+    setNotifStatus(result.success ? 'success' : 'idle');
+    setNotifMsg(result.message);
+
+    if (result.success) {
+        setTimeout(() => setNotifStatus('idle'), 3000);
     }
   };
 
@@ -195,6 +223,124 @@ export default function SettingsForm({ user }: { user: UserData }) {
                     )}
                 </div>
             </form>
+        </div>
+
+        {/* --- SECTION 3: NOTIFICATION PREFERENCES --- */}
+        <div className="bg-white rounded-3xl shadow-2xl p-6 sm:p-8 border border-white/10">
+            <h2 className="text-xl font-black text-[#004876] mb-6 border-b pb-2 flex items-center gap-2">
+                <span>🔔</span> Notification Preferences
+            </h2>
+            
+            <div className="space-y-5">
+                {/* Enable Notifications Toggle */}
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200">
+                    <div className="flex-1">
+                        <label className="text-sm font-bold text-gray-700 block mb-1">
+                            Enable notifications for all orders
+                        </label>
+                        <p className="text-xs text-gray-500">
+                            Get notified when your drinks are ready
+                        </p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                            type="checkbox"
+                            checked={notificationsEnabled}
+                            onChange={(e) => setNotificationsEnabled(e.target.checked)}
+                            className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#32A5DC]/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#32A5DC]"></div>
+                    </label>
+                </div>
+
+                {/* Notification Type (only show if notifications enabled) */}
+                {notificationsEnabled && (
+                    <div className="space-y-3 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                        <label className="text-sm font-bold text-gray-700 block mb-2">
+                            Default notification type
+                        </label>
+                        <div className="space-y-2">
+                            <label className="flex items-center p-3 bg-white rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors">
+                                <input
+                                    type="radio"
+                                    name="notificationType"
+                                    value="order-complete"
+                                    checked={notificationType === 'order-complete'}
+                                    onChange={(e) => setNotificationType(e.target.value)}
+                                    className="w-4 h-4 text-[#32A5DC] focus:ring-[#32A5DC] focus:ring-2"
+                                />
+                                <div className="ml-3 flex-1">
+                                    <span className="text-sm font-bold text-gray-700">Notify when entire order is complete</span>
+                                    <p className="text-xs text-gray-500">You'll receive one notification when all drinks in your order are ready</p>
+                                </div>
+                            </label>
+                            <label className="flex items-center p-3 bg-white rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors">
+                                <input
+                                    type="radio"
+                                    name="notificationType"
+                                    value="per-drink"
+                                    checked={notificationType === 'per-drink'}
+                                    onChange={(e) => setNotificationType(e.target.value)}
+                                    className="w-4 h-4 text-[#32A5DC] focus:ring-[#32A5DC] focus:ring-2"
+                                />
+                                <div className="ml-3 flex-1">
+                                    <span className="text-sm font-bold text-gray-700">Notify when each drink completes</span>
+                                    <p className="text-xs text-gray-500">You'll receive a notification as each individual drink is ready</p>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                )}
+
+                {/* Notification Methods (only show if notifications enabled) */}
+                {notificationsEnabled && (
+                    <div className="space-y-3 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                        <label className="text-sm font-bold text-gray-700 block mb-2">
+                            Notification methods
+                        </label>
+                        <div className="space-y-2">
+                            <label className="flex items-center p-3 bg-white rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors">
+                                <input
+                                    type="checkbox"
+                                    checked={emailEnabled}
+                                    onChange={(e) => setEmailEnabled(e.target.checked)}
+                                    className="w-4 h-4 text-[#32A5DC] focus:ring-[#32A5DC] focus:ring-2 rounded"
+                                />
+                                <div className="ml-3 flex-1">
+                                    <span className="text-sm font-bold text-gray-700">Email notifications</span>
+                                    <p className="text-xs text-gray-500">Receive notifications via email</p>
+                                </div>
+                            </label>
+                            <label className="flex items-center p-3 bg-white rounded-lg border border-gray-200 cursor-not-allowed opacity-50">
+                                <input
+                                    type="checkbox"
+                                    disabled
+                                    className="w-4 h-4 text-gray-400 rounded"
+                                />
+                                <div className="ml-3 flex-1">
+                                    <span className="text-sm font-bold text-gray-500">SMS notifications</span>
+                                    <p className="text-xs text-gray-400">Coming soon</p>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                )}
+
+                <div className="pt-2 flex flex-col sm:flex-row items-center gap-4">
+                    <button 
+                        onClick={handleNotificationUpdate}
+                        disabled={notifStatus === 'loading'}
+                        className="w-full sm:w-auto bg-[#32A5DC] hover:bg-[#288bba] text-white font-bold py-3 px-8 rounded-xl transition-all shadow-md hover:scale-[1.02] disabled:opacity-50"
+                    >
+                        {notifStatus === 'loading' ? 'Saving...' : 'Save Preferences'}
+                    </button>
+                    {notifMsg && (
+                        <span className={`text-sm font-bold ${notifStatus === 'success' ? 'text-green-600' : 'text-red-500'}`}>
+                            {notifMsg}
+                        </span>
+                    )}
+                </div>
+            </div>
         </div>
       </div>
     </div>

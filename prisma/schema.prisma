@@ -25,6 +25,11 @@ model User {
   firstName     String?
   lastName      String?
   
+  // Notification preferences
+  notificationsEnabled    Boolean  @default(false)
+  notificationDefaultType String   @default("order-complete") // 'per-drink' or 'order-complete'
+  notificationMethods     Json     @default("{\"email\": true}") // Store enabled methods
+  
   accounts      Account[]
   sessions      Session[]
   orders        Order[]
@@ -111,6 +116,11 @@ model Order {
   
   status      String   @default("queued") // 'queued', 'preparing', 'ready', 'completed', 'cancelled'
   total       Decimal  @default(0.00)
+  
+  // Notification preferences (nullable = use user default)
+  notificationsEnabled Boolean? // Override user default for this order
+  notificationType     String?  // Override notification type for this order ('per-drink' or 'order-complete')
+  notificationMethods  Json?    // Override methods for this order
   
   items       OrderItem[]
   

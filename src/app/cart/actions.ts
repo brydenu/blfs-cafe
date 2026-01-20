@@ -19,14 +19,27 @@ export async function placeOrder(items: CartItem[]) {
     let guestEmail = null;
     let guestName = null; // We could capture this from a form if needed
 
+    let user = null;
     if (userEmail) {
-      const user = await prisma.user.findUnique({ where: { email: userEmail } });
+      user = await prisma.user.findUnique({ where: { email: userEmail } });
       if (user) userId = user.id;
     }
 
     // 2. Create the Order
     // We calculate total roughly here, or trust the client (better to recalc in real app)
     const total = items.reduce((sum, item) => sum + (item.basePrice || 0), 0);
+
+    // Copy user notification preferences to order (if user exists and has preferences)
+    // Note: Setting these on the order allows per-order override without changing user defaults
+    const orderNotificationData: {
+      notificationsEnabled?: boolean;
+      notificationMethods?: any;
+    } = {};
+    
+    if (user) {
+      orderNotificationData.notificationsEnabled = user.notificationsEnabled;
+      orderNotificationData.notificationMethods = user.notificationMethods;
+    }
 
     const order = await prisma.order.create({
       data: {
@@ -35,6 +48,7 @@ export async function placeOrder(items: CartItem[]) {
         guestName,  // If you had a guest name input
         status: 'queued',
         total: total,
+        ...orderNotificationData,
         items: {
           create: items.map((item) => ({
             productId: item.productId,

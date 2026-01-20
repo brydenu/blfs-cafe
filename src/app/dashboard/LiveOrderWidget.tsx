@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { io } from "socket.io-client";
-import { fetchDailyHistory, cancelOrderItem } from "./actions"; 
+import { fetchDailyHistory, cancelOrderItem, updateOrderNotificationPreferences } from "./actions"; 
 
 interface LiveOrderWidgetProps {
   initialOrders: any[]; 
@@ -14,6 +14,8 @@ export default function LiveOrderWidget({ initialOrders }: LiveOrderWidgetProps)
   const [loading, setLoading] = useState(false);
   const [confirmingItemId, setConfirmingItemId] = useState<number | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [expandedNotifications, setExpandedNotifications] = useState<number | null>(null);
+  const [updatingNotif, setUpdatingNotif] = useState<number | null>(null);
 
   const todayStr = new Date().toLocaleDateString('en-CA');
   const isToday = currentDateString === todayStr;
@@ -35,6 +37,36 @@ export default function LiveOrderWidget({ initialOrders }: LiveOrderWidgetProps)
     const newOrders = await fetchDailyHistory(nextDateStr);
     setOrders(newOrders);
     setLoading(false);
+  };
+
+  // --- Update Notification Preferences Handler ---
+  const handleUpdateNotifications = async (orderId: number, enabled: boolean, emailEnabled?: boolean, smsEnabled?: boolean) => {
+    if (updatingNotif === orderId) return;
+    setUpdatingNotif(orderId);
+    
+    try {
+      const methods = {
+        email: emailEnabled ?? true,
+        sms: smsEnabled ?? false
+      };
+      
+      const result = await updateOrderNotificationPreferences(orderId, {
+        notificationsEnabled: enabled,
+        notificationMethods: methods,
+      });
+      
+      if (result.success) {
+        const newOrders = await fetchDailyHistory(currentDateString);
+        setOrders(newOrders);
+      } else {
+        alert(result.message || 'Failed to update notification preferences');
+      }
+    } catch (error) {
+      console.error('Error updating notification preferences:', error);
+      alert('Failed to update notification preferences');
+    } finally {
+      setUpdatingNotif(null);
+    }
   };
 
   // --- Cancel Item Handler ---
@@ -242,11 +274,133 @@ export default function LiveOrderWidget({ initialOrders }: LiveOrderWidgetProps)
                                 );
                             })}
                         </div>
+
+                        {/* Notification Preferences */}
+                        {!isFullyComplete && (
+                            <div className="mt-3 pt-3 border-t border-gray-200">
+                                <NotificationControls
+                                    order={order}
+                                    onUpdate={(enabled, emailEnabled, smsEnabled) => handleUpdateNotifications(order.id, enabled, emailEnabled, smsEnabled)}
+                                    isUpdating={updatingNotif === order.id}
+                                />
+                            </div>
+                        )}
                     </div>
                 );
             })
         )}
       </div>
+    </div>
+  );
+}
+
+// Notification Controls Component
+function NotificationControls({ order, onUpdate, isUpdating }: { order: any; onUpdate: (enabled: boolean, emailEnabled?: boolean, smsEnabled?: boolean) => void; isUpdating: boolean }) {
+  const [notificationsEnabled, setNotificationsEnabled] = useState(order.notificationsEnabled ?? false);
+  const [emailEnabled, setEmailEnabled] = useState((order.notificationMethods as any)?.email ?? true);
+  const [smsEnabled, setSmsEnabled] = useState((order.notificationMethods as any)?.sms ?? false);
+  const [showMethods, setShowMethods] = useState(notificationsEnabled);
+
+  const handleToggle = (enabled: boolean) => {
+    if (enabled) {
+      // When enabling notifications, automatically enable email
+      setNotificationsEnabled(true);
+      setEmailEnabled(true);
+      setShowMethods(true);
+      onUpdate(true, true, smsEnabled);
+    } else {
+      // When disabling notifications, collapse the options
+      setNotificationsEnabled(false);
+      setShowMethods(false);
+      onUpdate(false, emailEnabled, smsEnabled);
+    }
+  };
+
+  const handleEmailToggle = (enabled: boolean) => {
+    setEmailEnabled(enabled);
+    if (notificationsEnabled) {
+      // If turning off email and SMS is also off, disable notifications entirely
+      if (!enabled && !smsEnabled) {
+        setNotificationsEnabled(false);
+        setShowMethods(false);
+        onUpdate(false, false, false);
+      } else {
+        onUpdate(true, enabled, smsEnabled);
+      }
+    }
+  };
+
+  const handleSmsToggle = (enabled: boolean) => {
+    setSmsEnabled(enabled);
+    if (notificationsEnabled) {
+      // If turning off SMS and email is also off, disable notifications entirely
+      if (!enabled && !emailEnabled) {
+        setNotificationsEnabled(false);
+        setShowMethods(false);
+        onUpdate(false, false, false);
+      } else {
+        onUpdate(true, emailEnabled, enabled);
+      }
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      <label className="flex items-center justify-between cursor-pointer">
+        <span className="text-xs font-bold text-gray-700">Notify me when this order is completed</span>
+        <label className="relative inline-flex items-center cursor-pointer">
+          <input
+            type="checkbox"
+            checked={notificationsEnabled}
+            onChange={(e) => handleToggle(e.target.checked)}
+            disabled={isUpdating}
+            className="sr-only peer"
+          />
+          <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#32A5DC]/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#32A5DC]"></div>
+        </label>
+      </label>
+
+      <div 
+        className={`overflow-hidden transition-all duration-300 ease-in-out ${
+          showMethods ? 'max-h-24 opacity-100' : 'max-h-0 opacity-0'
+        }`}
+      >
+        <div className="ml-4 space-y-2 pl-4 border-l-2 border-gray-200 pt-2">
+          <label className="flex items-center justify-between cursor-pointer">
+            <span className="text-xs font-bold text-gray-700">Email</span>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={emailEnabled}
+                onChange={(e) => handleEmailToggle(e.target.checked)}
+                disabled={isUpdating}
+                className="sr-only peer"
+              />
+              <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#32A5DC]/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#32A5DC]"></div>
+            </label>
+          </label>
+          
+          <label className="flex items-center justify-between cursor-not-allowed opacity-50">
+            <span className="text-xs font-bold text-gray-500">SMS</span>
+            <label className="relative inline-flex items-center cursor-not-allowed">
+              <input
+                type="checkbox"
+                checked={smsEnabled}
+                onChange={(e) => handleSmsToggle(e.target.checked)}
+                disabled={true}
+                className="sr-only peer"
+              />
+              <div className="w-9 h-5 bg-gray-200 rounded-full"></div>
+            </label>
+          </label>
+        </div>
+      </div>
+      
+      {isUpdating && (
+        <div className="text-center">
+          <div className="inline-block w-4 h-4 border-2 border-gray-300 border-t-[#32A5DC] rounded-full animate-spin"></div>
+        </div>
+      )}
     </div>
   );
 }
