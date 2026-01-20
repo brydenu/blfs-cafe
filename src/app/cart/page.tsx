@@ -48,7 +48,10 @@ export default function CartPage() {
         milkName: item.milkName,
         milkId: item.milkId,
         modifiers: item.modifiers,
-        recipientName: item.recipientName
+        recipientName: item.recipientName,
+        personalCup: item.personalCup,
+        caffeineType: item.caffeineType,
+        notes: item.notes
     };
     
     // Encode it
@@ -140,7 +143,7 @@ export default function CartPage() {
                            type="text"
                            value={item.recipientName}
                            onChange={(e) => updateItemName(item.internalId, e.target.value)}
-                           className="font-bold text-[#32A5DC] uppercase tracking-wide bg-transparent border-b border-dashed border-gray-300 focus:border-[#32A5DC] outline-none w-full max-w-[200px]"
+                           className="font-bold text-[#32A5DC] tracking-wide bg-transparent border-b border-dashed border-gray-300 focus:border-[#32A5DC] outline-none w-full max-w-[200px]"
                         />
                       </div>
                       
@@ -166,13 +169,23 @@ export default function CartPage() {
                <span className="text-3xl font-extrabold text-[#004876]">{items.length}</span>
             </div>
             
-            <button 
-              onClick={handleCheckout}
-              disabled={isSubmitting}
-              className="w-full bg-[#004876] text-white font-bold py-4 rounded-xl shadow-xl hover:bg-[#32A5DC] transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2 cursor-pointer"
-            >
-              {isSubmitting ? "Processing..." : "Confirm & Place Order"}
-            </button>
+            {/* Split Button Layout */}
+            <div className="grid grid-cols-2 gap-4">
+              <button 
+                onClick={handleAddMore}
+                className="bg-white border-2 border-[#32A5DC] text-[#32A5DC] font-bold py-4 rounded-xl shadow-lg hover:bg-[#32A5DC]/5 transition-all transform hover:scale-[1.02] flex justify-center items-center gap-2 cursor-pointer"
+              >
+                Order More
+              </button>
+              
+              <button 
+                onClick={handleCheckout}
+                disabled={isSubmitting}
+                className="bg-[#004876] text-white font-bold py-4 rounded-xl shadow-xl hover:bg-[#32A5DC] transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2 cursor-pointer"
+              >
+                {isSubmitting ? "Processing..." : "Confirm & Place Order"}
+              </button>
+            </div>
          </div>
 
        </div>

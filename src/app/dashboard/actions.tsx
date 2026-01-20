@@ -1,7 +1,8 @@
 'use server';
 
-import { auth } from "@/auth";
+import { auth, signOut } from "@/auth";
 import { prisma } from "@/lib/db";
+import { redirect } from "next/navigation";
 
 // --- EXISTING: Fetch Daily History ---
 export async function fetchDailyHistory(dateStr: string) {
@@ -86,6 +87,12 @@ export async function getQueuePosition(orderId: number) {
 
   // 3. My position is (Items Ahead) + 1
   return itemsAhead + 1;
+}
+
+// --- Sign Out ---
+export async function handleSignOut() {
+  await signOut({ redirect: false });
+  redirect("/");
 }
 
 // --- Helper ---

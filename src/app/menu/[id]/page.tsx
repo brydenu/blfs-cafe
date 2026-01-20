@@ -22,9 +22,12 @@ export default async function ProductPage({ params, searchParams }: Props) {
   if (!product) notFound();
 
   // 2. Fetch Ingredients
-  // Use isAvailable to hide out of stock items
+  // Use isAvailable AND isShowing to hide out of stock and hidden items
   const ingredients = await prisma.ingredient.findMany({
-    where: { isAvailable: true }, 
+    where: { 
+      isAvailable: true,
+      isShowing: true
+    }, 
     orderBy: { rank: 'desc' }
   });
 
@@ -39,9 +42,29 @@ export default async function ProductPage({ params, searchParams }: Props) {
     priceMod: i.priceMod.toNumber()
   }));
 
-  // 4. Handle Default Name (e.g., "Bryden" or "Guest")
+  // 4. Handle Default Name - Fetch full user data and format display name
   let defaultName = "Guest";
-  if (session?.user?.firstName) defaultName = session.user.firstName;
+  let defaultDisplayName = "Guest";
+  let userLastName: string | null = null;
+  
+  if (session?.user?.email) {
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      select: { firstName: true, lastName: true }
+    });
+    
+    if (user?.firstName) {
+      defaultName = user.firstName;
+      userLastName = user.lastName || null;
+      
+      // Format: firstName + lastInitial (e.g., "Bryden B")
+      if (user.lastName) {
+        defaultDisplayName = `${user.firstName} ${user.lastName.charAt(0).toUpperCase()}`;
+      } else {
+        defaultDisplayName = user.firstName;
+      }
+    }
+  }
 
   // 5. Handle Favorites Loading (Optional Future Step)
   // If searchParams.favId exists, we could load it here. 
@@ -54,6 +77,8 @@ export default async function ProductPage({ params, searchParams }: Props) {
         product={serializedProduct} 
         ingredients={serializedIngredients}
         defaultName={defaultName}
+        defaultDisplayName={defaultDisplayName}
+        userLastName={userLastName}
         initialConfig={initialConfig}
       />
     </main>

@@ -10,15 +10,22 @@ export default function QueueListener() {
 
   useEffect(() => {
     // Dynamic Connection URL
+    // Support environment variable for AWS/deployment scenarios
     const protocol = window.location.protocol;
     const hostname = window.location.hostname;
-    const url = `${protocol}//${hostname}:3001`;
+    
+    // Allow override via environment variable or default to port 3001
+    const socketPort = process.env.NEXT_PUBLIC_SOCKET_PORT || '3001';
+    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || `${protocol}//${hostname}:${socketPort}`;
+    
+    console.log("🔌 Admin Queue connecting to:", socketUrl);
 
-    console.log("🔌 Admin Queue connecting to:", url);
-
-    const socket = io(url, {
-      transports: ["websocket"], // Force websocket for speed
-      reconnectionAttempts: 5,
+    const socket = io(socketUrl, {
+      transports: ["websocket", "polling"], // Try websocket first, fallback to polling
+      reconnectionAttempts: 10,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      timeout: 20000,
     });
 
     socket.on("connect", () => {
@@ -33,6 +40,22 @@ export default function QueueListener() {
 
     socket.on("connect_error", (err) => {
       console.error("Connection Error:", err.message);
+      console.error("Socket URL attempted:", socketUrl);
+      setIsConnected(false);
+    });
+
+    // Log reconnection attempts
+    socket.on("reconnect_attempt", (attemptNumber) => {
+      console.log(`🔄 Reconnection attempt ${attemptNumber}...`);
+    });
+
+    socket.on("reconnect", (attemptNumber) => {
+      console.log(`✅ Reconnected after ${attemptNumber} attempts`);
+      setIsConnected(true);
+    });
+
+    socket.on("reconnect_failed", () => {
+      console.error("❌ Failed to reconnect to WebSocket server");
       setIsConnected(false);
     });
 

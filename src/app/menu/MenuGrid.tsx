@@ -34,8 +34,15 @@ export default function MenuGrid({ products = [], favorites = [], ingredients = 
     }
   }, [isMultiForced, orderMode, setOrderMode]);
 
-  // Categories
-  const categories = ["all", ...Array.from(new Set(products.map((p) => p.category)))];
+  // Categories - Explicit order: All, Coffee, Tea, Other
+  const allCategories = Array.from(new Set(products.map((p) => p.category)));
+  const orderedCategories = ["all", "coffee", "tea", "other"].filter(
+    (cat) => cat === "all" || allCategories.includes(cat)
+  );
+  const categories = [
+    ...orderedCategories,
+    ...allCategories.filter((c) => !["coffee", "tea", "other"].includes(c)),
+  ];
   const [activeCategory, setActiveCategory] = useState("all");
 
   const filteredProducts = activeCategory === "all" 
@@ -246,9 +253,17 @@ export default function MenuGrid({ products = [], favorites = [], ingredients = 
           <Link href={`/menu/${product.id}?mode=${orderMode}`} key={product.id} className="block group">
             <div className="bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden flex transform hover:-translate-y-1 min-h-[120px] cursor-pointer">
               <div className="w-24 sm:w-32 bg-gray-50 flex items-center justify-center shrink-0 border-r border-gray-100 group-hover:bg-[#32A5DC]/10 transition-colors">
-                <span className="text-4xl sm:text-5xl drop-shadow-sm filter grayscale group-hover:grayscale-0 transition-all duration-300">
-                  {product.category === 'coffee' ? '☕' : product.category === 'tea' ? '🍵' : '🥤'}
-                </span>
+                {product.imageUrl ? (
+                  <img 
+                    src={product.imageUrl} 
+                    alt={product.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-4xl sm:text-5xl drop-shadow-sm filter grayscale group-hover:grayscale-0 transition-all duration-300">
+                    {product.category === 'coffee' ? '☕' : product.category === 'tea' ? '🍵' : '🥤'}
+                  </span>
+                )}
               </div>
 
               <div className="flex-1 p-5 flex flex-col justify-center">
