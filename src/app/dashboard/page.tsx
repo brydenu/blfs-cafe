@@ -107,7 +107,16 @@ export default async function DashboardPage() {
                 Hi, {user.firstName || "Friend"}!
             </h1>
             
-            <SignOutButton />
+            <div className="flex items-center gap-3">
+                {user.role === "admin" && (
+                    <Link href="/admin/dashboard">
+                        <button className="bg-gray-800 hover:bg-gray-700 border border-white/10 text-white px-5 py-2 rounded-xl text-xs font-bold tracking-wider transition-all shadow-lg hover:scale-105 cursor-pointer">
+                            Barista<span className="text-[#32A5DC]">OS</span>
+                        </button>
+                    </Link>
+                )}
+                <SignOutButton />
+            </div>
         </header>
 
         {/* --- ROW 1: ACTION BUTTONS (Blue) --- */}
