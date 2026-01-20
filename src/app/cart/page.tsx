@@ -60,12 +60,12 @@ export default function CartPage() {
     router.push(`/menu/${item.productId}?editId=${item.internalId}&config=${configStr}`);
   };
 
-  // Redirect to menu if cart is empty
+  // Redirect to menu if cart is empty (but not when submitting an order)
   useEffect(() => {
-    if (items.length === 0) {
+    if (items.length === 0 && !isSubmitting) {
       router.push('/menu');
     }
-  }, [items.length, router]);
+  }, [items.length, router, isSubmitting]);
 
   // Return null while redirecting (prevents flash of empty state)
   if (items.length === 0) {

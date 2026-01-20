@@ -34,10 +34,11 @@ function parseLegacyDetails(instructions: string | null) {
 
 export default async function AdminQueuePage() {
   // 1. Fetch Active Orders
-  // We still fetch orders that are 'queued' or 'preparing'
+  // Fetch orders that are 'queued', 'preparing', or 'cancelled' (cancelled orders may still have uncompleted items)
+  // We filter out 'completed' orders since all items should be done
   const rawOrders = await prisma.order.findMany({
     where: {
-      status: { in: ['queued', 'preparing'] } 
+      status: { in: ['queued', 'preparing', 'cancelled'] } 
     },
     include: {
       items: {
@@ -64,50 +65,54 @@ export default async function AdminQueuePage() {
 
   rawOrders.forEach((order) => {
     order.items.forEach(item => {
-        // --- KEY CHANGE: Filter out completed items ---
-        if (item.completed === true) return; 
+        // --- Show items in queue only if completed_at IS NULL (not completed yet) ---
+        if (item.completed_at !== null) return; 
 
+        const isCancelled = item.cancelled === true;
         const legacy = parseLegacyDetails(item.specialInstructions);
         
-        // 1. Temperature
-        const temp = (item.temperature || "").toLowerCase();
-        if (temp.includes('iced')) totalIced++;
-        else totalHot++;
+        // Skip stats calculation for cancelled items (they stay visible but don't count)
+        if (!isCancelled) {
+            // 1. Temperature
+            const temp = (item.temperature || "").toLowerCase();
+            if (temp.includes('iced')) totalIced++;
+            else totalHot++;
 
-        // 2. Shots (count shots for any drink, regardless of category)
-        const activeShots = (item.shots || 0) > 0 ? item.shots : legacy.shots;
-        
-        if (activeShots > 0) {
-             // Check caffeineType for accurate shot counting
-             if (item.caffeineType === 'Decaf') {
-                 totalDecafShots += activeShots;
-             } else if (item.caffeineType === 'Half-Caff') {
-                 // Half-caff: divide shots by 2, add half to each total
-                 const halfShots = activeShots / 2;
-                 totalDecafShots += halfShots;
-                 totalCafShots += halfShots;
-             } else {
-                 // Normal or null caffeineType counts as regular caff shots
-                 totalCafShots += activeShots;
-             }
-        }
-
-        // 3. Milk
-        let foundMilk = false;
-        // Check Modifiers
-        item.modifiers.forEach(mod => {
-            if (mod.ingredient.category === 'milk') {
-                milkCounts[mod.ingredient.name] = (milkCounts[mod.ingredient.name] || 0) + 1;
-                foundMilk = true;
+            // 2. Shots (count shots for any drink, regardless of category)
+            const activeShots = (item.shots || 0) > 0 ? item.shots : legacy.shots;
+            
+            if (activeShots > 0) {
+                 // Check caffeineType for accurate shot counting
+                 if (item.caffeineType === 'Decaf') {
+                     totalDecafShots += activeShots;
+                 } else if (item.caffeineType === 'Half-Caff') {
+                     // Half-caff: divide shots by 2, add half to each total
+                     const halfShots = activeShots / 2;
+                     totalDecafShots += halfShots;
+                     totalCafShots += halfShots;
+                 } else {
+                     // Normal or null caffeineType counts as regular caff shots
+                     totalCafShots += activeShots;
+                 }
             }
-        });
-        // Check Legacy
-        if (!foundMilk && legacy.milk) {
-             milkCounts[legacy.milk] = (milkCounts[legacy.milk] || 0) + 1;
-        }
-        // Check Direct Column
-        if (!foundMilk && !legacy.milk && item.milkName && item.milkName !== "No Milk") {
-             milkCounts[item.milkName] = (milkCounts[item.milkName] || 0) + 1;
+
+            // 3. Milk
+            let foundMilk = false;
+            // Check Modifiers
+            item.modifiers.forEach(mod => {
+                if (mod.ingredient.category === 'milk') {
+                    milkCounts[mod.ingredient.name] = (milkCounts[mod.ingredient.name] || 0) + 1;
+                    foundMilk = true;
+                }
+            });
+            // Check Legacy
+            if (!foundMilk && legacy.milk) {
+                 milkCounts[legacy.milk] = (milkCounts[legacy.milk] || 0) + 1;
+            }
+            // Check Direct Column
+            if (!foundMilk && !legacy.milk && item.milkName && item.milkName !== "No Milk") {
+                 milkCounts[item.milkName] = (milkCounts[item.milkName] || 0) + 1;
+            }
         }
 
         // --- SERIALIZE MODIFIERS (Decimal -> Number) ---
@@ -119,11 +124,14 @@ export default async function AdminQueuePage() {
             }
         }));
 
+        // Calculate activeShots for display (even if cancelled)
+        const activeShots = (item.shots || 0) > 0 ? item.shots : legacy.shots;
+
         // 4. Flatten for Cards
         allTickets.push({
             ...item,
             modifiers: serializedModifiers,
-            
+            cancelled: isCancelled,
             parsedShots: activeShots,
             parsedMilk: legacy.milk,
             parsedName: legacy.name,

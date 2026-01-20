@@ -46,7 +46,8 @@ export async function placeOrder(items: CartItem[]) {
             specialInstructions: item.notes || "", // Use notes field
             personalCup: item.personalCup || false,
             caffeineType: item.caffeineType || null,
-            completed: false, // Items start as not completed
+            // completed_at defaults to null (not completed)
+            // cancelled defaults to false
             modifiers: {
               create: Object.entries(item.modifiers).map(([ingId, qty]) => ({
                 ingredientId: parseInt(ingId),

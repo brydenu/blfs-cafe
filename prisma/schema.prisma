@@ -139,7 +139,8 @@ model OrderItem {
   specialInstructions String? // Fallback text string
 
   // Completion status
-  completed           Boolean @default(false)
+  completed_at        DateTime?
+  cancelled           Boolean @default(false)
   
   // Customization fields
   personalCup         Boolean @default(false)
