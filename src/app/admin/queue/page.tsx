@@ -197,9 +197,11 @@ export default async function AdminQueuePage() {
            <h3 className="text-3xl font-bold text-white">Queue Empty</h3>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 queue-grid">
            {allTickets.map((item) => (
-             <TicketCard key={item.id} item={item} />
+             <div key={item.id} className="queue-grid-item">
+               <TicketCard item={item} />
+             </div>
            ))}
         </div>
       )}
