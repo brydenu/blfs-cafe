@@ -145,26 +145,38 @@ export default function TicketCard({ item }: { item: any }) {
   // Determine animation classes
   const pressClass = isPressing ? 'card-pressing' : '';
   const exitClass = isExiting ? 'card-exit-liftoff' : '';
+  const isCancelled = item.cancelled === true;
 
   return (
     <div 
       ref={cardRef}
-      className={`bg-gray-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col h-full border border-gray-700 relative ${pressClass} ${exitClass} ${isExiting ? 'pointer-events-none' : ''}`}
+      className={`bg-gray-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col h-full border-2 relative ${pressClass} ${exitClass} ${isExiting ? 'pointer-events-none' : ''} ${
+        isCancelled ? 'border-red-500 border-opacity-60' : 'border-gray-700'
+      }`}
       style={{
         transition: isPressing ? 'none' : 'transform 0.15s ease-out'
       }}
     >
       
       {/* --- HEADER --- */}
-      <div className="bg-gray-750 p-4 border-b border-gray-700 flex justify-between items-start">
+      <div className={`bg-gray-750 p-4 border-b flex justify-between items-start ${isCancelled ? 'border-red-500 border-opacity-40' : 'border-gray-700'}`}>
          <div className="flex-1 min-w-0 pr-2">
-            <h2 className="text-2xl font-black text-white leading-tight truncate uppercase tracking-tight">
+            <h2 className={`text-2xl font-black leading-tight truncate uppercase tracking-tight ${
+                isCancelled ? 'text-red-300 line-through' : 'text-white'
+            }`}>
                 {primaryName}
             </h2>
             {secondaryName && (
-                <p className="text-gray-400 text-xs font-semibold uppercase mt-1 tracking-wide">
+                <p className={`text-xs font-semibold uppercase mt-1 tracking-wide ${
+                    isCancelled ? 'text-red-400' : 'text-gray-400'
+                }`}>
                     {secondaryName}
                 </p>
+            )}
+            {isCancelled && (
+                <span className="inline-block mt-2 px-2 py-0.5 bg-red-500 text-white text-xs font-bold uppercase rounded border border-red-400">
+                    Cancelled
+                </span>
             )}
             <div className="mt-2.5 flex flex-col gap-1">
                 <span className="text-xs font-semibold text-gray-400">
@@ -197,10 +209,14 @@ export default function TicketCard({ item }: { item: any }) {
          <div className="border-b border-gray-700 pb-3">
              <div className="flex items-start justify-between gap-2">
                  <div className="flex-1">
-                     <h3 className="text-xl font-extrabold text-[#32A5DC] leading-tight">
+                     <h3 className={`text-xl font-extrabold leading-tight ${
+                         isCancelled ? 'text-red-300 line-through' : 'text-[#32A5DC]'
+                     }`}>
                          {item.product.name}
                      </h3>
-                     <p className={`text-base font-semibold mt-1 ${item.temperature?.includes('Iced') ? 'text-blue-300' : 'text-orange-300'}`}>
+                     <p className={`text-base font-semibold mt-1 ${
+                         isCancelled ? 'text-red-400' : item.temperature?.includes('Iced') ? 'text-blue-300' : 'text-orange-300'
+                     }`}>
                          {item.temperature}
                      </p>
                  </div>
@@ -279,7 +295,11 @@ export default function TicketCard({ item }: { item: any }) {
           onMouseLeave={handleMouseLeave}
           onClick={handleComplete}
           disabled={loading || isExiting}
-          className="w-full bg-[#32A5DC] hover:bg-[#288bba] active:bg-[#1f7aa3] text-white font-black text-xl py-4 px-6 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg"
+          className={`w-full font-black text-xl py-4 px-6 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg ${
+            isCancelled 
+              ? 'bg-red-600 hover:bg-red-700 active:bg-red-800 text-white border-2 border-red-500' 
+              : 'bg-[#32A5DC] hover:bg-[#288bba] active:bg-[#1f7aa3] text-white'
+          }`}
         >
           {loading || isExiting ? (
                <span className="animate-pulse">Processing...</span>

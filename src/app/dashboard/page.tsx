@@ -45,9 +45,9 @@ export default async function DashboardPage() {
     orderBy: { createdAt: 'desc' }
   });
 
-  // 3. Fetch Latest Order
+  // 3. Fetch Latest Order (including cancelled orders)
   const latestRawOrder = await prisma.order.findFirst({
-    where: { userId: user.id, status: { not: 'cancelled' } },
+    where: { userId: user.id },
     orderBy: { createdAt: 'desc' },
     include: {
         items: {

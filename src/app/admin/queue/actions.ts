@@ -6,11 +6,11 @@ import { sendNotification } from "@/lib/notifications"; // Import your new notif
 
 export async function completeOrderItem(itemId: number) {
   try {
-    // 1. Mark the specific item as completed
+    // 1. Mark the specific item as completed by setting completed_at timestamp
     // We include 'product' so we can use the name in notifications
     const updatedItem = await prisma.orderItem.update({
       where: { id: itemId },
-      data: { completed: true },
+      data: { completed_at: new Date() },
       include: { 
         order: true,
         product: true 
@@ -18,11 +18,11 @@ export async function completeOrderItem(itemId: number) {
     });
 
     // 2. Check if the parent Order has any items LEFT to do
-    // We count items in the SAME order that are NOT completed
+    // We count items in the SAME order that are NOT completed (completed_at IS NULL)
     const remainingItems = await prisma.orderItem.count({
       where: {
         orderId: updatedItem.orderId,
-        completed: false
+        completed_at: null
       }
     });
 

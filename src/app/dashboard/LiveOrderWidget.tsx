@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { io } from "socket.io-client";
-import { fetchDailyHistory } from "./actions"; 
+import { fetchDailyHistory, cancelOrderItem } from "./actions"; 
 
 interface LiveOrderWidgetProps {
   initialOrders: any[]; 
@@ -12,6 +12,8 @@ export default function LiveOrderWidget({ initialOrders }: LiveOrderWidgetProps)
   const [orders, setOrders] = useState(initialOrders);
   const [currentDateString, setCurrentDateString] = useState(() => new Date().toLocaleDateString('en-CA'));
   const [loading, setLoading] = useState(false);
+  const [confirmingItemId, setConfirmingItemId] = useState<number | null>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   const todayStr = new Date().toLocaleDateString('en-CA');
   const isToday = currentDateString === todayStr;
@@ -33,6 +35,29 @@ export default function LiveOrderWidget({ initialOrders }: LiveOrderWidgetProps)
     const newOrders = await fetchDailyHistory(nextDateStr);
     setOrders(newOrders);
     setLoading(false);
+  };
+
+  // --- Cancel Item Handler ---
+  const handleCancelItem = async (itemId: number) => {
+    if (isCancelling) return;
+    setIsCancelling(true);
+    
+    try {
+      const result = await cancelOrderItem(itemId);
+      if (result.success) {
+        setConfirmingItemId(null);
+        // Refresh orders
+        const newOrders = await fetchDailyHistory(currentDateString);
+        setOrders(newOrders);
+      } else {
+        alert(result.message || 'Failed to cancel item');
+      }
+    } catch (error) {
+      console.error('Error cancelling item:', error);
+      alert('Failed to cancel item');
+    } finally {
+      setIsCancelling(false);
+    }
   };
 
   useEffect(() => {
@@ -133,7 +158,7 @@ export default function LiveOrderWidget({ initialOrders }: LiveOrderWidgetProps)
                                 </span>
                             ) : (
                                 <span className="text-[10px] bg-blue-50 text-blue-600 px-2 py-1 rounded-md font-bold uppercase border border-blue-100">
-                                    Preparing
+                                    In-progress
                                 </span>
                             )}
                         </div>
@@ -141,21 +166,76 @@ export default function LiveOrderWidget({ initialOrders }: LiveOrderWidgetProps)
                         {/* Items */}
                         <div className="space-y-2 border-t border-gray-200 pt-3">
                             {order.items.map((item: any) => {
+                                // Prioritize cancelled over completed
+                                const isCancelled = item.cancelled === true;
+                                const isItemDone = item.completed_at !== null && !isCancelled;
+                                const isInProgress = item.completed_at === null && !isCancelled;
+                                const showCancelButton = isInProgress;
                                 const details = [];
                                 if (item.milkName && item.milkName !== "No Milk") details.push(item.milkName);
                                 if (item.shots > 0) details.push(`${item.shots} Shots`);
                                 item.modifiers.forEach((m:any) => details.push(`${m.ingredient.name} (${m.quantity})`));
 
                                 return (
-                                    <div key={item.id} className="flex justify-between items-start">
-                                        <div>
-                                            <p className="text-sm font-bold text-gray-700">
+                                    <div key={item.id} className={`relative flex justify-between items-start p-2 rounded-lg ${
+                                        isCancelled ? 'border border-red-300 bg-red-50/30' : ''
+                                    }`}>
+                                        <div className="flex-1">
+                                            <p className={`text-sm font-bold ${
+                                                isCancelled ? 'text-red-600 line-through opacity-70' :
+                                                isItemDone ? 'text-green-600 line-through opacity-60' :
+                                                'text-gray-700'
+                                            }`}>
                                                 {item.product.name}
                                             </p>
                                             {details.length > 0 && (
-                                                <p className="text-[11px] text-gray-400 font-bold leading-tight mt-0.5">
+                                                <p className={`text-[11px] font-bold leading-tight mt-0.5 ${
+                                                    isCancelled ? 'text-red-400' : 'text-gray-400'
+                                                }`}>
                                                     {details.join(" • ")}
                                                 </p>
+                                            )}
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            {showCancelButton && (
+                                                <>
+                                                    {confirmingItemId === item.id ? (
+                                                        <div className="flex items-center gap-1.5">
+                                                            <button
+                                                                onClick={() => handleCancelItem(item.id)}
+                                                                disabled={isCancelling}
+                                                                className="px-2 py-1 text-[10px] font-bold text-white bg-red-500 hover:bg-red-600 rounded transition-colors cursor-pointer disabled:opacity-50"
+                                                            >
+                                                                {isCancelling ? 'Cancelling...' : 'Confirm Cancel'}
+                                                            </button>
+                                                            <button
+                                                                onClick={() => setConfirmingItemId(null)}
+                                                                disabled={isCancelling}
+                                                                className="px-2 py-1 text-[10px] font-bold text-gray-600 bg-gray-200 hover:bg-gray-300 rounded transition-colors cursor-pointer disabled:opacity-50"
+                                                            >
+                                                                Go Back
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => setConfirmingItemId(item.id)}
+                                                            className="px-1.5 py-0.5 text-[10px] font-bold text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 rounded border border-gray-300 transition-colors cursor-pointer"
+                                                            disabled={isCancelling}
+                                                        >
+                                                            Cancel
+                                                        </button>
+                                                    )}
+                                                </>
+                                            )}
+                                            {isCancelled && (
+                                                <span className="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded font-bold uppercase border border-red-200">
+                                                    Cancelled
+                                                </span>
+                                            )}
+                                            {isItemDone && !isCancelled && (
+                                                <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded font-bold uppercase border border-green-200">
+                                                    Completed
+                                                </span>
                                             )}
                                         </div>
                                     </div>

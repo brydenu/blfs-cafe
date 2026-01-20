@@ -4,13 +4,44 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { io } from "socket.io-client";
 import { useToast } from "@/providers/ToastProvider";
+import { cancelOrderItem } from "@/app/dashboard/actions";
 
 export default function OrderTrackerClient({ order, ordersAhead, estimatedMinutes }: any) {
   const router = useRouter();
   const { showToast } = useToast();
-  const [isConnected, setIsConnected] = useState(false); // <--- New State
+  const [isConnected, setIsConnected] = useState(false);
+  const [activeOrder, setActiveOrder] = useState(order);
+  const [confirmingItemId, setConfirmingItemId] = useState<number | null>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
 
-  const isOrderComplete = order.status === 'completed';
+  // Update activeOrder when order prop changes
+  useEffect(() => {
+    setActiveOrder(order);
+  }, [order]);
+
+  const isOrderComplete = activeOrder.status === 'completed';
+
+  // --- Cancel Item Handler ---
+  const handleCancelItem = async (itemId: number) => {
+    if (isCancelling) return;
+    setIsCancelling(true);
+    
+    try {
+      const result = await cancelOrderItem(itemId);
+      if (result.success) {
+        setConfirmingItemId(null);
+        showToast('Item cancelled');
+        router.refresh();
+      } else {
+        alert(result.message || 'Failed to cancel item');
+      }
+    } catch (error) {
+      console.error('Error cancelling item:', error);
+      alert('Failed to cancel item');
+    } finally {
+      setIsCancelling(false);
+    }
+  };
 
   useEffect(() => {
     const protocol = window.location.protocol;
@@ -37,7 +68,7 @@ export default function OrderTrackerClient({ order, ordersAhead, estimatedMinute
     socket.on("order-update", (data: any) => {
       console.log("🔔 Order Update Received:", data);
 
-      if (String(data.orderId) !== String(order.id)) return;
+      if (String(data.orderId) !== String(activeOrder.id)) return;
 
       if (data.type === 'item-completed') {
         showToast(`☕ ${data.recipientName}'s ${data.itemName} is ready!`);
@@ -48,12 +79,16 @@ export default function OrderTrackerClient({ order, ordersAhead, estimatedMinute
         showToast(`✅ Order Complete!`);
         router.refresh();
       }
+
+      if (data.type === 'item-cancelled' || data.type === 'order-cancelled') {
+        router.refresh();
+      }
     });
 
     return () => {
       socket.disconnect();
     };
-  }, [order.id, router, showToast]);
+  }, [activeOrder.id, router, showToast]);
 
   return (
     <div className="relative">
@@ -110,37 +145,87 @@ export default function OrderTrackerClient({ order, ordersAhead, estimatedMinute
         <div className="bg-gray-50 rounded-xl border border-gray-200 mb-8 text-left overflow-hidden">
             <div className="bg-white p-3 border-b border-gray-200 flex justify-between items-center">
                  <p className="text-[10px] text-gray-500 uppercase font-extrabold tracking-widest">
-                    Items ({order.items.length})
+                    Items ({activeOrder.items.length})
                 </p>
-                <span className="text-[10px] text-gray-400 font-mono">#{order.publicId.split('-')[0]}</span>
+                <span className="text-[10px] text-gray-400 font-mono">#{activeOrder.publicId.split('-')[0]}</span>
             </div>
             
             <div className="divide-y divide-gray-200">
-                {order.items.map((item: any) => {
-                    const isItemDone = item.completed === true;
+                {activeOrder.items.map((item: any) => {
+                    // Prioritize cancelled over completed
+                    const isCancelled = item.cancelled === true;
+                    const isItemDone = item.completed_at !== null && !isCancelled;
+                    const isInProgress = item.completed_at === null && !isCancelled;
+                    const showCancelButton = isInProgress;
                     return (
-                        <div key={item.id} className="p-4 flex items-center justify-between transition-colors hover:bg-gray-100 bg-white">
-                            <div>
-                                <p className={`font-bold text-sm ${isItemDone ? 'text-green-600 line-through opacity-70' : 'text-[#004876]'}`}>
+                        <div key={item.id} className={`relative p-4 flex items-center justify-between transition-colors hover:bg-gray-100 bg-white ${
+                            isCancelled ? 'border-l-4 border-red-400 bg-red-50/30' : ''
+                        }`}>
+                            <div className="flex-1">
+                                <p className={`font-bold text-sm ${
+                                    isCancelled ? 'text-red-600 line-through opacity-70' :
+                                    isItemDone ? 'text-green-600 line-through opacity-70' : 
+                                    'text-[#004876]'
+                                }`}>
                                     {item.product.name}
                                 </p>
-                                <p className="text-xs text-gray-600">
+                                <p className={`text-xs ${
+                                    isCancelled ? 'text-red-500' : 'text-gray-600'
+                                }`}>
                                     For: {item.recipientName || "Guest"}
                                 </p>
                             </div>
                             
-                            {/* Status Icon */}
-                            {isItemDone ? (
-                                <span className="bg-green-100 text-green-600 p-1.5 rounded-full">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-4 h-4">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                                    </svg>
-                                </span>
-                            ) : (
-                                <span className="bg-[#32A5DC]/10 text-[#32A5DC] px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide">
-                                    Prep
-                                </span>
-                            )}
+                            <div className="flex items-center gap-2">
+                                {/* Cancel Button - Two states: initial (small secondary) and confirming (red with Go Back) */}
+                                {showCancelButton && (
+                                    <>
+                                        {confirmingItemId === item.id ? (
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    onClick={() => handleCancelItem(item.id)}
+                                                    disabled={isCancelling}
+                                                    className="px-3 py-1.5 text-xs font-bold text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+                                                >
+                                                    {isCancelling ? 'Cancelling...' : 'Confirm Cancel'}
+                                                </button>
+                                                <button
+                                                    onClick={() => setConfirmingItemId(null)}
+                                                    disabled={isCancelling}
+                                                    className="px-3 py-1.5 text-xs font-bold text-gray-600 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+                                                >
+                                                    Go Back
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <button
+                                                onClick={() => setConfirmingItemId(item.id)}
+                                                className="px-2 py-1 text-xs font-bold text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 rounded border border-gray-300 transition-colors cursor-pointer"
+                                                disabled={isCancelling}
+                                            >
+                                                Cancel
+                                            </button>
+                                        )}
+                                    </>
+                                )}
+
+                                {/* Status Icon - Prioritize cancelled */}
+                                {isCancelled ? (
+                                    <span className="bg-red-100 text-red-600 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide border border-red-200">
+                                        Cancelled
+                                    </span>
+                                ) : isItemDone ? (
+                                    <span className="bg-green-100 text-green-600 p-1.5 rounded-full">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-4 h-4">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                        </svg>
+                                    </span>
+                                ) : (
+                                    <span className="bg-[#32A5DC]/10 text-[#32A5DC] px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide">
+                                        In-progress
+                                    </span>
+                                )}
+                            </div>
                         </div>
                     );
                 })}
