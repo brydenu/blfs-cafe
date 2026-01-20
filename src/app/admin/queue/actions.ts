@@ -10,7 +10,7 @@ export async function completeOrderItem(itemId: number) {
     // We include 'product' so we can use the name in notifications
     const updatedItem = await prisma.orderItem.update({
       where: { id: itemId },
-      data: { status: 'completed' },
+      data: { completed: true },
       include: { 
         order: true,
         product: true 
@@ -22,7 +22,7 @@ export async function completeOrderItem(itemId: number) {
     const remainingItems = await prisma.orderItem.count({
       where: {
         orderId: updatedItem.orderId,
-        status: { not: 'completed' }
+        completed: false
       }
     });
 

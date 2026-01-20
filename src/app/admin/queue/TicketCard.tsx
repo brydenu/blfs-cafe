@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation"; // Added for manual refresh backup
 import { completeOrderItem } from "./actions"; // New Action
 
@@ -15,13 +15,59 @@ const MILK_COLORS: Record<string, string> = {
     'Hemp': 'bg-green-800 text-white',
 };
 
+// Helper function to format order time (e.g., "2:45 PM")
+function formatOrderTime(timestamp: Date | string): string {
+  const date = new Date(timestamp);
+  return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
+}
+
+// Helper function to format relative time
+function formatTimeAgo(timestamp: Date | string): string {
+  const now = new Date();
+  const orderTime = new Date(timestamp);
+  const diffMs = now.getTime() - orderTime.getTime();
+  const diffMinutes = Math.floor(diffMs / 60000);
+
+  // Less than 1 minute
+  if (diffMinutes < 1) {
+    return "< 1 minute ago";
+  }
+
+  // 1-59 minutes: show exact minutes
+  if (diffMinutes < 60) {
+    return `${diffMinutes} minute${diffMinutes !== 1 ? 's' : ''} ago`;
+  }
+
+  // 60+ minutes: show in 0.5 hour increments
+  const diffHours = diffMs / (1000 * 60 * 60);
+  const halfHours = Math.round(diffHours * 2) / 2;
+  
+  if (halfHours === 1) {
+    return "1 hour ago";
+  } else if (halfHours % 1 === 0) {
+    return `${halfHours} hours ago`;
+  } else {
+    return `${halfHours} hours ago`;
+  }
+}
+
+// Helper function to convert topping quantity to label
+function getToppingLabel(quantity: number): string | null {
+  if (quantity === 0) return null;
+  if (quantity === 1) return "Light";
+  if (quantity === 2) return "Medium";
+  if (quantity === 3) return "Extra";
+  // Fallback for unexpected values
+  return `${quantity}`;
+}
+
 export default function TicketCard({ item }: { item: any }) {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const minutesElapsed = Math.floor(
-    (new Date().getTime() - new Date(item.orderCreatedAt).getTime()) / 60000
-  );
+  // Calculate time displays
+  const orderTime = useMemo(() => formatOrderTime(item.orderCreatedAt), [item.orderCreatedAt]);
+  const timeAgo = useMemo(() => formatTimeAgo(item.orderCreatedAt), [item.orderCreatedAt]);
 
   const handleComplete = async () => {
     setLoading(true);
@@ -74,18 +120,20 @@ export default function TicketCard({ item }: { item: any }) {
       {/* --- HEADER --- */}
       <div className="bg-gray-750 p-4 border-b border-gray-700 flex justify-between items-start">
          <div className="flex-1 min-w-0 pr-2">
-            <h2 className="text-3xl font-black text-white leading-none truncate uppercase tracking-tight">
+            <h2 className="text-2xl font-black text-white leading-tight truncate uppercase tracking-tight">
                 {primaryName}
             </h2>
             {secondaryName && (
-                <p className="text-gray-400 text-xs font-bold uppercase mt-1 tracking-wide">
+                <p className="text-gray-400 text-xs font-semibold uppercase mt-1 tracking-wide">
                     {secondaryName}
                 </p>
             )}
-            <div className="mt-2 text-xs font-mono text-gray-500 flex gap-2">
-                <span>#{item.parentPublicId.split('-')[0]}</span>
-                <span className={minutesElapsed > 10 ? 'text-red-400 font-bold animate-pulse' : ''}>
-                    • {minutesElapsed}m ago
+            <div className="mt-2.5 flex flex-col gap-1">
+                <span className="text-xs font-semibold text-gray-400">
+                    {orderTime}
+                </span>
+                <span className="text-xs font-bold text-gray-500">
+                    {timeAgo}
                 </span>
             </div>
          </div>
@@ -93,11 +141,11 @@ export default function TicketCard({ item }: { item: any }) {
          {/* SHOT BOX */}
          {(item.product.category === 'coffee' || activeShots > 0) && (
              <div className="bg-gray-900 border-2 border-gray-600 rounded-xl w-20 h-20 flex flex-col items-center justify-center shrink-0 shadow-inner relative">
-                <span className="text-4xl font-black text-white leading-none">{activeShots}</span>
+                <span className="text-3xl font-black text-white leading-none">{activeShots}</span>
                 <span className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mt-1">Shots</span>
                 {/* Caffeine Type Badge */}
                 {item.caffeineType && item.caffeineType !== "Normal" && (
-                    <span className="absolute -top-1 -right-1 bg-orange-600 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-wider">
+                    <span className="absolute -top-1 -right-1 bg-orange-600 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide">
                         {item.caffeineType === "Decaf" ? "Decaf" : "Half-Caff"}
                     </span>
                 )}
@@ -111,16 +159,16 @@ export default function TicketCard({ item }: { item: any }) {
          <div className="border-b border-gray-700 pb-3">
              <div className="flex items-start justify-between gap-2">
                  <div className="flex-1">
-                     <h3 className="text-2xl font-extrabold text-[#32A5DC] leading-tight">
+                     <h3 className="text-xl font-extrabold text-[#32A5DC] leading-tight">
                          {item.product.name}
                      </h3>
-                     <p className={`text-lg font-bold mt-1 ${item.temperature?.includes('Iced') ? 'text-blue-300' : 'text-orange-300'}`}>
+                     <p className={`text-base font-semibold mt-1 ${item.temperature?.includes('Iced') ? 'text-blue-300' : 'text-orange-300'}`}>
                          {item.temperature}
                      </p>
                  </div>
                  {/* Personal Cup Badge */}
                  {item.personalCup && (
-                     <span className="bg-green-600 text-white text-xs font-black px-2 py-1 rounded-full uppercase tracking-wider shrink-0">
+                     <span className="bg-green-600 text-white text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wide shrink-0">
                          Personal Cup
                      </span>
                  )}
@@ -128,7 +176,7 @@ export default function TicketCard({ item }: { item: any }) {
          </div>
 
          {/* --- CUSTOMIZATIONS LIST --- */}
-         <ul className="space-y-3">
+         <ul className="space-y-2.5">
             
             {/* 1. MILK DISPLAY */}
             {finalMilkName && (
@@ -140,7 +188,7 @@ export default function TicketCard({ item }: { item: any }) {
 
                  return (
                     <li className="flex">
-                         <span className={`${colorClass} px-3 py-1.5 rounded text-lg font-black uppercase shadow-sm`}>
+                         <span className={`${colorClass} px-3 py-1.5 rounded-lg text-sm font-bold uppercase shadow-sm`}>
                              {finalMilkName}
                          </span>
                     </li>
@@ -148,13 +196,28 @@ export default function TicketCard({ item }: { item: any }) {
                })()
             )}
 
-            {/* 2. OTHER MODIFIERS (Syrups) */}
+            {/* 2. OTHER MODIFIERS (Syrups, Toppings, etc.) */}
             {item.modifiers.map((mod: any) => {
                 if (mod.ingredient.category === 'milk') return null; // Handled above
+                
+                // Handle toppings/drizzles specially (Light/Medium/Extra)
+                const isTopping = mod.ingredient.category === 'topping';
+                const toppingLabel = isTopping ? getToppingLabel(mod.quantity) : null;
+                const displayQuantity = isTopping && toppingLabel 
+                  ? toppingLabel 
+                  : mod.quantity > 1 ? `(${mod.quantity})` : null;
+                
                 return (
-                    <li key={mod.id} className="text-xl font-bold text-yellow-400 flex items-start gap-3">
+                    <li key={mod.id} className="text-lg font-semibold text-gray-300 flex items-start gap-2.5">
                         <span className="mt-2 w-1.5 h-1.5 bg-yellow-400 rounded-full shrink-0"></span>
-                        <span>{mod.ingredient.name} {mod.quantity > 1 && `(${mod.quantity})`}</span>
+                        <span>
+                            {mod.ingredient.name}
+                            {displayQuantity && (
+                                <span className="ml-2 text-gray-400 font-normal">
+                                    {displayQuantity}
+                                </span>
+                            )}
+                        </span>
                     </li>
                 );
             })}
@@ -162,7 +225,7 @@ export default function TicketCard({ item }: { item: any }) {
             {/* 3. SPECIAL INSTRUCTIONS (Hide if it's just the system dump) */}
             {item.specialInstructions && !isSystemDump && (
                 <li className="bg-pink-900/20 border border-pink-900/50 p-3 rounded-lg mt-2">
-                    <p className="text-pink-300 text-lg font-medium italic">
+                    <p className="text-pink-300 text-sm font-medium italic">
                         "{item.specialInstructions}"
                     </p>
                 </li>

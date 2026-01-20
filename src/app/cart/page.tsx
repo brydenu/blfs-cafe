@@ -1,8 +1,7 @@
 'use client';
 
 import { useCart, CartItem } from "@/providers/CartProvider";
-import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { placeOrder } from "./actions";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/providers/ToastProvider";
@@ -61,22 +60,16 @@ export default function CartPage() {
     router.push(`/menu/${item.productId}?editId=${item.internalId}&config=${configStr}`);
   };
 
-  // --- EMPTY STATE ---
+  // Redirect to menu if cart is empty
+  useEffect(() => {
+    if (items.length === 0) {
+      router.push('/menu');
+    }
+  }, [items.length, router]);
+
+  // Return null while redirecting (prevents flash of empty state)
   if (items.length === 0) {
-    return (
-      <main className="min-h-screen bg-[#004876] flex items-center justify-center p-6">
-        <div className="bg-white rounded-3xl p-10 text-center max-w-md w-full shadow-2xl">
-          <div className="text-6xl mb-4">🛒</div>
-          <h1 className="text-2xl font-extrabold text-[#004876] mb-2">Your Cart is Empty</h1>
-          <p className="text-gray-500 mb-8">Looks like you haven't added any drinks yet.</p>
-          <Link href="/menu">
-            <button className="w-full bg-[#32A5DC] text-white font-bold py-4 rounded-xl hover:bg-[#288bba] transition-all cursor-pointer">
-              Browse Menu
-            </button>
-          </Link>
-        </div>
-      </main>
-    );
+    return null;
   }
 
   // --- CART LIST ---
@@ -84,16 +77,8 @@ export default function CartPage() {
     <main className="min-h-screen bg-gray-50 p-6 pb-32">
        <div className="max-w-2xl mx-auto">
          
-         <div className="flex items-center justify-between mb-8">
+         <div className="mb-8">
             <h1 className="text-3xl font-extrabold text-[#004876]">Review Order</h1>
-            
-            {/* ADD MORE BUTTON */}
-            <button 
-                onClick={handleAddMore}
-                className="text-gray-400 hover:text-[#32A5DC] font-bold text-sm cursor-pointer transition-colors"
-            >
-               + Add More
-            </button>
          </div>
 
          <div className="space-y-4">

@@ -77,7 +77,7 @@ export async function getQueuePosition(orderId: number) {
   // 2. Count ONLY items that are NOT completed, from orders OLDER than mine
   const itemsAhead = await prisma.orderItem.count({
     where: {
-      status: { not: 'completed' }, // strictly items yet to be made
+      completed: false, // strictly items yet to be made
       order: {
         createdAt: { lt: currentOrder.createdAt }, // strictly older orders
         status: { in: ['queued', 'preparing'] } // from active orders only

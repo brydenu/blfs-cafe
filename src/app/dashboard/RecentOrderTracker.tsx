@@ -109,7 +109,7 @@ export default function RecentOrderTracker({ order }: RecentOrderTrackerProps) {
         {/* Drinks List */}
         <div className="space-y-3">
             {activeOrder.items.map((item: any) => {
-                const isItemDone = item.status === 'completed';
+                const isItemDone = item.completed === true;
                 const details = [];
                 if (item.milkName && item.milkName !== "No Milk") details.push(item.milkName);
                 if (item.shots > 0) details.push(`${item.shots} Shots`);
