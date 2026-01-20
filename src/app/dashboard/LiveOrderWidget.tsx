@@ -168,6 +168,9 @@ export default function LiveOrderWidget({ initialOrders }: LiveOrderWidgetProps)
         ) : (
             orders.map((order: any) => {
                 const isFullyComplete = order.status === 'completed';
+                // Check if all items are cancelled
+                const allItemsCancelled = order.items.length > 0 && order.items.every((item: any) => item.cancelled === true);
+                const isOrderCancelled = allItemsCancelled;
 
                 return (
                     <div key={order.id} className="bg-gray-50 rounded-2xl p-5 border border-gray-100 relative overflow-hidden group w-full hover:bg-gray-100 transition-colors animate-fade-in">
@@ -184,7 +187,11 @@ export default function LiveOrderWidget({ initialOrders }: LiveOrderWidgetProps)
                             </div>
                             
                             {/* Status Badge */}
-                            {isFullyComplete ? (
+                            {isOrderCancelled ? (
+                                <span className="text-[10px] bg-red-100 text-red-700 px-2 py-1 rounded-md font-bold uppercase border border-red-200">
+                                    Cancelled
+                                </span>
+                            ) : isFullyComplete ? (
                                 <span className="text-[10px] bg-green-100 text-green-700 px-2 py-1 rounded-md font-bold uppercase border border-green-200">
                                     Completed
                                 </span>
@@ -210,7 +217,7 @@ export default function LiveOrderWidget({ initialOrders }: LiveOrderWidgetProps)
 
                                 return (
                                     <div key={item.id} className={`relative flex justify-between items-start p-2 rounded-lg ${
-                                        isCancelled ? 'border border-red-300 bg-red-50/30' : ''
+                                        isCancelled ? 'bg-red-50/30' : ''
                                     }`}>
                                         <div className="flex-1">
                                             <p className={`text-sm font-bold ${
@@ -260,14 +267,10 @@ export default function LiveOrderWidget({ initialOrders }: LiveOrderWidgetProps)
                                                 </>
                                             )}
                                             {isCancelled && (
-                                                <span className="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded font-bold uppercase border border-red-200">
-                                                    Cancelled
-                                                </span>
+                                                <div className="bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs shadow-md font-bold">✕</div>
                                             )}
                                             {isItemDone && !isCancelled && (
-                                                <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded font-bold uppercase border border-green-200">
-                                                    Completed
-                                                </span>
+                                                <div className="bg-green-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs shadow-md">✓</div>
                                             )}
                                         </div>
                                     </div>
@@ -276,7 +279,7 @@ export default function LiveOrderWidget({ initialOrders }: LiveOrderWidgetProps)
                         </div>
 
                         {/* Notification Preferences */}
-                        {!isFullyComplete && (
+                        {!isFullyComplete && !isOrderCancelled && (
                             <div className="mt-3 pt-3 border-t border-gray-200">
                                 <NotificationControls
                                     order={order}

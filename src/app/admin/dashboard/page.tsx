@@ -34,7 +34,7 @@ export default async function AdminDashboard() {
       {/* Header */}
       <div className="flex items-end justify-between border-b border-gray-800 pb-4">
         <div>
-          <h1 className="text-3xl font-black text-white">Dashboard</h1>
+          <h1 className="text-3xl font-black text-white">Admin Dashboard</h1>
           <p className="text-gray-400 font-medium">Admin Control Center</p>
         </div>
       </div>

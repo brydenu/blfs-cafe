@@ -28,12 +28,12 @@ export default async function AdminLayout({
            <h1 className="font-bold text-xl tracking-wide">Barista<span className="text-[#32A5DC]">OS</span></h1>
         </div>
         
-        <nav className="hidden md:flex gap-6 text-sm font-medium text-gray-400">
+        <nav className="hidden md:flex gap-6 text-sm font-medium text-gray-400 items-center">
            {/* Added Dashboard link so you can get back to it */}
-           <Link href="/admin/dashboard" className="hover:text-white transition-colors">Dashboard</Link>
+           <Link href="/admin/dashboard" className="hover:text-white transition-colors">Admin Dashboard</Link>
            <Link href="/admin/queue" className="hover:text-white transition-colors">Active Queue</Link>
            <Link href="/admin/history" className="hover:text-white transition-colors">History</Link>
-           <Link href="/" className="text-[#32A5DC] hover:text-white transition-colors">Exit to Menu</Link>
+           <Link href="/dashboard" className="bg-[#32A5DC] hover:bg-[#288bba] text-white px-4 py-2 rounded-lg font-medium transition-colors">User Dashboard</Link>
         </nav>
       </header>
 
