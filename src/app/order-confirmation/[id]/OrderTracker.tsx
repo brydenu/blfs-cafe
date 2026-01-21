@@ -5,20 +5,31 @@ import { useRouter } from "next/navigation";
 import { io } from "socket.io-client";
 import { useToast } from "@/providers/ToastProvider";
 import { cancelOrderItem, updateOrderNotificationPreferences } from "@/app/dashboard/actions";
+import { cancelGuestOrderItem, updateGuestOrderNotifications } from "@/app/track/actions";
+import { updateGuestEmail } from "../actions";
 
-export default function OrderTrackerClient({ order, ordersAhead, estimatedMinutes }: any) {
+export default function OrderTracker({ order, ordersAhead, estimatedMinutes }: any) {
   const router = useRouter();
   const { showToast } = useToast();
   const [isConnected, setIsConnected] = useState(false);
   const [activeOrder, setActiveOrder] = useState(order);
   const [confirmingItemId, setConfirmingItemId] = useState<number | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
   const [updatingNotif, setUpdatingNotif] = useState(false);
+  
+  // Email input state for guest orders
+  const [email, setEmail] = useState(order.guestEmail || '');
+  const [isSubmittingEmail, setIsSubmittingEmail] = useState(false);
+  const [emailSubmitted, setEmailSubmitted] = useState(!!order.guestEmail);
+
+  // Detect if this is a guest order
+  const isGuestOrder = !order.userId;
 
   // Update activeOrder when order prop changes
   useEffect(() => {
     setActiveOrder(order);
+    setEmail(order.guestEmail || '');
+    setEmailSubmitted(!!order.guestEmail);
   }, [order]);
 
   const isOrderComplete = activeOrder.status === 'completed';
@@ -34,10 +45,18 @@ export default function OrderTrackerClient({ order, ordersAhead, estimatedMinute
         sms: smsEnabled ?? false
       };
       
-      const result = await updateOrderNotificationPreferences(activeOrder.id, {
-        notificationsEnabled: enabled,
-        notificationMethods: methods,
-      });
+      let result;
+      if (isGuestOrder) {
+        result = await updateGuestOrderNotifications(activeOrder.id, {
+          notificationsEnabled: enabled,
+          notificationMethods: methods,
+        });
+      } else {
+        result = await updateOrderNotificationPreferences(activeOrder.id, {
+          notificationsEnabled: enabled,
+          notificationMethods: methods,
+        });
+      }
       
       if (result.success) {
         showToast('Notification preferences updated');
@@ -59,7 +78,13 @@ export default function OrderTrackerClient({ order, ordersAhead, estimatedMinute
     setIsCancelling(true);
     
     try {
-      const result = await cancelOrderItem(itemId);
+      let result;
+      if (isGuestOrder) {
+        result = await cancelGuestOrderItem(itemId, activeOrder.publicId);
+      } else {
+        result = await cancelOrderItem(itemId);
+      }
+      
       if (result.success) {
         setConfirmingItemId(null);
         showToast('Item cancelled');
@@ -75,12 +100,35 @@ export default function OrderTrackerClient({ order, ordersAhead, estimatedMinute
     }
   };
 
+  // --- Email Submit Handler (Guest Only) ---
+  const handleEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim() || emailSubmitted || !isGuestOrder) return;
+
+    setIsSubmittingEmail(true);
+    try {
+      const result = await updateGuestEmail(activeOrder.id, email.trim());
+      if (result.success) {
+        setEmailSubmitted(true);
+        router.refresh();
+      } else {
+        alert(result.message || 'Failed to save email');
+      }
+    } catch (error) {
+      console.error('Error saving email:', error);
+      alert('Failed to save email');
+    } finally {
+      setIsSubmittingEmail(false);
+    }
+  };
+
+  // Socket.io connection for live updates
   useEffect(() => {
     const protocol = window.location.protocol;
     const hostname = window.location.hostname;
     const url = `${protocol}//${hostname}:3001`;
 
-    console.log("🔌 Tracker connecting to:", url);
+    console.log("🔌 Order Tracker connecting to:", url);
 
     const socket = io(url, {
         transports: ["websocket"], 
@@ -88,19 +136,20 @@ export default function OrderTrackerClient({ order, ordersAhead, estimatedMinute
     });
 
     socket.on("connect", () => {
-      console.log("✅ Tracker Connected");
-      setIsConnected(true); // <--- Set Green
+      console.log("✅ Order Tracker Connected");
+      setIsConnected(true);
     });
 
     socket.on("disconnect", () => {
-      console.log("❌ Tracker Disconnected");
-      setIsConnected(false); // <--- Set Red
+      console.log("❌ Order Tracker Disconnected");
+      setIsConnected(false);
     });
 
     socket.on("order-update", (data: any) => {
       console.log("🔔 Order Update Received:", data);
 
-      if (String(data.orderId) !== String(activeOrder.id)) return;
+      // Match by orderId or publicId
+      if (String(data.orderId) !== String(activeOrder.id) && data.publicId !== activeOrder.publicId) return;
 
       if (data.type === 'item-completed') {
         showToast(`☕ ${data.recipientName}'s ${data.itemName} is ready!`);
@@ -120,7 +169,7 @@ export default function OrderTrackerClient({ order, ordersAhead, estimatedMinute
     return () => {
       socket.disconnect();
     };
-  }, [activeOrder.id, router, showToast]);
+  }, [activeOrder.id, activeOrder.publicId, router, showToast]);
 
   return (
     <div className="relative">
@@ -152,8 +201,23 @@ export default function OrderTrackerClient({ order, ordersAhead, estimatedMinute
         <p className="text-gray-600 text-sm md:text-base mb-8 font-medium">
             {isOrderComplete 
                 ? "Please head to the pickup counter." 
-                : "Sit tight, the baristas are working their magic."}
+                : "Your order has been added to the queue and will be prepared shortly."}
         </p>
+
+        {/* ORDER ID - Prominently Displayed for Guests */}
+        {isGuestOrder && (
+          <div className="bg-[#32A5DC]/10 border-2 border-[#32A5DC] rounded-xl p-4 mb-6">
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
+              Your Order Code
+            </p>
+            <p className="text-3xl font-extrabold text-[#004876] font-mono tracking-wider">
+              {activeOrder.publicId}
+            </p>
+            <p className="text-xs text-gray-500 mt-2">
+              Save this code to track your order later
+            </p>
+          </div>
+        )}
 
         {/* STATS (Hide if complete) */}
         {!isOrderComplete && (
@@ -264,8 +328,43 @@ export default function OrderTrackerClient({ order, ordersAhead, estimatedMinute
             </div>
         </div>
 
-        {/* Notification Preferences */}
-        {!isOrderComplete && (
+        {/* EMAIL INPUT FORM (Guest Only) */}
+        {isGuestOrder && !emailSubmitted && (
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+            <p className="text-sm font-bold text-[#004876] mb-3">
+              Get notified when your order is ready
+            </p>
+            <form onSubmit={handleEmailSubmit} className="space-y-3">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email"
+                className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-[#32A5DC] focus:outline-none text-gray-900"
+                disabled={isSubmittingEmail}
+                required
+              />
+              <button
+                type="submit"
+                disabled={isSubmittingEmail || !email.trim()}
+                className="w-full bg-[#32A5DC] hover:bg-[#004876] text-white font-bold py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSubmittingEmail ? 'Saving...' : 'Save Email'}
+              </button>
+            </form>
+          </div>
+        )}
+
+        {isGuestOrder && emailSubmitted && (
+          <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6">
+            <p className="text-sm font-bold text-green-700">
+              ✓ Email saved! You'll receive notifications when your order is ready.
+            </p>
+          </div>
+        )}
+
+        {/* Notification Preferences - Only show for logged-in users */}
+        {!isOrderComplete && !isGuestOrder && (
             <div className="mt-6 pt-6 border-t border-gray-200">
                 <NotificationControls
                     order={activeOrder}
