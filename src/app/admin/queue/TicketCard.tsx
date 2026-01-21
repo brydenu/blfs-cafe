@@ -240,14 +240,26 @@ export default function TicketCard({ item }: { item: any }) {
                  const key = Object.keys(MILK_COLORS).find(k => finalMilkName.includes(k));
                  if (key) colorClass = MILK_COLORS[key];
 
+                 // Add milk amount if present
+                 const milkDisplay = item.milkAmount ? `${item.milkAmount} ${finalMilkName}` : finalMilkName;
+
                  return (
                     <li className="flex">
                          <span className={`${colorClass} px-3 py-1.5 rounded-lg text-sm font-bold uppercase shadow-sm`}>
-                             {finalMilkName}
+                             {milkDisplay}
                          </span>
                     </li>
                  );
                })()
+            )}
+
+            {/* FOAM LEVEL DISPLAY */}
+            {item.foamLevel && (
+                <li className="flex">
+                    <span className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-bold uppercase shadow-sm">
+                        Foam: {item.foamLevel}
+                    </span>
+                </li>
             )}
 
             {/* 2. OTHER MODIFIERS (Syrups, Toppings, etc.) */}

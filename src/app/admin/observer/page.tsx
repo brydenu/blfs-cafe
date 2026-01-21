@@ -265,7 +265,7 @@ export default async function ObserverPage() {
                 </div>
                 {/* Not Accepting Orders Sign */}
                 <div className={`w-full px-4 py-2.5 rounded-lg border-2 font-semibold text-sm text-center transition-all ${
-                  !acceptingOrders && (todaySchedule && todaySchedule.isOpen)
+                  !acceptingOrders
                     ? "text-white border-red-500 bg-red-500 shadow-[0_0_20px_rgba(239,68,68,0.8)] animate-pulse-glow-red"
                     : "text-gray-400 border-gray-500 bg-gray-500 opacity-50"
                 }`}>
