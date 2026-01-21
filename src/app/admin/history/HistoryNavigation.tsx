@@ -1,10 +1,15 @@
 'use client';
 
+import { useSearchParams } from 'next/navigation';
+
 interface HistoryNavigationProps {
   selectedDate: Date;
 }
 
 export function HistoryNavigation({ selectedDate }: HistoryNavigationProps) {
+  const searchParams = useSearchParams();
+  const userIdParam = searchParams.get('userId');
+  
   const formatDateForUrl = (date: Date): string => {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -14,8 +19,12 @@ export function HistoryNavigation({ selectedDate }: HistoryNavigationProps) {
 
   const navigateToDate = (date: Date) => {
     const dateStr = formatDateForUrl(date);
+    // Preserve userId parameter if present
+    const url = userIdParam
+      ? `/admin/history?date=${dateStr}&userId=${userIdParam}`
+      : `/admin/history?date=${dateStr}`;
     // Use window.location for full page reload
-    window.location.href = `/admin/history?date=${dateStr}`;
+    window.location.href = url;
   };
 
   const goToPreviousDay = () => {
