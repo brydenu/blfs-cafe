@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { 
   updateIngredientAvailability, 
   updateIngredientVisibility, 
@@ -21,7 +21,14 @@ interface IngredientManagerProps {
 
 export function IngredientManager({ ingredient: initialIngredient }: IngredientManagerProps) {
   const [ingredient, setIngredient] = useState(initialIngredient);
+  const [rankInputValue, setRankInputValue] = useState(initialIngredient.rank.toString());
   const [isPending, startTransition] = useTransition();
+
+  // Sync local state when prop changes
+  useEffect(() => {
+    setIngredient(initialIngredient);
+    setRankInputValue(initialIngredient.rank.toString());
+  }, [initialIngredient.id, initialIngredient.rank]);
 
   const handleToggleAvailability = () => {
     const newValue = !ingredient.isAvailable;
@@ -42,12 +49,38 @@ export function IngredientManager({ ingredient: initialIngredient }: IngredientM
   const handleToggleFeatured = () => {
     const newRank = ingredient.rank > 0 ? 0 : 1; // Simple toggle: 0 = not featured, 1+ = featured
     setIngredient(prev => ({ ...prev, rank: newRank }));
+    setRankInputValue(newRank.toString());
     startTransition(() => {
       updateIngredientRank(ingredient.id, newRank);
     });
   };
 
-  const isFeatured = ingredient.rank > 0;
+  const handleRankInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setRankInputValue(value);
+  };
+
+  const handleRankBlur = () => {
+    const value = parseInt(rankInputValue);
+    if (!isNaN(value) && value >= 1 && value !== ingredient.rank) {
+      setIngredient(prev => ({ ...prev, rank: value }));
+      startTransition(() => {
+        updateIngredientRank(ingredient.id, value);
+      });
+    } else if (isNaN(value) || value < 1) {
+      // Reset to current rank if invalid
+      setRankInputValue(ingredient.rank.toString());
+    }
+  };
+
+  const handleRankKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.currentTarget.blur();
+    }
+  };
+
+  const isFeatured = ingredient.category === 'syrup' && ingredient.rank > 0;
+  const isSyrup = ingredient.category === 'syrup';
 
   return (
     <div className={`bg-gray-900 p-4 rounded-xl border ${
@@ -107,25 +140,39 @@ export function IngredientManager({ ingredient: initialIngredient }: IngredientM
           </button>
         </div>
 
-        {/* Featured (for syrups) */}
-        {ingredient.category === 'syrup' && (
+        {/* Featured (for syrups only) */}
+        {isSyrup && (
           <div className="flex items-center justify-between">
             <span className="text-xs text-gray-400">Featured</span>
-            <button
-              onClick={handleToggleFeatured}
-              disabled={isPending}
-              className={`relative w-11 h-6 rounded-full transition-colors ${
-                isFeatured 
-                  ? 'bg-[#32A5DC]' 
-                  : 'bg-gray-600'
-              } ${isPending ? 'cursor-not-allowed' : 'cursor-pointer'}`}
-            >
-              <span
-                className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform ${
-                  isFeatured ? 'translate-x-5' : 'translate-x-0'
-                }`}
-              />
-            </button>
+            <div className="flex items-center gap-2">
+              {isFeatured && (
+                <input
+                  type="number"
+                  min="1"
+                  value={rankInputValue}
+                  onChange={handleRankInputChange}
+                  onBlur={handleRankBlur}
+                  onKeyDown={handleRankKeyDown}
+                  disabled={isPending}
+                  className="w-16 px-2 py-1 text-xs bg-gray-800 text-white border border-gray-600 rounded focus:outline-none focus:border-[#32A5DC] disabled:opacity-50 disabled:cursor-not-allowed"
+                />
+              )}
+              <button
+                onClick={handleToggleFeatured}
+                disabled={isPending}
+                className={`relative w-11 h-6 rounded-full transition-colors ${
+                  isFeatured 
+                    ? 'bg-[#32A5DC]' 
+                    : 'bg-gray-600'
+                } ${isPending ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+              >
+                <span
+                  className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform ${
+                    isFeatured ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
           </div>
         )}
 

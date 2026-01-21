@@ -80,6 +80,32 @@ export async function updateIngredientRank(ingredientId: number, rank: number) {
   }
 }
 
+export async function createIngredient(
+  name: string,
+  category: string,
+  isAvailable: boolean = true,
+  isShowing: boolean = true
+) {
+  try {
+    await prisma.ingredient.create({
+      data: {
+        name,
+        category,
+        isAvailable,
+        isShowing,
+        rank: 0, // Default rank is 0 (not featured)
+        priceMod: 0.00
+      }
+    });
+    revalidatePath('/admin/inventory');
+    revalidatePath('/menu');
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to create ingredient:", error);
+    return { success: false, message: "Database error" };
+  }
+}
+
 // --- SCHEDULE MANAGEMENT ---
 
 export async function updateSchedule(
