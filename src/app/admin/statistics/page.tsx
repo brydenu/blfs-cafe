@@ -1,13 +1,15 @@
 import { getStatistics } from "../actions";
+import Link from "next/link";
 
 export const dynamic = 'force-dynamic';
 
 interface StatisticsPageProps {
-  searchParams: { timeframe?: string };
+  searchParams: Promise<{ timeframe?: string }>;
 }
 
 export default async function StatisticsPage({ searchParams }: StatisticsPageProps) {
-  const timeframe = (searchParams.timeframe as 'today' | 'week' | 'month' | 'all') || 'today';
+  const resolvedSearchParams = await searchParams;
+  const timeframe = (resolvedSearchParams.timeframe as 'today' | 'week' | 'month' | 'all') || 'today';
   
   const statsResult = await getStatistics(timeframe);
   
@@ -63,8 +65,16 @@ export default async function StatisticsPage({ searchParams }: StatisticsPagePro
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 border-b border-gray-800 pb-4">
-        <div>
-          <h1 className="text-3xl font-black text-white">Statistics</h1>
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-4">
+            <h1 className="text-3xl font-black text-white">Statistics</h1>
+            <Link
+              href="/admin/statistics/ingredients"
+              className="px-4 py-2 bg-[#32A5DC] hover:bg-[#32A5DC]/90 text-white rounded-lg text-sm font-bold transition-colors"
+            >
+              Ingredient Usage
+            </Link>
+          </div>
           <p className="text-gray-400 font-medium">Detailed Analytics & Insights</p>
         </div>
         
