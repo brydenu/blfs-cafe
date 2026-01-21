@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { IngredientManager } from "./IngredientManager";
+import { CreateIngredientForm } from "./CreateIngredientForm";
 
 export const dynamic = 'force-dynamic';
 
@@ -7,12 +8,14 @@ export default async function InventoryPage() {
   const ingredients = await prisma.ingredient.findMany({
     orderBy: [
       { category: 'asc' },
-      { rank: 'desc' },
       { name: 'asc' }
     ]
   });
 
-  // Group by category
+  // Helper function to check if a name contains "sugar free"
+  const isSugarFree = (name: string) => name.toLowerCase().includes('sugar free');
+
+  // Group by category and apply custom sorting
   const ingredientsByCategory = ingredients.reduce((acc, ingredient) => {
     if (!acc[ingredient.category]) {
       acc[ingredient.category] = [];
@@ -23,6 +26,26 @@ export default async function InventoryPage() {
     });
     return acc;
   }, {} as Record<string, typeof ingredients>);
+
+  // Apply custom sorting for each category
+  Object.keys(ingredientsByCategory).forEach(category => {
+    if (category === 'syrup') {
+      // For syrups: featured first (by rank ascending), then non-featured alphabetical (sugar-free last)
+      const syrups = ingredientsByCategory[category];
+      const featuredSyrups = syrups.filter(s => s.rank > 0).sort((a, b) => a.rank - b.rank);
+      const nonFeaturedSyrups = syrups.filter(s => s.rank === 0).sort((a, b) => {
+        const aIsSugarFree = isSugarFree(a.name);
+        const bIsSugarFree = isSugarFree(b.name);
+        if (aIsSugarFree && !bIsSugarFree) return 1;
+        if (!aIsSugarFree && bIsSugarFree) return -1;
+        return a.name.localeCompare(b.name);
+      });
+      ingredientsByCategory[category] = [...featuredSyrups, ...nonFeaturedSyrups];
+    } else {
+      // For other categories: alphabetical
+      ingredientsByCategory[category].sort((a, b) => a.name.localeCompare(b.name));
+    }
+  });
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
@@ -50,6 +73,9 @@ export default async function InventoryPage() {
           </div>
         ))}
       </div>
+
+      {/* Create New Ingredient Form */}
+      <CreateIngredientForm />
 
     </div>
   );
