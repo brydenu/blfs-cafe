@@ -16,6 +16,9 @@ export type CartItem = {
   milkId?: number; // For editing support
   personalCup?: boolean;
   caffeineType?: string; // "Normal" | "Decaf" | "Half-Caff"
+  milkSteamed?: boolean; // Whether milk is steamed
+  foamLevel?: string; // 'No foam' | 'Light' | 'Normal' | 'Extra'
+  milkAmount?: string; // 'Light' | 'Normal' | 'Extra' (for optional milk drinks)
   notes?: string;
   basePrice?: number; // For total calculation
 };

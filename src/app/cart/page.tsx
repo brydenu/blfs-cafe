@@ -134,7 +134,10 @@ export default function CartPage() {
                       
                       <div className="text-sm text-gray-500 space-y-1 mt-1">
                         <p>{item.temperature} • {item.shots} Shots</p>
-                        <p>{item.milkName}</p>
+                        <p>{item.milkAmount ? `${item.milkAmount} ${item.milkName}` : item.milkName}</p>
+                        {item.foamLevel && (
+                          <p className="text-gray-500">Foam: {item.foamLevel}</p>
+                        )}
                         {item.syrupDetails.length > 0 && (
                           <p className="text-gray-400 text-xs italic">
                             {item.syrupDetails.join(", ")}

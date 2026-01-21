@@ -33,9 +33,20 @@ export default function ObserverCard({ item, queuePosition }: ObserverCardProps)
   // 3. Legacy Parsed String
   const resolveMilkName = () => {
     const modMilk = item.modifiers.find((m: any) => m.ingredient.category === 'milk');
-    if (modMilk) return modMilk.ingredient.name;
+    if (modMilk) {
+      // Replace "Half and Half" with "Breve" to save space
+      return modMilk.ingredient.name === "Half and Half" ? "Breve" : modMilk.ingredient.name;
+    }
     
-    if (item.milkName && item.milkName !== "No Milk") return item.milkName;
+    if (item.milkName && item.milkName !== "No Milk") {
+      // Replace "Half and Half" with "Breve" to save space
+      return item.milkName === "Half and Half" ? "Breve" : item.milkName;
+    }
+    
+    // Replace "Half and Half" with "Breve" in parsed milk too
+    if (item.parsedMilk && item.parsedMilk === "Half and Half") {
+      return "Breve";
+    }
     
     return item.parsedMilk;
   };
@@ -136,7 +147,10 @@ export default function ObserverCard({ item, queuePosition }: ObserverCardProps)
           {finalMilkName && (
             (() => {
               let colorClass = DEFAULT_MILK_COLOR;
-              const key = Object.keys(MILK_COLORS).find(k => finalMilkName.includes(k));
+              // Check for "Breve" or original "Half and Half" in color mapping
+              const key = Object.keys(MILK_COLORS).find(k => 
+                finalMilkName.includes(k) || (finalMilkName === "Breve" && k === "Half and Half")
+              );
               if (key) colorClass = MILK_COLORS[key];
 
               return (

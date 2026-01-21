@@ -1,11 +1,111 @@
 import { prisma } from "@/lib/db";
 import Link from "next/link";
+import { HistoryNavigation } from "./HistoryNavigation";
 
 export const dynamic = 'force-dynamic';
 
-export default async function OrderHistoryPage() {
+interface OrderHistoryPageProps {
+  searchParams: Promise<{ date?: string }>;
+}
+
+export default async function OrderHistoryPage({ searchParams }: OrderHistoryPageProps) {
+  // Await searchParams for Next.js 15+
+  const resolvedSearchParams = await searchParams;
+  const dateParam = resolvedSearchParams?.date;
+  
+  // Parse date from searchParams, default to today
+  let selectedDate: Date;
+  if (dateParam) {
+    // Parse date string (YYYY-MM-DD) and create date in local timezone
+    const parts = dateParam.split('-');
+    if (parts.length === 3) {
+      const [year, month, day] = parts.map(Number);
+      selectedDate = new Date(year, month - 1, day);
+      // Validate date
+      if (isNaN(selectedDate.getTime())) {
+        selectedDate = new Date();
+      }
+    } else {
+      selectedDate = new Date();
+    }
+  } else {
+    selectedDate = new Date();
+  }
+
+  // Create date range for the selected day in Pacific Time
+  // Get the date string in YYYY-MM-DD format
+  const dateStr = dateParam || (() => {
+    const year = selectedDate.getFullYear();
+    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+    const day = String(selectedDate.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  })();
+  
+  // Parse the date string
+  const [year, month, day] = dateStr.split('-').map(Number);
+  
+  // Helper function to get Pacific Time offset in hours for a given date
+  // PST is UTC-8, PDT is UTC-7
+  // DST typically runs from second Sunday in March to first Sunday in November
+  const getPacificOffset = (date: Date): number => {
+    const month = date.getMonth(); // 0-11
+    
+    // DST starts: Second Sunday in March (typically around March 10-14)
+    // DST ends: First Sunday in November (typically around November 3-7)
+    
+    // Before March or after November: PST (UTC-8)
+    if (month < 2 || month > 10) {
+      return -8;
+    }
+    
+    // April through October: definitely PDT (UTC-7)
+    if (month > 2 && month < 10) {
+      return -7;
+    }
+    
+    // March: Check if after second Sunday
+    if (month === 2) {
+      const day = date.getDate();
+      // Find second Sunday
+      const firstDay = new Date(year, 2, 1).getDay();
+      const firstSunday = firstDay === 0 ? 1 : 8 - firstDay;
+      const secondSunday = firstSunday + 7;
+      return day >= secondSunday ? -7 : -8; // PDT if after second Sunday
+    }
+    
+    // November: Check if before first Sunday
+    if (month === 10) {
+      const day = date.getDate();
+      // Find first Sunday
+      const firstDay = new Date(year, 10, 1).getDay();
+      const firstSunday = firstDay === 0 ? 1 : 8 - firstDay;
+      return day < firstSunday ? -7 : -8; // PDT if before first Sunday
+    }
+    
+    return -8; // Default to PST
+  };
+  
+  // Create start and end of day in Pacific Time
+  const pacificStart = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+  const pacificEnd = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999));
+  
+  // Get Pacific Time offset for this date
+  const pacificOffset = getPacificOffset(new Date(year, month - 1, day));
+  
+  // Convert Pacific Time to UTC for database query
+  // Pacific is behind UTC, so we subtract the offset (which is negative)
+  // Example: PST is UTC-8, so to convert PST to UTC: UTC = PST - (-8) = PST + 8
+  const startOfDay = new Date(pacificStart.getTime() - (pacificOffset * 60 * 60 * 1000));
+  const endOfDay = new Date(pacificEnd.getTime() - (pacificOffset * 60 * 60 * 1000));
+
   const orders = await prisma.order.findMany({
-    where: { status: { not: 'cancelled' } },
+    where: { 
+      status: { not: 'cancelled' },
+      createdAt: {
+        gte: startOfDay,
+        lte: endOfDay
+      }
+    },
     include: {
       user: {
         select: {
@@ -26,8 +126,7 @@ export default async function OrderHistoryPage() {
         orderBy: { id: 'asc' }
       }
     },
-    orderBy: { createdAt: 'desc' },
-    take: 100 // Limit to recent 100 orders for performance
+    orderBy: { createdAt: 'desc' }
   });
 
   // Serialize orders
@@ -49,6 +148,11 @@ export default async function OrderHistoryPage() {
       }))
     }))
   }));
+
+  // Calculate total number of drinks (sum of all item quantities)
+  const totalDrinks = serializedOrders.reduce((sum, order) => {
+    return sum + order.items.reduce((itemSum, item) => itemSum + item.quantity, 0);
+  }, 0);
 
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat('en-US', {
@@ -131,6 +235,17 @@ export default async function OrderHistoryPage() {
     }
   };
 
+  // Format date for display
+  const [displayYear, displayMonth, displayDay] = dateStr.split('-').map(Number);
+  const displayDate = new Date(displayYear, displayMonth - 1, displayDay);
+  
+  const dateDisplay = displayDate.toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
       
@@ -138,10 +253,15 @@ export default async function OrderHistoryPage() {
       <div className="flex items-end justify-between border-b border-gray-800 pb-4">
         <div>
           <h1 className="text-3xl font-black text-white">Order History</h1>
-          <p className="text-gray-400 font-medium">View all past orders</p>
+          <p className="text-gray-400 font-medium">{dateDisplay}</p>
         </div>
-        <span className="text-sm text-gray-500">Showing {serializedOrders.length} orders</span>
+        <span className="text-sm text-gray-500">
+          Showing {serializedOrders.length} {serializedOrders.length === 1 ? 'order' : 'orders'} ({totalDrinks} {totalDrinks === 1 ? 'drink' : 'drinks'})
+        </span>
       </div>
+
+      {/* Navigation */}
+      <HistoryNavigation selectedDate={selectedDate} />
 
       {/* Orders List */}
       {serializedOrders.length === 0 ? (
@@ -212,7 +332,8 @@ export default async function OrderHistoryPage() {
                   {order.items.map((item) => {
                     const details: string[] = [];
                     if (item.milkName && item.milkName !== "No Milk") {
-                      details.push(item.milkName);
+                      const milkDisplay = item.milkAmount ? `${item.milkAmount} ${item.milkName}` : item.milkName;
+                      details.push(milkDisplay);
                     }
                     if (item.shots > 0) {
                       details.push(`${item.shots} ${item.shots === 1 ? 'Shot' : 'Shots'}`);
@@ -222,6 +343,9 @@ export default async function OrderHistoryPage() {
                     });
                     if (item.temperature) {
                       details.push(item.temperature);
+                    }
+                    if (item.foamLevel) {
+                      details.push(`Foam: ${item.foamLevel}`);
                     }
 
                     return (

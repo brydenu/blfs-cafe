@@ -81,6 +81,13 @@ export default async function MenuPage() {
            </p>
         </div>
 
+        {/* Back Button */}
+        <div className="mb-8">
+          <Link href="/dashboard" className="text-blue-200 hover:text-white underline underline-offset-4 text-sm font-medium">
+            ← Back to Dashboard
+          </Link>
+        </div>
+
         {/* 4. Pass everything (INCLUDING USER NAME) to Grid */}
         <MenuGrid 
             products={products} 
@@ -88,12 +95,6 @@ export default async function MenuPage() {
             ingredients={ingredients}
             userName={userName} // <--- THIS WAS MISSING
         />
-
-        <div className="mt-20 mb-10">
-          <Link href="/dashboard" className="text-blue-200 hover:text-white underline underline-offset-4">
-            ← Back to Dashboard
-          </Link>
-        </div>
 
       </div>
     </main>

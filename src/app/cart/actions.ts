@@ -71,6 +71,9 @@ export async function placeOrder(items: CartItem[]) {
                 specialInstructions: item.notes || "", // Use notes field
                 personalCup: item.personalCup || false,
                 caffeineType: item.caffeineType || null,
+                milkSteamed: item.milkSteamed ?? null,
+                foamLevel: item.foamLevel || null,
+                milkAmount: item.milkAmount || null,
                 // completed_at defaults to null (not completed)
                 // cancelled defaults to false
                 modifiers: {

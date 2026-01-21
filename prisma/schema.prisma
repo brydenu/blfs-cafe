@@ -155,6 +155,9 @@ model OrderItem {
   // Customization fields
   personalCup         Boolean @default(false)
   caffeineType        String? // 'Normal', 'Decaf', 'Half-Caff'
+  milkSteamed         Boolean? // Whether milk is steamed (for hot drinks with optional milk)
+  foamLevel           String? // 'No foam', 'Light', 'Normal', 'Extra'
+  milkAmount          String? // 'Light', 'Normal', 'Extra' (for optional milk drinks)
   
   // Relationship to Ingredients (Syrups, etc.)
   modifiers Modifier[]

@@ -120,6 +120,9 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
   // New customization fields
   const [personalCup, setPersonalCup] = useState(initialConfig?.personalCup || false);
   const [caffeineType, setCaffeineType] = useState(initialConfig?.caffeineType || "Normal");
+  const [milkSteamed, setMilkSteamed] = useState(initialConfig?.milkSteamed || false);
+  const [foamLevel, setFoamLevel] = useState(initialConfig?.foamLevel || "Normal");
+  const [milkAmount, setMilkAmount] = useState(initialConfig?.milkAmount || "Normal");
   const [notes, setNotes] = useState(initialConfig?.notes || initialConfig?.specialInstructions || "");
 
   // --- HANDLERS ---
@@ -165,6 +168,9 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
       milkId: selectedMilk || undefined,
       personalCup: personalCup,
       caffeineType: shots > 0 ? caffeineType : undefined,
+      milkSteamed: (baseTemp === "Hot" && !product.requiresMilk && selectedMilk !== null && selectedMilk !== -1) ? milkSteamed : undefined,
+      foamLevel: (baseTemp === "Hot" && (milkSteamed || product.requiresMilk)) ? foamLevel : undefined,
+      milkAmount: (!product.requiresMilk && selectedMilk !== null && selectedMilk !== -1) ? milkAmount : undefined,
       notes: notes,
       basePrice: productWithPrice.basePrice || 0
     };
@@ -415,6 +421,82 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
             ))}
           </div>
         </section>
+
+        {/* Milk Amount & Milk Steamed - For drinks with optional milk */}
+        {!product.requiresMilk && selectedMilk !== null && selectedMilk !== -1 && (
+          <section>
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              {/* Milk Amount - Always shown for optional milk drinks */}
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 md:flex-1 md:max-w-[50%]">
+                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest sm:min-w-[120px]">Milk Amount</h3>
+                <select 
+                  value={milkAmount} 
+                  onChange={(e) => setMilkAmount(e.target.value)}
+                  className="flex-1 sm:max-w-[200px] p-3 pl-3 pr-10 rounded-xl border border-gray-200 bg-white text-gray-700 font-medium focus:ring-2 focus:ring-[#32A5DC] outline-none cursor-pointer"
+                >
+                  <option value="Light">Light</option>
+                  <option value="Normal">Normal</option>
+                  <option value="Extra">Extra</option>
+                </select>
+              </div>
+              
+              {/* Milk Steamed Checkbox - Only for hot drinks */}
+              {baseTemp === "Hot" && (
+                <div className="flex items-center md:justify-center md:flex-1">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={milkSteamed}
+                      onChange={(e) => {
+                        setMilkSteamed(e.target.checked);
+                        if (!e.target.checked) {
+                          setFoamLevel("Normal"); // Reset foam level when unchecking
+                        }
+                      }}
+                      disabled={selectedMilk === null || selectedMilk === -1}
+                      className="w-5 h-5 rounded border-gray-300 text-[#32A5DC] focus:ring-[#32A5DC] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    />
+                    <span className={`text-sm font-bold ${selectedMilk === null || selectedMilk === -1 ? 'text-gray-400' : 'text-[#004876]'}`}>
+                      Milk steamed?
+                    </span>
+                  </label>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
+        {/* Foam Level - Only for hot drinks */}
+        {baseTemp === "Hot" && (
+          <>
+
+            {/* Foam Level Dropdown - Show when milk is steamed OR drink requires milk */}
+            {(milkSteamed || product.requiresMilk) && (
+              <section>
+                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Foam Level</h3>
+                <select 
+                  value={foamLevel} 
+                  onChange={(e) => setFoamLevel(e.target.value)}
+                  className="w-full p-3 pl-3 pr-10 rounded-xl border border-gray-200 bg-white text-gray-700 font-medium focus:ring-2 focus:ring-[#32A5DC] outline-none cursor-pointer"
+                >
+                  {product.name.toLowerCase().includes('cappuccino') ? (
+                    <>
+                      <option value="Normal">Normal</option>
+                      <option value="Extra">Extra</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value="No foam">No foam</option>
+                      <option value="Light">Light</option>
+                      <option value="Normal">Normal</option>
+                      <option value="Extra">Extra</option>
+                    </>
+                  )}
+                </select>
+              </section>
+            )}
+          </>
+        )}
 
         <hr className="border-gray-100" />
         
