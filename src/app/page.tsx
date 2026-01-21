@@ -1,10 +1,20 @@
 import Link from "next/link";
 import Image from "next/image";
 import { auth } from "@/auth"; // <--- Added Auth Import
+import CommunicationBanner from "@/components/CommunicationBanner";
+import ScheduleDisplay from "@/components/ScheduleDisplay";
+import { prisma } from "@/lib/db";
+
+export const dynamic = 'force-dynamic';
 
 export default async function LandingPage() {
   const session = await auth(); // <--- Check Session
   const isLoggedIn = !!session?.user;
+
+  // Fetch schedule data
+  const schedules = await prisma.schedule.findMany({
+    orderBy: { dayOfWeek: 'asc' }
+  });
 
   return (
     <main className="relative min-h-screen flex flex-col items-center justify-center p-6 overflow-hidden">
@@ -17,6 +27,11 @@ export default async function LandingPage() {
       </div>
 
       <div className="relative z-10 flex flex-col items-center text-center max-w-4xl mx-auto">
+        
+        {/* Communications Banner */}
+        <div className="w-full mb-6">
+          <CommunicationBanner location="landing" />
+        </div>
         
         {/* LOGO SECTION */}
         <div className="mb-8 relative w-24 h-24 md:w-32 md:h-32">
@@ -71,8 +86,9 @@ export default async function LandingPage() {
         </Link>
       </div>
 
-      <div className="absolute bottom-6 text-blue-200/60 text-sm z-10 font-mono">
-        <p>OPEN TODAY: 08:00 - 16:00</p>
+      {/* Schedule Display */}
+      <div className="relative z-10 w-full max-w-4xl mt-8">
+        <ScheduleDisplay schedules={schedules as any} />
       </div>
     </main>
   );

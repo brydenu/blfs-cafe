@@ -6,6 +6,7 @@ import RecentOrderTracker from "./RecentOrderTracker";
 import ScheduleWidget from "./ScheduleWidget";
 import Link from "next/link";
 import SignOutButton from "./SignOutButton";
+import CommunicationBanner from "@/components/CommunicationBanner";
 
 export const dynamic = 'force-dynamic';
 
@@ -100,6 +101,9 @@ export default async function DashboardPage() {
       </div>
 
       <div className="relative z-10 w-full max-w-4xl p-6 space-y-6 pb-20">
+        
+        {/* Communications Banner */}
+        <CommunicationBanner location="dashboard" />
         
         {/* HEADER */}
         <header className="mb-2 flex items-center justify-between">
