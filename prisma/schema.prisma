@@ -87,6 +87,9 @@ model Product {
   defaultShots      Int     @default(0)
   forceTemperature  String? // If strictly 'Hot' or 'Iced', else null
 
+  // Soft Delete
+  deletedAt   DateTime? // Soft delete timestamp
+
   orderItems  OrderItem[]
   savedOrders SavedOrder[]
 }

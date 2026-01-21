@@ -275,6 +275,29 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
     );
   };
 
+  // Check if product is inactive
+  const isProductActive = (product as any).isActive !== false; // Default to true if not specified
+
+  // If product is inactive, show disabled message
+  if (!isProductActive) {
+    return (
+      <div className="w-full max-w-3xl mx-auto bg-white rounded-3xl shadow-2xl overflow-hidden mb-20 relative z-10">
+        <div className="p-8 text-center">
+          <div className="bg-red-100 border-2 border-red-500 rounded-xl p-6 mb-6">
+            <h2 className="text-2xl font-bold text-red-600 mb-2">This item is currently unavailable</h2>
+            <p className="text-gray-600">{product.name} is temporarily unavailable for ordering.</p>
+          </div>
+          <Link 
+            href="/menu" 
+            className="inline-block bg-[#32A5DC] text-white font-bold py-3 px-6 rounded-xl hover:bg-[#288bba] transition-colors"
+          >
+            Back to Menu
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full max-w-3xl mx-auto bg-white rounded-3xl shadow-2xl overflow-hidden mb-20 relative z-10">
       

@@ -14,9 +14,12 @@ export default async function ProductPage({ params, searchParams }: Props) {
   const { id } = await Promise.resolve(params); // Next 15 specific
   const session = await auth();
 
-  // 1. Fetch Product
-  const product = await prisma.product.findUnique({
-    where: { id: parseInt(id) }
+  // 1. Fetch Product (must not be deleted, but can be inactive)
+  const product = await prisma.product.findFirst({
+    where: { 
+      id: parseInt(id),
+      ...({ deletedAt: null } as any) // Type assertion until Prisma client is regenerated
+    }
   });
 
   if (!product) notFound();
@@ -34,7 +37,8 @@ export default async function ProductPage({ params, searchParams }: Props) {
   // 3. Serialize Product Data (Decimal -> Number for client)
   const serializedProduct = {
     ...product,
-    basePrice: product.basePrice.toNumber()
+    basePrice: product.basePrice.toNumber(),
+    isActive: product.isActive
   };
 
   const serializedIngredients = ingredients.map(i => ({

@@ -5,9 +5,12 @@ import { prisma } from "@/lib/db"
 export type MenuCategory = 'coffee' | 'tea' | 'other'
 
 export async function getMenu() {
-  // 1. Fetch all active products
+  // 1. Fetch all active products (not deleted)
   const products = await prisma.product.findMany({
-    where: { isActive: true },
+    where: { 
+      isActive: true,
+      ...({ deletedAt: null } as any) // Type assertion until Prisma client is regenerated
+    },
     orderBy: { name: 'asc' }
   })
 

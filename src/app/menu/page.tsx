@@ -9,8 +9,11 @@ export const dynamic = 'force-dynamic';
 export default async function MenuPage() {
   const session = await auth();
 
-  // 1. Fetch Products
+  // 1. Fetch Products (all non-deleted ones, including inactive)
   const rawProducts = await prisma.product.findMany({
+    where: { 
+      ...({ deletedAt: null } as any) // Type assertion until Prisma client is regenerated
+    },
     orderBy: { category: 'asc' }
   });
 
@@ -44,13 +47,16 @@ export default async function MenuPage() {
             where: { userId: user.id },
             include: { product: true }
         });
+        
+        // Filter out favorites where product was deleted (deletedAt will be null for non-deleted)
+        const validFavorites = rawFavorites.filter(fav => fav.product && (fav.product as any).deletedAt === null);
 
-        favorites = rawFavorites.map(fav => ({
+        favorites = validFavorites.map(fav => ({
             ...fav,
             customName: fav.name, 
             product: {
-                ...fav.product,
-                basePrice: fav.product.basePrice.toNumber()
+                ...fav.product!,
+                basePrice: fav.product!.basePrice.toNumber()
             }
         }));
     }

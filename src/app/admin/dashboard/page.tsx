@@ -127,8 +127,23 @@ export default async function AdminDashboard() {
           </div>
         </Link>
 
+        {/* Menu Card */}
+        <Link href="/admin/menu" className="order-3 md:order-none">
+          <div className="bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-700 hover:border-[#32A5DC] transition-all cursor-pointer group h-full flex flex-col">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-16 h-16 bg-[#32A5DC]/20 text-[#32A5DC] rounded-xl flex items-center justify-center text-3xl group-hover:bg-[#32A5DC]/30 transition-colors">
+                ☕
+              </div>
+              <div>
+                <h2 className="text-xl font-black text-white">Menu</h2>
+                <p className="text-sm text-gray-400">Manage menu items</p>
+              </div>
+            </div>
+          </div>
+        </Link>
+
         {/* Inventory Card */}
-        <Link href="/admin/inventory" className="order-3 md:order-none">
+        <Link href="/admin/inventory" className="order-4 md:order-none">
           <div className="bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-700 hover:border-[#32A5DC] transition-all cursor-pointer group h-full flex flex-col">
             <div className="flex items-center gap-4 mb-4">
               <div className="w-16 h-16 bg-[#32A5DC]/20 text-[#32A5DC] rounded-xl flex items-center justify-center text-3xl group-hover:bg-[#32A5DC]/30 transition-colors">
@@ -143,7 +158,7 @@ export default async function AdminDashboard() {
         </Link>
 
         {/* Order History Card */}
-        <Link href="/admin/history" className="order-4 md:order-none">
+        <Link href="/admin/history" className="order-5 md:order-none">
           <div className="bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-700 hover:border-[#32A5DC] transition-all cursor-pointer group h-full flex flex-col">
             <div className="flex items-center gap-4 mb-4">
               <div className="w-16 h-16 bg-[#32A5DC]/20 text-[#32A5DC] rounded-xl flex items-center justify-center text-3xl group-hover:bg-[#32A5DC]/30 transition-colors">
@@ -158,7 +173,7 @@ export default async function AdminDashboard() {
         </Link>
 
         {/* Statistics Card */}
-        <Link href="/admin/statistics" className="order-5 md:order-none">
+        <Link href="/admin/statistics" className="order-6 md:order-none">
           <div className="bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-700 hover:border-[#32A5DC] transition-all cursor-pointer group h-full flex flex-col">
             <div className="flex items-center gap-4 mb-4">
               <div className="w-16 h-16 bg-[#32A5DC]/20 text-[#32A5DC] rounded-xl flex items-center justify-center text-3xl group-hover:bg-[#32A5DC]/30 transition-colors">

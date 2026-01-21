@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useCart } from "@/providers/CartProvider";
 import { useToast } from "@/providers/ToastProvider";
 
-type AnyProduct = { id: number; name: string; description?: string | null; category: string };
+type AnyProduct = { id: number; name: string; description?: string | null; category: string; isActive?: boolean; imageUrl?: string | null };
 
 interface MenuGridProps {
   products: AnyProduct[];
@@ -249,37 +249,93 @@ export default function MenuGrid({ products = [], favorites = [], ingredients = 
 
       {/* GRID */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {filteredProducts.map((product) => (
-          <Link href={`/menu/${product.id}?mode=${orderMode}`} key={product.id} className="block group">
-            <div className="bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden flex transform hover:-translate-y-1 min-h-[120px] cursor-pointer">
-              <div className="w-24 sm:w-32 bg-gray-50 flex items-center justify-center shrink-0 border-r border-gray-100 group-hover:bg-[#32A5DC]/10 transition-colors">
-                {product.imageUrl ? (
-                  <img 
-                    src={product.imageUrl} 
-                    alt={product.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-4xl sm:text-5xl drop-shadow-sm filter grayscale group-hover:grayscale-0 transition-all duration-300">
-                    {product.category === 'coffee' ? '☕' : product.category === 'tea' ? '🍵' : '🥤'}
-                  </span>
-                )}
-              </div>
+        {filteredProducts.map((product) => {
+          const isActive = product.isActive !== false; // Default to true if not specified
+          const getCategoryEmoji = (category: string) => {
+            switch (category.toLowerCase()) {
+              case 'coffee':
+                return '☕';
+              case 'tea':
+                return '🍵';
+              default:
+                return '🥤';
+            }
+          };
 
-              <div className="flex-1 p-5 flex flex-col justify-center">
-                <h3 className="text-xl font-extrabold text-[#004876] mb-2 group-hover:text-[#32A5DC] transition-colors">
-                  {product.name}
-                </h3>
-                <p className="text-gray-500 text-sm leading-relaxed line-clamp-2">
-                  {product.description || "No description available."}
-                </p>
-                <div className="mt-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-xs font-bold text-[#32A5DC] uppercase tracking-wider flex items-center gap-1">
-                  Customize <span className="text-lg">→</span>
+          if (!isActive) {
+            // Disabled product - not clickable
+            return (
+              <div key={product.id} className="block group">
+                <div className="bg-white/60 rounded-xl shadow-lg overflow-hidden flex min-h-[120px] relative opacity-60 cursor-not-allowed">
+                  {/* Disabled Badge */}
+                  <div className="absolute top-2 right-2 z-10 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
+                    Unavailable
+                  </div>
+                  
+                  <div className="w-24 sm:w-32 bg-gray-50 flex items-center justify-center shrink-0 border-r border-gray-100">
+                    {product.imageUrl ? (
+                      <img 
+                        src={product.imageUrl} 
+                        alt={product.name}
+                        className="w-full h-full object-cover grayscale"
+                      />
+                    ) : (
+                      <span className="text-4xl sm:text-5xl drop-shadow-sm filter grayscale">
+                        {getCategoryEmoji(product.category)}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex-1 p-5 flex flex-col justify-center">
+                    <h3 className="text-xl font-extrabold text-gray-500 mb-2">
+                      {product.name}
+                    </h3>
+                    <p className="text-gray-400 text-sm leading-relaxed line-clamp-2">
+                      {product.description || "No description available."}
+                    </p>
+                    {/* Spacer to match active card height - same structure as active card */}
+                    <div className="mt-3 opacity-0 text-xs font-bold text-[#32A5DC] uppercase tracking-wider flex items-center gap-1">
+                      <span>Customize</span> <span className="text-lg">→</span>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </Link>
-        ))}
+            );
+          }
+
+          // Active product - clickable
+          return (
+            <Link href={`/menu/${product.id}?mode=${orderMode}`} key={product.id} className="block group">
+              <div className="bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden flex transform hover:-translate-y-1 min-h-[120px] cursor-pointer">
+                <div className="w-24 sm:w-32 bg-gray-50 flex items-center justify-center shrink-0 border-r border-gray-100 group-hover:bg-[#32A5DC]/10 transition-colors">
+                  {product.imageUrl ? (
+                    <img 
+                      src={product.imageUrl} 
+                      alt={product.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-4xl sm:text-5xl drop-shadow-sm filter grayscale group-hover:grayscale-0 transition-all duration-300">
+                      {getCategoryEmoji(product.category)}
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex-1 p-5 flex flex-col justify-center">
+                  <h3 className="text-xl font-extrabold text-[#004876] mb-2 group-hover:text-[#32A5DC] transition-colors">
+                    {product.name}
+                  </h3>
+                  <p className="text-gray-500 text-sm leading-relaxed line-clamp-2">
+                    {product.description || "No description available."}
+                  </p>
+                  <div className="mt-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-xs font-bold text-[#32A5DC] uppercase tracking-wider flex items-center gap-1">
+                    Customize <span className="text-lg">→</span>
+                  </div>
+                </div>
+              </div>
+            </Link>
+          );
+        })}
       </div>
 
       {/* FLOATING CART BUTTON */}
