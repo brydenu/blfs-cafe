@@ -20,39 +20,40 @@ model User {
   image         String?
   passwordHash  String?
   role          String    @default("customer") // 'admin' or 'customer'
-  
-  // Profile fields
-  firstName     String?
-  lastName      String?
-  
-  // Notification preferences
-  notificationsEnabled    Boolean  @default(false)
-  notificationDefaultType String   @default("order-complete") // 'per-drink' or 'order-complete'
-  notificationMethods     Json     @default("{\"email\": true}") // Store enabled methods
-  
-  accounts      Account[]
-  sessions      Session[]
-  orders        Order[]
-  savedOrders   SavedOrder[] // For "Favorites"
 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  deletedAt     DateTime? // Soft delete timestamp
+  // Profile fields
+  firstName String?
+  lastName  String?
+
+  // Notification preferences
+  notificationsEnabled    Boolean @default(false)
+  notificationDefaultType String  @default("order-complete") // 'per-drink' or 'order-complete'
+  notificationMethods     Json    @default("{\"email\": true}") // Store enabled methods
+
+  accounts                Account[]
+  sessions                Session[]
+  orders                  Order[]
+  savedOrders             SavedOrder[] // For "Favorites"
+  communicationDismissals CommunicationDismissal[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime? // Soft delete timestamp
 }
 
 model Account {
-  id                 String  @id @default(cuid())
-  userId             String
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String? @db.Text
-  access_token       String? @db.Text
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String? @db.Text
-  session_state      String?
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -70,25 +71,25 @@ model Session {
 // --- MENU & PRODUCTS ---
 
 model Product {
-  id          Int      @id @default(autoincrement())
+  id          Int     @id @default(autoincrement())
   name        String
   description String?
-  basePrice   Decimal  @default(0.00)
+  basePrice   Decimal @default(0.00)
   imageUrl    String?
-  category    String   // 'coffee', 'tea', 'refresher', 'bakery'
-  
+  category    String // 'coffee', 'tea', 'refresher', 'bakery'
+
   // Recipe Logic
-  isActive    Boolean  @default(true)
-  isSeasonal  Boolean  @default(false)
-  
+  isActive   Boolean @default(true)
+  isSeasonal Boolean @default(false)
+
   // Customization Constraints
-  requiresMilk      Boolean @default(false)
-  allowsShots       Boolean @default(false)
-  defaultShots      Int     @default(0)
-  forceTemperature  String? // If strictly 'Hot' or 'Iced', else null
+  requiresMilk     Boolean @default(false)
+  allowsShots      Boolean @default(false)
+  defaultShots     Int     @default(0)
+  forceTemperature String? // If strictly 'Hot' or 'Iced', else null
 
   // Soft Delete
-  deletedAt   DateTime? // Soft delete timestamp
+  deletedAt DateTime? // Soft delete timestamp
 
   orderItems  OrderItem[]
   savedOrders SavedOrder[]
@@ -97,102 +98,102 @@ model Product {
 model Ingredient {
   id          Int     @id @default(autoincrement())
   name        String
-  category    String  // 'milk', 'syrup', 'topping', 'decaf'
+  category    String // 'milk', 'syrup', 'topping', 'decaf'
   priceMod    Decimal @default(0.00)
   isAvailable Boolean @default(true)
   isShowing   Boolean @default(true) // Visibility in UI (for seasonal flavors)
   rank        Int     @default(0) // Higher numbers = Higher priority in UI
 
-  modifiers   Modifier[]
+  modifiers Modifier[]
 }
 
 // --- ORDERS ---
 
 model Order {
-  id          Int      @id @default(autoincrement())
-  publicId    String   @unique // Friendly ID for tracking (generated in app code)
-  
-  userId      String?
-  user        User?    @relation(fields: [userId], references: [id])
-  
-  guestName   String?  // If not logged in
-  guestEmail  String?
-  
-  status      String   @default("queued") // 'queued', 'preparing', 'ready', 'completed', 'cancelled'
-  total       Decimal  @default(0.00)
-  
+  id       Int    @id @default(autoincrement())
+  publicId String @unique // Friendly ID for tracking (generated in app code)
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  guestName  String? // If not logged in
+  guestEmail String?
+
+  status String  @default("queued") // 'queued', 'preparing', 'ready', 'completed', 'cancelled'
+  total  Decimal @default(0.00)
+
   // Notification preferences (nullable = use user default)
   notificationsEnabled Boolean? // Override user default for this order
-  notificationType     String?  // Override notification type for this order ('per-drink' or 'order-complete')
-  notificationMethods  Json?    // Override methods for this order
-  
-  items       OrderItem[]
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  notificationType     String? // Override notification type for this order ('per-drink' or 'order-complete')
+  notificationMethods  Json? // Override methods for this order
+
+  items OrderItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model OrderItem {
-  id        Int      @id @default(autoincrement())
-  orderId   Int
-  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  
+  id      Int   @id @default(autoincrement())
+  orderId Int
+  order   Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
   productId Int
-  product   Product  @relation(fields: [productId], references: [id])
-  
-  quantity  Int      @default(1)
-  
+  product   Product @relation(fields: [productId], references: [id])
+
+  quantity Int @default(1)
+
   // Drink Specifics
-  shots               Int     @default(0)
-  temperature         String? // 'Hot', 'Iced'
-  
+  shots       Int     @default(0)
+  temperature String? // 'Hot', 'Iced'
+
   // NEW COLUMNS
-  milkName            String? // e.g. "Oat", "Whole"
-  recipientName       String? // e.g. "My Morning Fuel"
-  
+  milkName      String? // e.g. "Oat", "Whole"
+  recipientName String? // e.g. "My Morning Fuel"
+
   specialInstructions String? // Fallback text string
 
   // Completion status
-  completed_at        DateTime?
-  cancelled           Boolean @default(false)
-  
+  completed_at DateTime?
+  cancelled    Boolean   @default(false)
+
   // Customization fields
-  personalCup         Boolean @default(false)
-  caffeineType        String? // 'Normal', 'Decaf', 'Half-Caff'
-  milkSteamed         Boolean? // Whether milk is steamed (for hot drinks with optional milk)
-  foamLevel           String? // 'No foam', 'Light', 'Normal', 'Extra'
-  milkAmount          String? // 'Light', 'Normal', 'Extra' (for optional milk drinks)
-  
+  personalCup  Boolean  @default(false)
+  caffeineType String? // 'Normal', 'Decaf', 'Half-Caff'
+  milkSteamed  Boolean? // Whether milk is steamed (for hot drinks with optional milk)
+  foamLevel    String? // 'No foam', 'Light', 'Normal', 'Extra'
+  milkAmount   String? // 'Light', 'Normal', 'Extra' (for optional milk drinks)
+
   // Relationship to Ingredients (Syrups, etc.)
   modifiers Modifier[]
 }
 
 model Modifier {
-  id            Int        @id @default(autoincrement())
-  
-  orderItemId   Int
-  orderItem     OrderItem  @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
-  
-  ingredientId  Int
-  ingredient    Ingredient @relation(fields: [ingredientId], references: [id])
-  
-  quantity      Int        @default(1) // e.g., "2 pumps"
+  id Int @id @default(autoincrement())
+
+  orderItemId Int
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+
+  ingredientId Int
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id])
+
+  quantity Int @default(1) // e.g., "2 pumps"
 }
 
 // --- FAVORITES / SAVED ORDERS ---
 
 model SavedOrder {
-  id             Int     @id @default(autoincrement())
-  userId         String
-  user           User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  productId      Int
-  product        Product @relation(fields: [productId], references: [id])
-  
-  name           String  // "My Morning Latte"
-  configuration  Json    // Store the JSON of shots, milk, syrups
-  
-  createdAt      DateTime @default(now())
+  id     Int    @id @default(autoincrement())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
+
+  name          String // "My Morning Latte"
+  configuration Json // Store the JSON of shots, milk, syrups
+
+  createdAt DateTime @default(now())
 }
 
 model PasswordResetToken {
@@ -210,10 +211,37 @@ model PasswordResetToken {
 model Schedule {
   id                   Int     @id @default(autoincrement())
   dayOfWeek            Int     @unique // 0=Sunday, 6=Saturday
-  openTime1            String  // HH:mm format - first period start
-  closeTime1           String  // HH:mm format - first period end
+  openTime1            String // HH:mm format - first period start
+  closeTime1           String // HH:mm format - first period end
   openTime2            String? // HH:mm format - second period start, nullable
   closeTime2           String? // HH:mm format - second period end, nullable
   isSecondPeriodActive Boolean @default(false) // enable/disable second period
   isOpen               Boolean @default(true) // enable/disable entire day
+}
+
+// --- COMMUNICATIONS ---
+
+model Communication {
+  id                  Int                      @id @default(autoincrement())
+  title               String
+  content             String                   @db.Text // HTML/rich text content
+  startDate           DateTime
+  endDate             DateTime
+  visibilityLocations Json // Array: ["landing", "dashboard", "menu"]
+  dismissals          CommunicationDismissal[]
+  createdAt           DateTime                 @default(now())
+  updatedAt           DateTime                 @updatedAt
+}
+
+model CommunicationDismissal {
+  id              Int           @id @default(autoincrement())
+  userId          String? // Nullable for logged-in users
+  user            User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionId       String? // Nullable for guest sessions
+  communicationId Int
+  communication   Communication @relation(fields: [communicationId], references: [id], onDelete: Cascade)
+  dismissedAt     DateTime      @default(now())
+
+  @@unique([userId, communicationId])
+  @@unique([sessionId, communicationId])
 }

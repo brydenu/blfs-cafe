@@ -3,6 +3,7 @@ import MenuGrid from "./MenuGrid";
 import Link from "next/link";
 import Image from "next/image";
 import { auth } from "@/auth";
+import CommunicationBanner from "@/components/CommunicationBanner";
 
 export const dynamic = 'force-dynamic'; 
 
@@ -73,6 +74,11 @@ export default async function MenuPage() {
       </div>
 
       <div className="relative z-10 flex flex-col items-center">
+        
+        {/* Communications Banner */}
+        <div className="w-full max-w-4xl mb-6">
+          <CommunicationBanner location="menu" />
+        </div>
         
         {/* Header */}
         <div className="text-center mb-12 mt-8">
