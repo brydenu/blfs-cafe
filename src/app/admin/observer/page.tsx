@@ -21,8 +21,141 @@ function parseLegacyDetails(instructions: string | null) {
   };
 }
 
+// Helper function to format time from HH:mm to 12:00 PM format
+function formatTime(time: string): string {
+  const [hours, minutes] = time.split(':');
+  const hour = parseInt(hours);
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  const displayHour = hour % 12 || 12;
+  return `${displayHour}:${minutes} ${ampm}`;
+}
+
+// Helper function to get current day of week (0=Sunday, 6=Saturday)
+function getCurrentDayOfWeek(): number {
+  return new Date().getDay();
+}
+
+// Get status message (same logic as ScheduleWidget)
+function getStatusMessage(schedule: any): string {
+  if (!schedule || !schedule.isOpen) {
+    return "Not in today";
+  }
+
+  const now = new Date();
+  const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+  const parseTime = (timeStr: string): number => {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return hours * 60 + minutes;
+  };
+
+  const currentMinutes = parseTime(currentTime);
+  const open1Minutes = parseTime(schedule.openTime1);
+  const close1Minutes = parseTime(schedule.closeTime1);
+  const open2Minutes = schedule.openTime2 ? parseTime(schedule.openTime2) : null;
+  const close2Minutes = schedule.closeTime2 ? parseTime(schedule.closeTime2) : null;
+
+  // During period 1
+  if (currentMinutes >= open1Minutes && currentMinutes < close1Minutes) {
+    return "Accepting orders";
+  }
+
+  // Before period 1 opens
+  if (currentMinutes < open1Minutes) {
+    return "Not open yet";
+  }
+
+  // Between period 1 and period 2 (if period 2 is active)
+  if (schedule.isSecondPeriodActive && open2Minutes && close2Minutes) {
+    if (currentMinutes >= close1Minutes && currentMinutes < open2Minutes) {
+      return "Will be back later";
+    }
+    // During period 2
+    if (currentMinutes >= open2Minutes && currentMinutes < close2Minutes) {
+      return "Accepting orders";
+    }
+    // After period 2
+    if (currentMinutes >= close2Minutes) {
+      return "Cleaned up for the day";
+    }
+  }
+
+  // After period 1 and period 2 is not active OR after period 2
+  if (currentMinutes >= close1Minutes) {
+    return "Cleaned up for the day";
+  }
+
+  return "Accepting orders";
+}
+
+// Check if currently accepting orders
+function isAcceptingOrders(schedule: any): boolean {
+  if (!schedule || !schedule.isOpen) {
+    return false;
+  }
+
+  const now = new Date();
+  const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+  const parseTime = (timeStr: string): number => {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return hours * 60 + minutes;
+  };
+
+  const currentMinutes = parseTime(currentTime);
+  const open1Minutes = parseTime(schedule.openTime1);
+  const close1Minutes = parseTime(schedule.closeTime1);
+  const open2Minutes = schedule.openTime2 ? parseTime(schedule.openTime2) : null;
+  const close2Minutes = schedule.closeTime2 ? parseTime(schedule.closeTime2) : null;
+
+  // During period 1
+  if (currentMinutes >= open1Minutes && currentMinutes < close1Minutes) {
+    return true;
+  }
+
+  // Between period 1 and period 2 (if period 2 is active) - not accepting
+  if (schedule.isSecondPeriodActive && open2Minutes && close2Minutes) {
+    if (currentMinutes >= close1Minutes && currentMinutes < open2Minutes) {
+      return false;
+    }
+    // During period 2
+    if (currentMinutes >= open2Minutes && currentMinutes < close2Minutes) {
+      return true;
+    }
+  }
+
+  // After closing or before opening
+  return false;
+}
+
+// Get display schedule as array (for stacking periods)
+function getDisplaySchedule(schedule: any): string[] {
+  if (!schedule || !schedule.isOpen) {
+    return ['Closed'];
+  }
+  
+  const periods: string[] = [`${formatTime(schedule.openTime1)} - ${formatTime(schedule.closeTime1)}`];
+  
+  if (schedule.isSecondPeriodActive && schedule.openTime2 && schedule.closeTime2) {
+    periods.push(`${formatTime(schedule.openTime2)} - ${formatTime(schedule.closeTime2)}`);
+  }
+  
+  return periods;
+}
+
 export default async function ObserverPage() {
-  // 1. Fetch Active Orders
+  // 1. Fetch Schedule for Today
+  const currentDayOfWeek = getCurrentDayOfWeek();
+  const todaySchedule = await prisma.schedule.findUnique({
+    where: { dayOfWeek: currentDayOfWeek }
+  });
+
+  // Get status message and display schedule
+  const statusMessage = todaySchedule ? getStatusMessage(todaySchedule) : "Not in today";
+  const displaySchedule = todaySchedule ? getDisplaySchedule(todaySchedule) : ["Closed"];
+  const acceptingOrders = todaySchedule ? isAcceptingOrders(todaySchedule) : false;
+
+  // 2. Fetch Active Orders
   // Fetch orders that are 'queued', 'preparing', or 'cancelled' (cancelled orders may still have uncompleted items)
   // We filter out 'completed' orders since all items should be done
   const rawOrders = await prisma.order.findMany({
@@ -104,14 +237,50 @@ export default async function ObserverPage() {
         {/* EVENT LISTENER */}
         <ObserverListener />
 
+        {/* TODAY'S SCHEDULE */}
+        <div className="text-center mb-6 pt-8">
+          <div className="bg-[#32A5DC]/20 backdrop-blur-sm rounded-xl shadow-lg px-6 py-4 inline-block border border-[#32A5DC]/30">
+            <p className="text-white/90 text-sm font-semibold mb-3 uppercase tracking-wide">
+              Today's Schedule
+            </p>
+            <div className="flex items-center gap-4">
+              <div className="text-right min-w-[200px]">
+                <div className="flex flex-col gap-0.5">
+                  {displaySchedule.map((period, index) => (
+                    <p key={index} className="text-white text-xl md:text-2xl font-medium">
+                      {period}
+                    </p>
+                  ))}
+                </div>
+              </div>
+              <div className="h-12 w-px bg-[#32A5DC]/50"></div>
+              <div className="text-left min-w-[220px] flex flex-col gap-2 items-start">
+                {/* Accepting Orders Sign */}
+                <div className={`w-full px-4 py-2.5 rounded-lg border-2 font-semibold text-sm text-center transition-all ${
+                  acceptingOrders
+                    ? "text-white border-green-500 bg-green-500 shadow-[0_0_20px_rgba(34,197,94,0.8)] animate-pulse-glow-green"
+                    : "text-gray-400 border-gray-500 bg-gray-500 opacity-50"
+                }`}>
+                  Accepting orders
+                </div>
+                {/* Not Accepting Orders Sign */}
+                <div className={`w-full px-4 py-2.5 rounded-lg border-2 font-semibold text-sm text-center transition-all ${
+                  !acceptingOrders && (todaySchedule && todaySchedule.isOpen)
+                    ? "text-white border-red-500 bg-red-500 shadow-[0_0_20px_rgba(239,68,68,0.8)] animate-pulse-glow-red"
+                    : "text-gray-400 border-gray-500 bg-gray-500 opacity-50"
+                }`}>
+                  Not accepting orders
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* HEADER */}
-        <div className="text-center mb-8 pt-8">
+        <div className="text-center mb-8">
           <h1 className="text-5xl md:text-6xl font-black text-white tracking-tight mb-2 drop-shadow-xl">
             Current Queue
           </h1>
-          <p className="text-blue-100 text-lg font-light">
-            Your order will appear here
-          </p>
         </div>
 
         {/* TICKETS GRID */}
