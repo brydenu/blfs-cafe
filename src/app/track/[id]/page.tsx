@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import OrderTracker from "./OrderTracker";
+import OrderTracker from "@/app/order-confirmation/[id]/OrderTracker";
 
 export const dynamic = 'force-dynamic';
 
@@ -9,11 +9,11 @@ interface Props {
   params: { id: string };
 }
 
-export default async function OrderConfirmationPage({ params }: Props) {
+export default async function GuestTrackerPage({ params }: Props) {
   // Await params for Next.js 15+
   const { id } = await Promise.resolve(params);
 
-  // 1. Fetch Order with Items and User
+  // 1. Fetch Order with Items and User (if exists)
   const rawOrder = await prisma.order.findUnique({
     where: { publicId: id },
     include: { 
@@ -33,7 +33,7 @@ export default async function OrderConfirmationPage({ params }: Props) {
 
   if (!rawOrder) notFound();
 
-  // 2. FIX: Serialize Decimals (total & basePrice) -> Numbers
+  // 2. Serialize Decimals (total & basePrice) -> Numbers
   const order = {
     ...rawOrder,
     total: Number(rawOrder.total),
@@ -56,9 +56,6 @@ export default async function OrderConfirmationPage({ params }: Props) {
 
   const estimatedMinutes = (ordersAhead * 3) + 3;
 
-  // 4. Detect if this is a guest order (no userId)
-  const isGuestOrder = !order.userId;
-
   return (
     <main className="min-h-screen relative p-6 flex items-center justify-center overflow-hidden">
       
@@ -72,7 +69,7 @@ export default async function OrderConfirmationPage({ params }: Props) {
       {/* Main Content */}
       <div className="bg-white rounded-3xl p-8 text-center max-w-lg w-full shadow-2xl relative z-10 animate-fade-in">
         
-        {/* Unified Tracker Component */}
+        {/* CLIENT COMPONENT: Handles Socket Listening & Live Updates */}
         <OrderTracker 
             order={order} 
             ordersAhead={ordersAhead} 
@@ -81,16 +78,14 @@ export default async function OrderConfirmationPage({ params }: Props) {
 
         {/* Actions */}
         <div className="space-y-4 mt-8">
-            {!isGuestOrder && (
-              <Link href="/dashboard" className="block">
-                  <button className="w-full bg-[#004876] hover:bg-[#32A5DC] text-white font-bold py-3.5 rounded-xl shadow-lg transition-all transform hover:scale-[1.02] cursor-pointer">
-                      Track in Dashboard
-                  </button>
-              </Link>
-            )}
             <Link href="/menu" className="block">
                 <button className="w-full bg-transparent text-[#32A5DC] hover:text-[#004876] font-bold py-2 text-sm transition-colors cursor-pointer">
                     Order Something Else
+                </button>
+            </Link>
+            <Link href="/" className="block">
+                <button className="w-full bg-transparent text-gray-400 hover:text-gray-600 font-bold py-2 text-xs transition-colors cursor-pointer">
+                    Back to Home
                 </button>
             </Link>
         </div>
