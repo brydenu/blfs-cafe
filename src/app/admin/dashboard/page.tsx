@@ -94,6 +94,21 @@ export default async function AdminDashboard() {
           </div>
         </Link>
 
+        {/* Observer Screen Card */}
+        <Link href="/admin/observer" className="order-6 md:order-none">
+          <div className="bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-700 hover:border-[#32A5DC] transition-all cursor-pointer group h-full flex flex-col">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-16 h-16 bg-[#32A5DC]/20 text-[#32A5DC] rounded-xl flex items-center justify-center text-3xl group-hover:bg-[#32A5DC]/30 transition-colors">
+                📺
+              </div>
+              <div>
+                <h2 className="text-xl font-black text-white">Observer Screen</h2>
+                <p className="text-sm text-gray-400">Customer-facing queue display</p>
+              </div>
+            </div>
+          </div>
+        </Link>
+
         {/* Schedule Card */}
         <Link href="/admin/schedule" className="order-2 md:order-none">
           <div className="bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-700 hover:border-[#32A5DC] transition-all cursor-pointer group h-full flex flex-col">
