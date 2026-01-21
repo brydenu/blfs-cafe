@@ -5,15 +5,37 @@ import { HistoryNavigation } from "./HistoryNavigation";
 export const dynamic = 'force-dynamic';
 
 interface OrderHistoryPageProps {
-  searchParams: Promise<{ date?: string }>;
+  searchParams: Promise<{ date?: string; userId?: string; page?: string }>;
 }
 
 export default async function OrderHistoryPage({ searchParams }: OrderHistoryPageProps) {
   // Await searchParams for Next.js 15+
   const resolvedSearchParams = await searchParams;
   const dateParam = resolvedSearchParams?.date;
+  const userIdParam = resolvedSearchParams?.userId;
+  const pageParam = resolvedSearchParams?.page;
   
-  // Parse date from searchParams, default to today
+  // Parse pagination
+  const currentPage = pageParam ? parseInt(pageParam, 10) : 1;
+  const pageSize = 20;
+  const skip = (currentPage - 1) * pageSize;
+  
+  // Fetch user info if userIdParam is present
+  let userInfo: { firstName: string | null; lastName: string | null } | null = null;
+  if (userIdParam) {
+    const user = await prisma.user.findUnique({
+      where: { id: userIdParam },
+      select: {
+        firstName: true,
+        lastName: true
+      }
+    });
+    if (user) {
+      userInfo = user;
+    }
+  }
+  
+  // Parse date from searchParams, default to today (only if not viewing user-specific history)
   let selectedDate: Date;
   if (dateParam) {
     // Parse date string (YYYY-MM-DD) and create date in local timezone
@@ -98,14 +120,34 @@ export default async function OrderHistoryPage({ searchParams }: OrderHistoryPag
   const startOfDay = new Date(pacificStart.getTime() - (pacificOffset * 60 * 60 * 1000));
   const endOfDay = new Date(pacificEnd.getTime() - (pacificOffset * 60 * 60 * 1000));
 
-  const orders = await prisma.order.findMany({
-    where: { 
-      status: { not: 'cancelled' },
-      createdAt: {
+  // Build where clause
+  let whereClause: any = { status: { not: 'cancelled' } };
+  
+  if (userIdParam) {
+    whereClause.userId = userIdParam;
+    // If dateParam is also present, filter by both user and date
+    if (dateParam) {
+      whereClause.createdAt = {
         gte: startOfDay,
         lte: endOfDay
-      }
-    },
+      };
+    }
+  } else {
+    // Normal admin history - filter by date
+    whereClause.createdAt = {
+      gte: startOfDay,
+      lte: endOfDay
+    };
+  }
+  
+  // Get total count for pagination (only when viewing user-specific history without date filter)
+  const totalCount = userIdParam && !dateParam
+    ? await prisma.order.count({ where: whereClause })
+    : 0;
+  
+  // If filtering by userId, show all orders for that user, not just today's
+  const orders = await prisma.order.findMany({
+    where: whereClause,
     include: {
       user: {
         select: {
@@ -126,7 +168,9 @@ export default async function OrderHistoryPage({ searchParams }: OrderHistoryPag
         orderBy: { id: 'asc' }
       }
     },
-    orderBy: { createdAt: 'desc' }
+    orderBy: { createdAt: 'desc' },
+    // Apply pagination only for user-specific history without date filter
+    ...(userIdParam && !dateParam ? { skip, take: pageSize } : {})
   });
 
   // Serialize orders
@@ -235,33 +279,92 @@ export default async function OrderHistoryPage({ searchParams }: OrderHistoryPag
     }
   };
 
-  // Format date for display
-  const [displayYear, displayMonth, displayDay] = dateStr.split('-').map(Number);
-  const displayDate = new Date(displayYear, displayMonth - 1, displayDay);
+  // Format date for display (only show if not user-specific or if date filter is present)
+  const showDateHeader = !userIdParam || dateParam;
+  let dateDisplay: string | null = null;
   
-  const dateDisplay = displayDate.toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
+  if (showDateHeader) {
+    const [displayYear, displayMonth, displayDay] = dateStr.split('-').map(Number);
+    const displayDate = new Date(displayYear, displayMonth - 1, displayDay);
+    
+    dateDisplay = displayDate.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  }
+  
+  // Calculate pagination info
+  const totalPages = userIdParam && !dateParam ? Math.ceil(totalCount / pageSize) : 1;
+  const hasNextPage = currentPage < totalPages;
+  const hasPrevPage = currentPage > 1;
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
       
+      {/* Back to User Link - only show for user-specific history */}
+      {userIdParam && (
+        <div className="mb-2">
+          <Link
+            href={`/admin/users/${userIdParam}`}
+            className="text-sm text-[#32A5DC] hover:text-[#5bc0de] font-bold transition-colors inline-flex items-center gap-1"
+          >
+            ← Back to User Statistics
+          </Link>
+        </div>
+      )}
+      
       {/* Header */}
       <div className="flex items-end justify-between border-b border-gray-800 pb-4">
         <div>
-          <h1 className="text-3xl font-black text-white">Order History</h1>
-          <p className="text-gray-400 font-medium">{dateDisplay}</p>
+          <h1 className="text-3xl font-black text-white">
+            {userIdParam && userInfo
+              ? `Order History: ${userInfo.firstName || ''} ${userInfo.lastName || ''}`.trim()
+              : 'Order History'}
+          </h1>
+          {dateDisplay && (
+            <p className="text-gray-400 font-medium">{dateDisplay}</p>
+          )}
         </div>
         <span className="text-sm text-gray-500">
-          Showing {serializedOrders.length} {serializedOrders.length === 1 ? 'order' : 'orders'} ({totalDrinks} {totalDrinks === 1 ? 'drink' : 'drinks'})
+          {userIdParam && !dateParam
+            ? `Showing ${skip + 1}-${Math.min(skip + serializedOrders.length, totalCount)} of ${totalCount} ${totalCount === 1 ? 'order' : 'orders'}`
+            : `Showing ${serializedOrders.length} ${serializedOrders.length === 1 ? 'order' : 'orders'} (${totalDrinks} ${totalDrinks === 1 ? 'drink' : 'drinks'})`}
         </span>
       </div>
 
-      {/* Navigation */}
-      <HistoryNavigation selectedDate={selectedDate} />
+      {/* Navigation - only show if not user-specific total history */}
+      {(!userIdParam || dateParam) && (
+        <HistoryNavigation selectedDate={selectedDate} />
+      )}
+      
+      {/* Pagination - only show for user-specific total history */}
+      {userIdParam && !dateParam && totalPages > 1 && (
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm text-gray-400">
+            Page {currentPage} of {totalPages}
+          </span>
+          <div className="flex items-center gap-2">
+            {hasPrevPage && (
+              <Link
+                href={`/admin/history?userId=${userIdParam}&page=${currentPage - 1}`}
+                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg transition-colors"
+              >
+                ← Previous page
+              </Link>
+            )}
+            {hasNextPage && (
+              <Link
+                href={`/admin/history?userId=${userIdParam}&page=${currentPage + 1}`}
+                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg transition-colors"
+              >
+                Next page →
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Orders List */}
       {serializedOrders.length === 0 ? (
