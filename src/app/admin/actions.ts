@@ -404,3 +404,181 @@ export async function getStatistics(timeframe: 'today' | 'week' | 'month' | 'all
     return { success: false, message: "Database error" };
   }
 }
+
+// --- INGREDIENT USAGE STATISTICS ---
+
+export async function getIngredientUsageStats() {
+  try {
+    const now = new Date();
+    
+    // Define timeframes
+    const todayStr = now.toLocaleDateString('en-CA');
+    const todayStart = new Date(`${todayStr}T00:00:00`);
+    
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - 7);
+    
+    const monthStart = new Date(now);
+    monthStart.setMonth(now.getMonth() - 1);
+    
+    const allTimeStart = new Date(0);
+
+    // Fetch all ingredients
+    const ingredients = await prisma.ingredient.findMany({
+      orderBy: { name: 'asc' }
+    });
+
+    // Fetch all orders with items and modifiers for all timeframes
+    const allOrders = await prisma.order.findMany({
+      where: {
+        createdAt: { gte: allTimeStart },
+        status: { not: 'cancelled' }
+      },
+      include: {
+        items: {
+          include: {
+            modifiers: {
+              include: { ingredient: true }
+            }
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    // Calculate total drinks for each timeframe
+    const getTotalDrinks = (orders: typeof allOrders) => {
+      return orders.reduce((total, order) => {
+        return total + order.items.reduce((sum, item) => sum + item.quantity, 0);
+      }, 0);
+    };
+
+    const todayOrders = allOrders.filter(o => new Date(o.createdAt) >= todayStart);
+    const weekOrders = allOrders.filter(o => new Date(o.createdAt) >= weekStart);
+    const monthOrders = allOrders.filter(o => new Date(o.createdAt) >= monthStart);
+
+    const totalDrinksToday = getTotalDrinks(todayOrders);
+    const totalDrinksWeek = getTotalDrinks(weekOrders);
+    const totalDrinksMonth = getTotalDrinks(monthOrders);
+    const totalDrinksAllTime = getTotalDrinks(allOrders);
+
+    // Helper to check if a drink item has any ingredient from a specific category
+    const hasCategoryIngredient = (item: typeof allOrders[0]['items'][0], category: string, allIngredients: typeof ingredients) => {
+      // Check modifiers for ingredients in this category
+      const hasModifier = item.modifiers.some(mod => {
+        const modIngredient = allIngredients.find(ing => ing.id === mod.ingredientId);
+        return modIngredient?.category === category;
+      });
+      
+      // Check milkName for milk category
+      const hasMilk = category === 'milk' && item.milkName && item.milkName !== "No Milk";
+      
+      return hasModifier || hasMilk;
+    };
+
+    // Helper to count drinks with any ingredient from a specific category
+    const countDrinksWithCategory = (orders: typeof allOrders, category: string) => {
+      let count = 0;
+      orders.forEach(order => {
+        order.items.forEach(item => {
+          if (hasCategoryIngredient(item, category, ingredients)) {
+            count += item.quantity;
+          }
+        });
+      });
+      return count;
+    };
+
+    // Calculate drinks with category ingredients for each timeframe
+    const categoryTotalsByTimeframe: Record<string, { today: number; week: number; month: number; allTime: number }> = {};
+    
+    // Get unique categories
+    const categories = [...new Set(ingredients.map(ing => ing.category))];
+    
+    categories.forEach(category => {
+      categoryTotalsByTimeframe[category] = {
+        today: countDrinksWithCategory(todayOrders, category),
+        week: countDrinksWithCategory(weekOrders, category),
+        month: countDrinksWithCategory(monthOrders, category),
+        allTime: countDrinksWithCategory(allOrders, category)
+      };
+    });
+
+    // Process each ingredient
+    const ingredientStats = ingredients.map(ingredient => {
+      // Helper to count drinks using this specific ingredient
+      const countDrinksWithIngredient = (orders: typeof allOrders, ingredientId: number, ingredientName: string, ingredientCategory: string) => {
+        let count = 0;
+        orders.forEach(order => {
+          order.items.forEach(item => {
+            // Check if ingredient is used via Modifier
+            const hasModifier = item.modifiers.some(mod => mod.ingredientId === ingredientId);
+            
+            // Check if ingredient is used via milkName (for milk category)
+            const hasMilkName = ingredientCategory === 'milk' && 
+                               item.milkName && 
+                               item.milkName.toLowerCase() === ingredientName.toLowerCase();
+            
+            if (hasModifier || hasMilkName) {
+              count += item.quantity;
+            }
+          });
+        });
+        return count;
+      };
+
+      const drinksToday = countDrinksWithIngredient(todayOrders, ingredient.id, ingredient.name, ingredient.category);
+      const drinksWeek = countDrinksWithIngredient(weekOrders, ingredient.id, ingredient.name, ingredient.category);
+      const drinksMonth = countDrinksWithIngredient(monthOrders, ingredient.id, ingredient.name, ingredient.category);
+      const drinksAllTime = countDrinksWithIngredient(allOrders, ingredient.id, ingredient.name, ingredient.category);
+
+      // Calculate usage percentages based on category totals
+      const categoryTotals = categoryTotalsByTimeframe[ingredient.category];
+      const usagePercentToday = categoryTotals.today > 0 ? (drinksToday / categoryTotals.today) * 100 : 0;
+      const usagePercentWeek = categoryTotals.week > 0 ? (drinksWeek / categoryTotals.week) * 100 : 0;
+      const usagePercentMonth = categoryTotals.month > 0 ? (drinksMonth / categoryTotals.month) * 100 : 0;
+      const usagePercentAllTime = categoryTotals.allTime > 0 ? (drinksAllTime / categoryTotals.allTime) * 100 : 0;
+
+      return {
+        id: ingredient.id,
+        name: ingredient.name,
+        category: ingredient.category,
+        today: {
+          drinks: drinksToday,
+          usagePercent: Math.round(usagePercentToday * 10) / 10
+        },
+        week: {
+          drinks: drinksWeek,
+          usagePercent: Math.round(usagePercentWeek * 10) / 10
+        },
+        month: {
+          drinks: drinksMonth,
+          usagePercent: Math.round(usagePercentMonth * 10) / 10
+        },
+        allTime: {
+          drinks: drinksAllTime,
+          usagePercent: Math.round(usagePercentAllTime * 10) / 10
+        }
+      };
+    });
+
+    // Sort by all-time usage (descending)
+    ingredientStats.sort((a, b) => b.allTime.drinks - a.allTime.drinks);
+
+    return {
+      success: true,
+      data: {
+        ingredients: ingredientStats,
+        totalDrinks: {
+          today: totalDrinksToday,
+          week: totalDrinksWeek,
+          month: totalDrinksMonth,
+          allTime: totalDrinksAllTime
+        }
+      }
+    };
+  } catch (error) {
+    console.error("Failed to get ingredient usage statistics:", error);
+    return { success: false, message: "Database error" };
+  }
+}
