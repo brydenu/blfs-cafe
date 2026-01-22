@@ -16,6 +16,8 @@ export default function AdminSidebar({ queueCount }: AdminSidebarProps) {
   const navItems = [
     { label: "Overview", href: "/admin", icon: "📊" },
     { label: "Order History", href: "/admin/history", icon: "📜" },
+    { label: "Menu", href: "/admin/menu", icon: "☕" },
+    { label: "Featured Drinks", href: "/admin/featured-drinks", icon: "⭐" },
     { label: "Inventory", href: "/admin/inventory", icon: "📦" },
     { label: "Schedule", href: "/admin/schedule", icon: "📅" },
   ];

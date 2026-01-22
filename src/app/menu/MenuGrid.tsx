@@ -11,11 +11,12 @@ type AnyProduct = { id: number; name: string; description?: string | null; categ
 interface MenuGridProps {
   products: AnyProduct[];
   favorites: any[];
+  featuredDrinks?: any[];
   ingredients: any[];
   userName?: string; // Added to support "My Name" default
 }
 
-export default function MenuGrid({ products = [], favorites = [], ingredients = [], userName = "Guest" }: MenuGridProps) {
+export default function MenuGrid({ products = [], favorites = [], featuredDrinks = [], ingredients = [], userName = "Guest" }: MenuGridProps) {
   const { cartCount, orderMode, setOrderMode, addToCart } = useCart();
   const { showToast } = useToast();
   const router = useRouter();
@@ -23,6 +24,8 @@ export default function MenuGrid({ products = [], favorites = [], ingredients = 
   // --- STATE ---
   const [activeQuickAddId, setActiveQuickAddId] = useState<number | null>(null);
   const [quickAddName, setQuickAddName] = useState("");
+  const [favoritesExpanded, setFavoritesExpanded] = useState(true);
+  const [featuredExpanded, setFeaturedExpanded] = useState(true);
 
   // --- CONSTANT: LOGIC LOCK ---
   const isMultiForced = cartCount > 0;
@@ -49,10 +52,19 @@ export default function MenuGrid({ products = [], favorites = [], ingredients = 
     ? products 
     : products.filter((p) => p.category === activeCategory);
 
+  // Filter favorites and featured drinks by category
+  const filteredFavorites = activeCategory === "all"
+    ? favorites
+    : favorites.filter((fav) => fav.product.category === activeCategory);
 
-  // --- HELPER: CREATE ITEM FROM FAVORITE CONFIG ---
+  const filteredFeaturedDrinks = activeCategory === "all"
+    ? (featuredDrinks || [])
+    : (featuredDrinks || []).filter((fd) => fd.product.category === activeCategory);
+
+
+  // --- HELPER: CREATE ITEM FROM FAVORITE OR FEATURED CONFIG ---
   const createItemFromFavorite = (fav: any, nameOverride?: string) => {
-    const config = JSON.parse(fav.configuration); 
+    const config = typeof fav.configuration === 'string' ? JSON.parse(fav.configuration) : fav.configuration; 
     
     // Resolve Milk Name
     let milkName = "No Milk";
@@ -117,88 +129,21 @@ export default function MenuGrid({ products = [], favorites = [], ingredients = 
     showToast(`Added ${fav.product.name} for ${item.recipientName}`);
   };
 
+  // Helper function for category emoji
+  const getCategoryEmoji = (category: string) => {
+    switch (category.toLowerCase()) {
+      case 'coffee':
+        return '☕';
+      case 'tea':
+        return '🍵';
+      default:
+        return '🥤';
+    }
+  };
+
   return (
     <div className="w-full max-w-5xl mx-auto pb-20 relative">
       
-      {/* FAVORITES */}
-      {favorites.length > 0 && (
-        <div className="mb-12 animate-fade-in">
-            <h2 className="text-white text-lg font-bold mb-4 flex items-center gap-2 opacity-90">
-                <span className="text-yellow-400">★</span> Your Favorites
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {favorites.map((fav) => {
-                    const isEditing = activeQuickAddId === fav.id;
-                    
-                    // LOGIC UPDATE: Create the config string for the Customizer Link
-                    const configStr = encodeURIComponent(fav.configuration);
-
-                    return (
-                        <div 
-                            key={fav.id}
-                            className={`bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-xl transition-all relative overflow-hidden ${isEditing ? 'bg-white/20 ring-2 ring-[#32A5DC]' : 'hover:bg-white/20'}`}
-                        >
-                            {!isEditing && (
-                                <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-xl shadow-lg shrink-0">
-                                        {fav.product.category === 'coffee' ? '☕' : '🥤'}
-                                    </div>
-                                    <div className="min-w-0 flex-1">
-                                        <h3 className="text-white font-bold truncate">{fav.customName}</h3>
-                                        <p className="text-blue-200 text-xs truncate">{fav.product.name}</p>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        {/* LOGIC UPDATE: Pass 'config' so CustomizeForm loads it */}
-                                        <Link href={`/menu/${fav.product.id}?config=${configStr}&mode=${orderMode}`}>
-                                            <button className="w-8 h-8 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white hover:text-[#004876] transition-colors cursor-pointer" title="Customize">
-                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
-                                                </svg>
-                                            </button>
-                                        </Link>
-                                        <button 
-                                            onClick={() => handleQuickAddClick(fav)}
-                                            className="w-8 h-8 rounded-full bg-[#32A5DC] text-white flex items-center justify-center shadow-md hover:scale-110 transition-transform cursor-pointer" 
-                                            title={orderMode === 'single' ? "Order Now" : "Quick Add"}
-                                        >
-                                            +
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-
-                            {isEditing && (
-                                <div className="flex items-center gap-2 w-full animate-in fade-in zoom-in duration-200">
-                                    <input 
-                                        type="text" 
-                                        autoFocus
-                                        value={quickAddName}
-                                        onChange={(e) => setQuickAddName(e.target.value)}
-                                        placeholder="Name?"
-                                        className="flex-1 bg-white/90 text-[#004876] text-sm font-bold px-3 py-1.5 rounded-lg outline-none focus:ring-2 focus:ring-[#32A5DC]"
-                                        onKeyDown={(e) => e.key === 'Enter' && confirmQuickAdd(fav)}
-                                    />
-                                    <button 
-                                        onClick={() => confirmQuickAdd(fav)}
-                                        className="w-8 h-8 rounded-lg bg-[#32A5DC] text-white flex items-center justify-center shadow-lg hover:bg-[#288bba] cursor-pointer"
-                                    >
-                                        ✓
-                                    </button>
-                                    <button 
-                                        onClick={() => setActiveQuickAddId(null)}
-                                        className="w-8 h-8 rounded-lg bg-red-500/20 text-red-100 hover:bg-red-500 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
-                                    >
-                                        ✕
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    );
-                })}
-            </div>
-        </div>
-      )}
-
       {/* ORDER MODE TOGGLE */}
       <div className="flex justify-center mb-8">
         <div className="bg-white/10 p-1 rounded-full flex relative backdrop-blur-md border border-white/20">
@@ -247,96 +192,349 @@ export default function MenuGrid({ products = [], favorites = [], ingredients = 
         </div>
       </div>
 
-      {/* GRID */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {filteredProducts.map((product) => {
-          const isActive = product.isActive !== false; // Default to true if not specified
-          const getCategoryEmoji = (category: string) => {
-            switch (category.toLowerCase()) {
-              case 'coffee':
-                return '☕';
-              case 'tea':
-                return '🍵';
-              default:
-                return '🥤';
-            }
-          };
+      {/* FEATURED DRINKS */}
+      {filteredFeaturedDrinks.length > 0 && (
+        <div className="mb-12 animate-fade-in">
+            <button
+              onClick={() => setFeaturedExpanded(!featuredExpanded)}
+              className="text-blue-200 text-sm font-bold uppercase tracking-wider mb-4 flex items-center gap-2 hover:text-blue-100 transition-colors cursor-pointer w-full text-left"
+            >
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  fill="none" 
+                  viewBox="0 0 24 24" 
+                  strokeWidth={2.5} 
+                  stroke="currentColor" 
+                  className={`w-4 h-4 transition-transform duration-300 ${featuredExpanded ? 'rotate-90' : ''}`}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                </svg>
+                FEATURED DRINKS
+            </button>
+            <div 
+              className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                featuredExpanded ? 'max-h-[5000px] opacity-100' : 'max-h-0 opacity-0'
+              }`}
+            >
+              <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {filteredFeaturedDrinks.map((featured) => {
+                  const configStr = encodeURIComponent(JSON.stringify(featured.configuration));
 
-          if (!isActive) {
-            // Disabled product - not clickable
-            return (
-              <div key={product.id} className="block group">
-                <div className="bg-white/60 rounded-xl shadow-lg overflow-hidden flex min-h-[120px] relative opacity-60 cursor-not-allowed">
-                  {/* Disabled Badge */}
-                  <div className="absolute top-2 right-2 z-10 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
-                    Unavailable
-                  </div>
-                  
-                  <div className="w-24 sm:w-32 bg-gray-50 flex items-center justify-center shrink-0 border-r border-gray-100">
-                    {product.imageUrl ? (
-                      <img 
-                        src={product.imageUrl} 
-                        alt={product.name}
-                        className="w-full h-full object-cover grayscale"
-                      />
-                    ) : (
-                      <span className="text-4xl sm:text-5xl drop-shadow-sm filter grayscale">
-                        {getCategoryEmoji(product.category)}
-                      </span>
-                    )}
-                  </div>
+                  return (
+                    <Link 
+                      key={featured.id}
+                      href={`/menu/${featured.product.id}?config=${configStr}&mode=${orderMode}`}
+                      className="block group"
+                    >
+                      <div className="bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden flex transform hover:-translate-y-1 min-h-[120px] cursor-pointer">
+                        <div className="w-24 sm:w-32 bg-gray-50 flex items-center justify-center shrink-0 border-r border-gray-100 group-hover:bg-[#32A5DC]/10 transition-colors">
+                          {featured.product.imageUrl ? (
+                            <img 
+                              src={featured.product.imageUrl} 
+                              alt={featured.product.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-4xl sm:text-5xl drop-shadow-sm filter grayscale group-hover:grayscale-0 transition-all duration-300">
+                              {getCategoryEmoji(featured.product.category)}
+                            </span>
+                          )}
+                        </div>
 
-                  <div className="flex-1 p-5 flex flex-col justify-center">
-                    <h3 className="text-xl font-extrabold text-gray-500 mb-2">
-                      {product.name}
-                    </h3>
-                    <p className="text-gray-400 text-sm leading-relaxed line-clamp-2">
-                      {product.description || "No description available."}
-                    </p>
-                    {/* Spacer to match active card height - same structure as active card */}
-                    <div className="mt-3 opacity-0 text-xs font-bold text-[#32A5DC] uppercase tracking-wider flex items-center gap-1">
-                      <span>Customize</span> <span className="text-lg">→</span>
-                    </div>
-                  </div>
+                        <div className="flex-1 p-5 flex flex-col justify-center">
+                          <h3 className="text-xl font-extrabold text-[#004876] mb-2 group-hover:text-[#32A5DC] transition-colors">
+                            {featured.customName}
+                          </h3>
+                          <p className="text-gray-500 text-sm leading-relaxed line-clamp-2">
+                            {featured.description || featured.product.name}
+                          </p>
+                          <div className="mt-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-xs font-bold text-[#32A5DC] uppercase tracking-wider flex items-center gap-1">
+                            Customize <span className="text-lg">→</span>
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  );
+                })}
                 </div>
               </div>
-            );
+            </div>
+        </div>
+      )}
+
+      {/* FAVORITES */}
+      {filteredFavorites.length > 0 && (
+        <div className="mb-12 animate-fade-in">
+            <button
+              onClick={() => setFavoritesExpanded(!favoritesExpanded)}
+              className="text-blue-200 text-sm font-bold uppercase tracking-wider mb-4 flex items-center gap-2 hover:text-blue-100 transition-colors cursor-pointer w-full text-left"
+            >
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  fill="none" 
+                  viewBox="0 0 24 24" 
+                  strokeWidth={2.5} 
+                  stroke="currentColor" 
+                  className={`w-4 h-4 transition-transform duration-300 ${favoritesExpanded ? 'rotate-90' : ''}`}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                </svg>
+                YOUR FAVORITES
+            </button>
+            <div 
+              className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                favoritesExpanded ? 'max-h-[5000px] opacity-100' : 'max-h-0 opacity-0'
+              }`}
+            >
+              <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {filteredFavorites.map((fav) => {
+                  const configStr = encodeURIComponent(JSON.stringify(fav.configuration));
+
+                  return (
+                    <Link 
+                      key={fav.id}
+                      href={`/menu/${fav.product.id}?config=${configStr}&mode=${orderMode}`}
+                      className="block group"
+                    >
+                      <div className="bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden flex transform hover:-translate-y-1 min-h-[120px] cursor-pointer">
+                        <div className="w-24 sm:w-32 bg-gray-50 flex items-center justify-center shrink-0 border-r border-gray-100 group-hover:bg-[#32A5DC]/10 transition-colors">
+                          {fav.product.imageUrl ? (
+                            <img 
+                              src={fav.product.imageUrl} 
+                              alt={fav.product.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-4xl sm:text-5xl drop-shadow-sm filter grayscale group-hover:grayscale-0 transition-all duration-300">
+                              {getCategoryEmoji(fav.product.category)}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex-1 p-5 flex flex-col justify-center">
+                          <h3 className="text-xl font-extrabold text-[#004876] mb-2 group-hover:text-[#32A5DC] transition-colors">
+                            {fav.customName}
+                          </h3>
+                          <p className="text-gray-500 text-sm leading-relaxed line-clamp-2">
+                            {fav.product.name}
+                          </p>
+                          <div className="mt-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-xs font-bold text-[#32A5DC] uppercase tracking-wider flex items-center gap-1">
+                            Customize <span className="text-lg">→</span>
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  );
+                })}
+                </div>
+              </div>
+            </div>
+        </div>
+      )}
+
+      {/* GRID - Grouped by Category */}
+      {(() => {
+        // Group products by category
+        const productsByCategory: Record<string, typeof filteredProducts> = {};
+        filteredProducts.forEach((product) => {
+          const category = product.category.toLowerCase();
+          if (!productsByCategory[category]) {
+            productsByCategory[category] = [];
           }
+          productsByCategory[category].push(product);
+        });
 
-          // Active product - clickable
-          return (
-            <Link href={`/menu/${product.id}?mode=${orderMode}`} key={product.id} className="block group">
-              <div className="bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden flex transform hover:-translate-y-1 min-h-[120px] cursor-pointer">
-                <div className="w-24 sm:w-32 bg-gray-50 flex items-center justify-center shrink-0 border-r border-gray-100 group-hover:bg-[#32A5DC]/10 transition-colors">
-                  {product.imageUrl ? (
-                    <img 
-                      src={product.imageUrl} 
-                      alt={product.name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-4xl sm:text-5xl drop-shadow-sm filter grayscale group-hover:grayscale-0 transition-all duration-300">
-                      {getCategoryEmoji(product.category)}
-                    </span>
-                  )}
-                </div>
+        // Define category order and labels
+        const categoryOrder = ['coffee', 'tea', 'other'];
+        const categoryLabels: Record<string, string> = {
+          coffee: 'COFFEE',
+          tea: 'TEA',
+          other: 'OTHER'
+        };
 
-                <div className="flex-1 p-5 flex flex-col justify-center">
-                  <h3 className="text-xl font-extrabold text-[#004876] mb-2 group-hover:text-[#32A5DC] transition-colors">
-                    {product.name}
-                  </h3>
-                  <p className="text-gray-500 text-sm leading-relaxed line-clamp-2">
-                    {product.description || "No description available."}
-                  </p>
-                  <div className="mt-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-xs font-bold text-[#32A5DC] uppercase tracking-wider flex items-center gap-1">
-                    Customize <span className="text-lg">→</span>
+        return (
+          <>
+            {categoryOrder.map((catKey) => {
+              const categoryProducts = productsByCategory[catKey] || [];
+              if (categoryProducts.length === 0) return null;
+
+              return (
+                <div key={catKey} className="mb-12">
+                  <h2 className="text-blue-200 text-sm font-bold uppercase tracking-wider mb-4">
+                    {categoryLabels[catKey]}
+                  </h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {categoryProducts.map((product) => {
+                      const isActive = product.isActive !== false; // Default to true if not specified
+
+                      if (!isActive) {
+                        // Disabled product - not clickable
+                        return (
+                          <div key={product.id} className="block group">
+                            <div className="bg-white/60 rounded-xl shadow-lg overflow-hidden flex min-h-[120px] relative opacity-60 cursor-not-allowed">
+                              {/* Disabled Badge */}
+                              <div className="absolute top-2 right-2 z-10 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
+                                Unavailable
+                              </div>
+                              
+                              <div className="w-24 sm:w-32 bg-gray-50 flex items-center justify-center shrink-0 border-r border-gray-100">
+                                {product.imageUrl ? (
+                                  <img 
+                                    src={product.imageUrl} 
+                                    alt={product.name}
+                                    className="w-full h-full object-cover grayscale"
+                                  />
+                                ) : (
+                                  <span className="text-4xl sm:text-5xl drop-shadow-sm filter grayscale">
+                                    {getCategoryEmoji(product.category)}
+                                  </span>
+                                )}
+                              </div>
+
+                              <div className="flex-1 p-5 flex flex-col justify-center">
+                                <h3 className="text-xl font-extrabold text-gray-500 mb-2">
+                                  {product.name}
+                                </h3>
+                                <p className="text-gray-400 text-sm leading-relaxed line-clamp-2">
+                                  {product.description || "No description available."}
+                                </p>
+                                {/* Spacer to match active card height - same structure as active card */}
+                                <div className="mt-3 opacity-0 text-xs font-bold text-[#32A5DC] uppercase tracking-wider flex items-center gap-1">
+                                  <span>Customize</span> <span className="text-lg">→</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      // Active product - clickable
+                      return (
+                        <Link href={`/menu/${product.id}?mode=${orderMode}`} key={product.id} className="block group">
+                          <div className="bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden flex transform hover:-translate-y-1 min-h-[120px] cursor-pointer">
+                            <div className="w-24 sm:w-32 bg-gray-50 flex items-center justify-center shrink-0 border-r border-gray-100 group-hover:bg-[#32A5DC]/10 transition-colors">
+                              {product.imageUrl ? (
+                                <img 
+                                  src={product.imageUrl} 
+                                  alt={product.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <span className="text-4xl sm:text-5xl drop-shadow-sm filter grayscale group-hover:grayscale-0 transition-all duration-300">
+                                  {getCategoryEmoji(product.category)}
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="flex-1 p-5 flex flex-col justify-center">
+                              <h3 className="text-xl font-extrabold text-[#004876] mb-2 group-hover:text-[#32A5DC] transition-colors">
+                                {product.name}
+                              </h3>
+                              <p className="text-gray-500 text-sm leading-relaxed line-clamp-2">
+                                {product.description || "No description available."}
+                              </p>
+                              <div className="mt-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-xs font-bold text-[#32A5DC] uppercase tracking-wider flex items-center gap-1">
+                                Customize <span className="text-lg">→</span>
+                              </div>
+                            </div>
+                          </div>
+                        </Link>
+                      );
+                    })}
                   </div>
                 </div>
-              </div>
-            </Link>
-          );
-        })}
-      </div>
+              );
+            })}
+            {/* Handle any other categories not in the standard list */}
+            {Object.keys(productsByCategory).filter(cat => !categoryOrder.includes(cat)).map((catKey) => {
+              const categoryProducts = productsByCategory[catKey] || [];
+              if (categoryProducts.length === 0) return null;
+
+              return (
+                <div key={catKey} className="mb-12">
+                  <h2 className="text-blue-200 text-sm font-bold uppercase tracking-wider mb-4">
+                    {catKey.toUpperCase()}
+                  </h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {categoryProducts.map((product) => {
+                      const isActive = product.isActive !== false;
+
+                      if (!isActive) {
+                        return (
+                          <div key={product.id} className="block group">
+                            <div className="bg-white/60 rounded-xl shadow-lg overflow-hidden flex min-h-[120px] relative opacity-60 cursor-not-allowed">
+                              <div className="absolute top-2 right-2 z-10 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
+                                Unavailable
+                              </div>
+                              <div className="w-24 sm:w-32 bg-gray-50 flex items-center justify-center shrink-0 border-r border-gray-100">
+                                {product.imageUrl ? (
+                                  <img 
+                                    src={product.imageUrl} 
+                                    alt={product.name}
+                                    className="w-full h-full object-cover grayscale"
+                                  />
+                                ) : (
+                                  <span className="text-4xl sm:text-5xl drop-shadow-sm filter grayscale">
+                                    {getCategoryEmoji(product.category)}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex-1 p-5 flex flex-col justify-center">
+                                <h3 className="text-xl font-extrabold text-gray-500 mb-2">
+                                  {product.name}
+                                </h3>
+                                <p className="text-gray-400 text-sm leading-relaxed line-clamp-2">
+                                  {product.description || "No description available."}
+                                </p>
+                                <div className="mt-3 opacity-0 text-xs font-bold text-[#32A5DC] uppercase tracking-wider flex items-center gap-1">
+                                  <span>Customize</span> <span className="text-lg">→</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <Link href={`/menu/${product.id}?mode=${orderMode}`} key={product.id} className="block group">
+                          <div className="bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden flex transform hover:-translate-y-1 min-h-[120px] cursor-pointer">
+                            <div className="w-24 sm:w-32 bg-gray-50 flex items-center justify-center shrink-0 border-r border-gray-100 group-hover:bg-[#32A5DC]/10 transition-colors">
+                              {product.imageUrl ? (
+                                <img 
+                                  src={product.imageUrl} 
+                                  alt={product.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <span className="text-4xl sm:text-5xl drop-shadow-sm filter grayscale group-hover:grayscale-0 transition-all duration-300">
+                                  {getCategoryEmoji(product.category)}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex-1 p-5 flex flex-col justify-center">
+                              <h3 className="text-xl font-extrabold text-[#004876] mb-2 group-hover:text-[#32A5DC] transition-colors">
+                                {product.name}
+                              </h3>
+                              <p className="text-gray-500 text-sm leading-relaxed line-clamp-2">
+                                {product.description || "No description available."}
+                              </p>
+                              <div className="mt-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-xs font-bold text-[#32A5DC] uppercase tracking-wider flex items-center gap-1">
+                                Customize <span className="text-lg">→</span>
+                              </div>
+                            </div>
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </>
+        );
+      })()}
 
       {/* FLOATING CART BUTTON */}
       {cartCount > 0 && (

@@ -63,6 +63,25 @@ export default async function MenuPage() {
     }
   }
 
+  // 4. Fetch Featured Drinks
+  const rawFeaturedDrinks = await prisma.featuredDrink.findMany({
+    where: { isActive: true },
+    include: { product: true },
+    orderBy: { createdAt: 'desc' }
+  });
+
+  // Filter out featured drinks where product was deleted
+  const validFeaturedDrinks = rawFeaturedDrinks.filter(fd => fd.product && (fd.product as any).deletedAt === null);
+
+  const featuredDrinks = validFeaturedDrinks.map(fd => ({
+    ...fd,
+    customName: fd.name,
+    product: {
+      ...fd.product!,
+      basePrice: fd.product!.basePrice.toNumber()
+    }
+  }));
+
   return (
     <main className="relative min-h-screen p-6 overflow-hidden">
       
@@ -100,12 +119,13 @@ export default async function MenuPage() {
           </Link>
         </div>
 
-        {/* 4. Pass everything (INCLUDING USER NAME) to Grid */}
+        {/* 5. Pass everything (INCLUDING USER NAME) to Grid */}
         <MenuGrid 
             products={products} 
             favorites={favorites} 
+            featuredDrinks={featuredDrinks}
             ingredients={ingredients}
-            userName={userName} // <--- THIS WAS MISSING
+            userName={userName}
         />
 
       </div>
