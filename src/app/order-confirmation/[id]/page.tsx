@@ -46,15 +46,19 @@ export default async function OrderConfirmationPage({ params }: Props) {
     }))
   };
 
-  // 3. Calculate Queue Info
-  const ordersAhead = await prisma.order.count({
+  // 3. Calculate Queue Info (based on drinks/items ahead, not orders)
+  const itemsAhead = await prisma.orderItem.count({
     where: {
-      status: { in: ['queued', 'preparing'] },
-      createdAt: { lt: rawOrder.createdAt },
+      completed_at: null, // Only count items that haven't been completed
+      cancelled: false, // Exclude cancelled items
+      order: {
+        createdAt: { lt: rawOrder.createdAt }, // Only orders older than this one
+        status: { in: ['queued', 'preparing'] } // Only active orders
+      }
     }
   });
 
-  const estimatedMinutes = (ordersAhead * 3) + 3;
+  const estimatedMinutes = (itemsAhead * 3) + 3;
 
   // 4. Detect if this is a guest order (no userId)
   const isGuestOrder = !order.userId;
@@ -75,7 +79,7 @@ export default async function OrderConfirmationPage({ params }: Props) {
         {/* Unified Tracker Component */}
         <OrderTracker 
             order={order} 
-            ordersAhead={ordersAhead} 
+            ordersAhead={itemsAhead} 
             estimatedMinutes={estimatedMinutes} 
         />
 

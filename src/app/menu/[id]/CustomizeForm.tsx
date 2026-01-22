@@ -55,6 +55,37 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
   };
   const rules = getProductRules();
 
+  // --- PRESET LOGIC ---
+  // Get preset modifiers based on product name (only if no initialConfig)
+  const getPresetModifiers = (): Record<number, number> => {
+    if (initialConfig?.modifiers) return {}; // Don't override if editing
+    const name = product.name.toLowerCase();
+    const presetModifiers: Record<number, number> = {};
+    
+    // Find ingredient IDs
+    const vanilla = ingredients.find(i => i.name === 'Vanilla');
+    const caramelDrizzle = ingredients.find(i => i.name === 'Caramel Drizzle');
+    const matchaScoops = ingredients.find(i => i.name === 'Matcha Scoops');
+    
+    // Caramel Macchiato: 3 vanilla + caramel drizzle
+    if (name.includes('caramel macchiato')) {
+      if (vanilla) presetModifiers[vanilla.id] = 3;
+      if (caramelDrizzle) presetModifiers[caramelDrizzle.id] = 2; // Medium drizzle (2 = Medium in quantity selector)
+    }
+    
+    // London Fog: 4 vanilla
+    if (name.includes('london fog')) {
+      if (vanilla) presetModifiers[vanilla.id] = 4;
+    }
+    
+    // Matcha Latte: 2 scoops matcha
+    if (name.includes('matcha latte')) {
+      if (matchaScoops) presetModifiers[matchaScoops.id] = 2;
+    }
+    
+    return presetModifiers;
+  };
+
   // --- INGREDIENTS FILTER ---
   const milks = ingredients
     .filter(i => i.category === 'milk')
@@ -68,6 +99,11 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
   const sweeteners = ingredients.filter(i => i.category === 'sweetener');
   const toppings = ingredients.filter(i => i.category === 'topping');
   const allSyrups = ingredients.filter(i => i.category === 'syrup');
+  const otherIngredients = ingredients.filter(i => i.category === 'other');
+  
+  // Separate other ingredients by measurement type
+  const matchaScoops = otherIngredients.find(i => i.name === 'Matcha Scoops');
+  const chaiConcentrate = otherIngredients.find(i => i.name === 'Chai Concentrate');
   
   const featuredSyrups = allSyrups.filter(i => i.rank > 0).sort((a, b) => a.rank - b.rank);
   const otherSyrups = allSyrups.filter(i => i.rank === 0).sort((a, b) => a.name.localeCompare(b.name));
@@ -131,6 +167,12 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
           return availableMilk ? availableMilk.id : null;
         }
     }
+    // London Fog preset: whole milk
+    const name = product.name.toLowerCase();
+    if (name.includes('london fog') && !initialConfig?.milkId) {
+      const wholeMilk = milks.find(m => m.name === 'Whole' && m.isAvailable);
+      if (wholeMilk) return wholeMilk.id;
+    }
     // For new orders, prefer available milks
     if (product.requiresMilk && milks.length > 0) {
       const availableMilk = milks.find(m => m.isAvailable);
@@ -139,13 +181,42 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
     return null;
   });
 
-  const [modifiers, setModifiers] = useState<Record<number, number>>(initialConfig?.modifiers || {});
-  const [openSection, setOpenSection] = useState<string | null>(initialConfig.modifiers ? 'syrups' : null);
+  // Get preset modifiers
+  const presetModifiers = getPresetModifiers();
+  const initialModifiers = initialConfig?.modifiers || presetModifiers;
+  
+  const [modifiers, setModifiers] = useState<Record<number, number>>(initialModifiers);
+  
+  // Determine initial open section based on presets (after variables are defined)
+  const getInitialOpenSection = (): string | null => {
+    if (initialModifiers && Object.keys(initialModifiers).length > 0) {
+      // Check if matcha scoops or chai concentrate are preset
+      if (matchaScoops && initialModifiers[matchaScoops.id]) {
+        return 'other';
+      }
+      if (chaiConcentrate && initialModifiers[chaiConcentrate.id]) {
+        return 'other';
+      }
+      return 'syrups';
+    }
+    return null;
+  };
+  
+  const [openSection, setOpenSection] = useState<string | null>(getInitialOpenSection());
   
   // New customization fields
   const [personalCup, setPersonalCup] = useState(initialConfig?.personalCup || false);
   const [caffeineType, setCaffeineType] = useState(initialConfig?.caffeineType || "Normal");
-  const [milkSteamed, setMilkSteamed] = useState(initialConfig?.milkSteamed || false);
+  
+  // London Fog preset: steamed whole milk
+  const getPresetMilkSteamed = (): boolean => {
+    if (initialConfig?.milkSteamed !== undefined) return initialConfig.milkSteamed;
+    const name = product.name.toLowerCase();
+    if (name.includes('london fog')) return true;
+    return false;
+  };
+  
+  const [milkSteamed, setMilkSteamed] = useState(getPresetMilkSteamed());
   const [foamLevel, setFoamLevel] = useState(initialConfig?.foamLevel || "Normal");
   const [milkAmount, setMilkAmount] = useState(initialConfig?.milkAmount || "Normal");
   const [notes, setNotes] = useState(initialConfig?.notes || initialConfig?.specialInstructions || "");
@@ -727,6 +798,62 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
                 </div>
                );
             })}
+            {/* Other Ingredients (Matcha Scoops, Chai Concentrate, etc.) */}
+            {otherIngredients.length > 0 && (
+            <div className="border border-gray-200 rounded-xl overflow-hidden">
+                <button onClick={() => setOpenSection(openSection === 'other' ? null : 'other')} className="w-full flex justify-between items-center p-4 bg-white hover:bg-gray-50 transition-colors cursor-pointer">
+                    <span className="font-bold text-[#004876]">Add Other Ingredients</span>
+                    <span className="text-gray-400 text-xl transition-transform duration-200">{openSection === 'other' ? '−' : '+'}</span>
+                </button>
+                {openSection === 'other' && (
+                    <div className="px-4 pt-4 pb-12 bg-gray-50 border-t border-gray-100 accordion-expand">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Matcha Scoops - Counter */}
+                            {matchaScoops && (
+                                <div className={`flex justify-between items-center bg-white p-2 px-3 rounded-lg shadow-sm border border-gray-100 ${!matchaScoops.isAvailable ? 'opacity-60' : ''}`}>
+                                    <span className={`text-sm font-medium ${!matchaScoops.isAvailable ? 'text-gray-400' : 'text-gray-700'}`}>
+                                      {matchaScoops.name}
+                                      {!matchaScoops.isAvailable && <span className="text-xs text-gray-400 ml-1">(Out of Stock)</span>}
+                                    </span>
+                                    <Counter 
+                                      count={modifiers[matchaScoops.id] || 0} 
+                                      onMinus={() => handleModifierChange(matchaScoops.id, false)} 
+                                      onPlus={() => handleModifierChange(matchaScoops.id, true)} 
+                                      disabled={!matchaScoops.isAvailable}
+                                    />
+                                </div>
+                            )}
+                            
+                            {/* Chai Concentrate - Quantity Selector */}
+                            {chaiConcentrate && (
+                                <div className={`flex flex-col gap-2 bg-white p-3 rounded-lg shadow-sm border border-gray-100 ${!chaiConcentrate.isAvailable ? 'opacity-60' : ''}`}>
+                                    <span className={`text-sm font-medium ${!chaiConcentrate.isAvailable ? 'text-gray-400' : 'text-gray-700'}`}>
+                                      {chaiConcentrate.name}
+                                      {!chaiConcentrate.isAvailable && <span className="text-xs text-gray-400 ml-1">(Out of Stock)</span>}
+                                    </span>
+                                    <QuantitySelector
+                                        currentValue={modifiers[chaiConcentrate.id] || 0}
+                                        onChange={(value) => {
+                                            if (value === 0) {
+                                                setModifiers(prev => {
+                                                    const copy = { ...prev };
+                                                    delete copy[chaiConcentrate.id];
+                                                    return copy;
+                                                });
+                                            } else {
+                                                setModifiers(prev => ({ ...prev, [chaiConcentrate.id]: value }));
+                                            }
+                                        }}
+                                        ingredientId={chaiConcentrate.id}
+                                        disabled={!chaiConcentrate.isAvailable}
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+            </div>
+            )}
         </section>
 
         {/* Notes Field */}

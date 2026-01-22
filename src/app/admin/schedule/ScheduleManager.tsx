@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition, useRef } from "react";
+import { useState, useTransition, useRef, useEffect, useImperativeHandle, forwardRef, useMemo, useCallback } from "react";
 import { updateSchedule } from "../actions";
 
 interface ScheduleManagerProps {
@@ -17,75 +17,109 @@ interface ScheduleManagerProps {
     isSecondPeriodActive: boolean;
     isOpen: boolean;
   };
+  onUnsavedChange?: (hasUnsaved: boolean) => void;
 }
 
-export function ScheduleManager({ dayOfWeek, dayName, dayAbbr, schedule: initialSchedule }: ScheduleManagerProps) {
-  const [schedule, setSchedule] = useState(initialSchedule);
-  const [isPending, startTransition] = useTransition();
-  const savingRef = useRef(false);
+export interface ScheduleManagerRef {
+  save: () => Promise<boolean>;
+  hasUnsavedChanges: () => boolean;
+}
 
-  const handleSave = async (scheduleToSave: typeof schedule) => {
-    if (savingRef.current) return; // Prevent duplicate saves
-    
-    savingRef.current = true;
-    try {
-      const result = await updateSchedule(
-        dayOfWeek,
-        scheduleToSave.openTime1,
-        scheduleToSave.closeTime1,
-        scheduleToSave.openTime2 || null,
-        scheduleToSave.closeTime2 || null,
-        scheduleToSave.isSecondPeriodActive,
-        scheduleToSave.isOpen
+export const ScheduleManager = forwardRef<ScheduleManagerRef, ScheduleManagerProps>(
+  ({ dayOfWeek, dayName, dayAbbr, schedule: initialSchedule, onUnsavedChange }, ref) => {
+    const [schedule, setSchedule] = useState(initialSchedule);
+    const [savedSchedule, setSavedSchedule] = useState(initialSchedule);
+    const [isPending, startTransition] = useTransition();
+    const savingRef = useRef(false);
+
+    // Update savedSchedule when initialSchedule prop changes
+    useEffect(() => {
+      setSavedSchedule(initialSchedule);
+      setSchedule(initialSchedule);
+    }, [initialSchedule]);
+
+    // Check if there are unsaved changes (memoized)
+    const hasUnsavedChanges = useMemo(() => {
+      return (
+        schedule.openTime1 !== savedSchedule.openTime1 ||
+        schedule.closeTime1 !== savedSchedule.closeTime1 ||
+        schedule.openTime2 !== savedSchedule.openTime2 ||
+        schedule.closeTime2 !== savedSchedule.closeTime2 ||
+        schedule.isSecondPeriodActive !== savedSchedule.isSecondPeriodActive ||
+        schedule.isOpen !== savedSchedule.isOpen
       );
-      
-      if (!result.success) {
-        console.error('Failed to save schedule:', result.message);
-        // Revert the state change on error
-        setSchedule(initialSchedule);
+    }, [schedule, savedSchedule]);
+
+    // Notify parent of unsaved changes
+    useEffect(() => {
+      if (onUnsavedChange) {
+        onUnsavedChange(hasUnsavedChanges);
       }
-    } finally {
-      savingRef.current = false;
-    }
-  };
+    }, [hasUnsavedChanges, onUnsavedChange]);
 
-  const handleToggleOpen = () => {
-    if (isPending || savingRef.current) return;
-    
-    // Calculate new value
-    const newValue = !schedule.isOpen;
-    const newSchedule = { ...schedule, isOpen: newValue };
-    
-    // Update state
-    setSchedule(newSchedule);
-    
-    // Save with the new value
-    startTransition(async () => {
-      await handleSave(newSchedule);
-    });
-  };
+    // Function version for useImperativeHandle
+    const hasUnsavedChangesFn = useCallback(() => hasUnsavedChanges, [hasUnsavedChanges]);
 
-  const handleToggleSecondPeriod = () => {
-    if (isPending || savingRef.current) return;
-    
-    // Calculate new value
-    const newValue = !schedule.isSecondPeriodActive;
-    const newSchedule = { ...schedule, isSecondPeriodActive: newValue };
-    
-    // Update state
-    setSchedule(newSchedule);
-    
-    // Save with the new value
-    startTransition(async () => {
-      await handleSave(newSchedule);
-    });
-  };
+    // Save handler
+    const handleSave = useCallback(async () => {
+      if (savingRef.current || !hasUnsavedChanges) return true;
+      
+      savingRef.current = true;
+      try {
+        const result = await updateSchedule(
+          dayOfWeek,
+          schedule.openTime1,
+          schedule.closeTime1,
+          schedule.openTime2 || null,
+          schedule.closeTime2 || null,
+          schedule.isSecondPeriodActive,
+          schedule.isOpen
+        );
+        
+        if (result.success) {
+          // Update savedSchedule to reflect saved state
+          setSavedSchedule({ ...schedule });
+          return true;
+        } else {
+          console.error('Failed to save schedule:', result.message);
+          return false;
+        }
+      } finally {
+        savingRef.current = false;
+      }
+    }, [dayOfWeek, schedule, hasUnsavedChanges]);
 
-  const handleTimeChange = (field: 'openTime1' | 'closeTime1' | 'openTime2' | 'closeTime2', value: string) => {
-    setSchedule(prev => ({ ...prev, [field]: value }));
-    // Debounce save - could add debouncing here if needed
-    // For now, saving on blur or toggle is fine
-  };
+    // Expose save method and hasUnsavedChanges to parent via ref
+    useImperativeHandle(ref, () => ({
+      save: handleSave,
+      hasUnsavedChanges: hasUnsavedChangesFn
+    }), [handleSave, hasUnsavedChangesFn]);
+
+    const handleToggleOpen = () => {
+      if (isPending || savingRef.current) return;
+      
+      // Calculate new value
+      const newValue = !schedule.isOpen;
+      const newSchedule = { ...schedule, isOpen: newValue };
+      
+      // Update state only (no auto-save)
+      setSchedule(newSchedule);
+    };
+
+    const handleToggleSecondPeriod = () => {
+      if (isPending || savingRef.current) return;
+      
+      // Calculate new value
+      const newValue = !schedule.isSecondPeriodActive;
+      const newSchedule = { ...schedule, isSecondPeriodActive: newValue };
+      
+      // Update state only (no auto-save)
+      setSchedule(newSchedule);
+    };
+
+    const handleTimeChange = (field: 'openTime1' | 'closeTime1' | 'openTime2' | 'closeTime2', value: string) => {
+      setSchedule(prev => ({ ...prev, [field]: value }));
+    };
 
   const formatTime = (time: string) => {
     const [hours, minutes] = time.split(':');
@@ -147,7 +181,6 @@ export function ScheduleManager({ dayOfWeek, dayName, dayAbbr, schedule: initial
                 type="time"
                 value={schedule.openTime1}
                 onChange={(e) => handleTimeChange('openTime1', e.target.value)}
-                onBlur={() => startTransition(async () => { await handleSave(); })}
                 disabled={isPending}
                 className="bg-gray-800 text-white text-sm px-2 py-1 rounded border border-gray-700 focus:border-[#32A5DC] focus:outline-none disabled:opacity-50"
               />
@@ -156,7 +189,6 @@ export function ScheduleManager({ dayOfWeek, dayName, dayAbbr, schedule: initial
                 type="time"
                 value={schedule.closeTime1}
                 onChange={(e) => handleTimeChange('closeTime1', e.target.value)}
-                onBlur={() => startTransition(async () => { await handleSave(); })}
                 disabled={isPending}
                 className="bg-gray-800 text-white text-sm px-2 py-1 rounded border border-gray-700 focus:border-[#32A5DC] focus:outline-none disabled:opacity-50"
               />
@@ -188,7 +220,6 @@ export function ScheduleManager({ dayOfWeek, dayName, dayAbbr, schedule: initial
                     type="time"
                     value={schedule.openTime2 || ''}
                     onChange={(e) => handleTimeChange('openTime2', e.target.value)}
-                    onBlur={() => startTransition(async () => { await handleSave(); })}
                     disabled={isPending}
                     className="bg-gray-800 text-white text-sm px-2 py-1 rounded border border-gray-700 focus:border-[#32A5DC] focus:outline-none disabled:opacity-50"
                   />
@@ -197,7 +228,6 @@ export function ScheduleManager({ dayOfWeek, dayName, dayAbbr, schedule: initial
                     type="time"
                     value={schedule.closeTime2 || ''}
                     onChange={(e) => handleTimeChange('closeTime2', e.target.value)}
-                    onBlur={() => startTransition(async () => { await handleSave(); })}
                     disabled={isPending}
                     className="bg-gray-800 text-white text-sm px-2 py-1 rounded border border-gray-700 focus:border-[#32A5DC] focus:outline-none disabled:opacity-50"
                   />
@@ -221,4 +251,6 @@ export function ScheduleManager({ dayOfWeek, dayName, dayAbbr, schedule: initial
 
     </div>
   );
-}
+});
+
+ScheduleManager.displayName = 'ScheduleManager';

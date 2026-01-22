@@ -164,10 +164,11 @@ export async function getQueuePosition(orderId: number) {
   // If my order is done, I don't have a queue position
   if (currentOrder.status === 'completed' || currentOrder.status === 'cancelled') return null;
 
-  // 2. Count ONLY items that are NOT completed (completed_at IS NULL), from orders OLDER than mine
+  // 2. Count ONLY items that are NOT completed (completed_at IS NULL) and NOT cancelled, from orders OLDER than mine
   const itemsAhead = await prisma.orderItem.count({
     where: {
       completed_at: null, // strictly items yet to be made
+      cancelled: false, // exclude cancelled items
       order: {
         createdAt: { lt: currentOrder.createdAt }, // strictly older orders
         status: { in: ['queued', 'preparing'] } // from active orders only
