@@ -111,6 +111,14 @@ async function main() {
     ]
   })
 
+  // Other ingredients (Matcha scoops, Chai concentrate, etc.)
+  await prisma.ingredient.createMany({
+    data: [
+      { name: 'Matcha Scoops', category: 'other', rank: 1 },
+      { name: 'Chai Concentrate', category: 'other', rank: 2 },
+    ]
+  })
+
   // 3. SEED MENU
   console.log('☕ Seeding Menu...')
   
