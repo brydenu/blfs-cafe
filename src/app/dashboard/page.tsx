@@ -126,16 +126,16 @@ export default async function DashboardPage() {
         {/* --- ROW 1: ACTION BUTTONS (Blue) --- */}
         <div className="grid grid-cols-2 gap-4">
             <Link href="/menu" className="block">
-                <button className="w-full bg-[#32A5DC] hover:bg-[#288bba] text-white p-6 rounded-3xl shadow-xl transition-all hover:scale-[1.02] flex flex-col items-center gap-2 cursor-pointer group border border-white/10">
-                    <span className="text-4xl group-hover:scale-110 transition-transform duration-300">☕</span>
-                    <span className="font-black text-lg">Order Now</span>
+                <button className="w-full bg-[#32A5DC] hover:bg-[#288bba] text-white p-4 md:p-6 rounded-3xl shadow-xl transition-all hover:scale-[1.02] flex flex-col items-center justify-center gap-2 cursor-pointer group border border-white/10 h-[110px] md:h-auto md:min-h-[120px]">
+                    <span className="text-3xl md:text-4xl group-hover:scale-110 transition-transform duration-300">☕</span>
+                    <span className="font-black text-sm md:text-lg text-center leading-tight">Order Now</span>
                 </button>
             </Link>
             
             <Link href="/dashboard/quick-order" className="block">
-                <button className="w-full bg-[#32A5DC] hover:bg-[#288bba] text-white p-6 rounded-3xl shadow-xl transition-all hover:scale-[1.02] flex flex-col items-center gap-2 cursor-pointer group border border-white/10">
-                    <span className="text-4xl group-hover:scale-110 transition-transform duration-300">⚡</span>
-                    <span className="font-black text-lg">Quick Order</span>
+                <button className="w-full bg-[#32A5DC] hover:bg-[#288bba] text-white p-4 md:p-6 rounded-3xl shadow-xl transition-all hover:scale-[1.02] flex flex-col items-center justify-center gap-2 cursor-pointer group border border-white/10 h-[110px] md:h-auto md:min-h-[120px]">
+                    <span className="text-3xl md:text-4xl group-hover:scale-110 transition-transform duration-300">⚡</span>
+                    <span className="font-black text-sm md:text-lg text-center leading-tight">Quick Order</span>
                 </button>
             </Link>
         </div>

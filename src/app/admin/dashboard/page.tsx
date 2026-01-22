@@ -37,7 +37,7 @@ export default async function AdminDashboard() {
           <h1 className="text-3xl font-black text-white">Admin Dashboard</h1>
           <p className="text-gray-400 font-medium">Admin Control Center</p>
         </div>
-        <Link href="/dashboard" className="bg-gray-800 border border-gray-700 hover:border-[#32A5DC] text-white px-6 py-3 rounded-2xl font-medium transition-all">
+        <Link href="/dashboard" className="bg-[#32A5DC] hover:bg-[#288bba] text-white px-6 py-3 rounded-2xl font-medium transition-colors">
           User Dashboard
         </Link>
       </div>

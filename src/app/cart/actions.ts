@@ -15,7 +15,39 @@ export async function placeOrder(items: CartItem[]) {
   }
 
   try {
-    // 1. Resolve User
+    // 1. Validate ingredient availability
+    // Collect all ingredient IDs from modifiers and milk selections
+    const ingredientIds = new Set<number>();
+    items.forEach(item => {
+      // Add modifier ingredient IDs
+      Object.keys(item.modifiers || {}).forEach(idStr => {
+        ingredientIds.add(parseInt(idStr));
+      });
+      // Add milk ID if selected
+      if (item.milkId && item.milkId !== -1) {
+        ingredientIds.add(item.milkId);
+      }
+    });
+
+    // Check availability of all ingredients
+    if (ingredientIds.size > 0) {
+      const ingredients = await prisma.ingredient.findMany({
+        where: { id: { in: Array.from(ingredientIds) } },
+        select: { id: true, name: true, isAvailable: true }
+      });
+
+      const unavailableIngredients = ingredients.filter(ing => !ing.isAvailable);
+      
+      if (unavailableIngredients.length > 0) {
+        const ingredientNames = unavailableIngredients.map(ing => ing.name).join(', ');
+        return { 
+          success: false, 
+          message: `We're sorry, but the cafe is currently out of the following ingredient(s): ${ingredientNames}. Please remove them from your order and try again.` 
+        };
+      }
+    }
+
+    // 2. Resolve User
     let userId = null;
     let guestEmail = null;
     let guestName = null; // We could capture this from a form if needed

@@ -25,10 +25,10 @@ export default async function ProductPage({ params, searchParams }: Props) {
   if (!product) notFound();
 
   // 2. Fetch Ingredients
-  // Use isAvailable AND isShowing to hide out of stock and hidden items
+  // Only filter by isShowing - unavailable ingredients (isAvailable: false) will still show but be disabled
+  // Ingredients with isShowing: false are completely hidden
   const ingredients = await prisma.ingredient.findMany({
     where: { 
-      isAvailable: true,
       isShowing: true
     }, 
     orderBy: { rank: 'desc' }
