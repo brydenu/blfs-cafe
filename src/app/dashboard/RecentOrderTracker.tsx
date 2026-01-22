@@ -125,48 +125,48 @@ export default function RecentOrderTracker({ order }: RecentOrderTrackerProps) {
   const isOrderCancelled = activeOrder.status === 'cancelled';
 
   return (
-    <div className="bg-white rounded-3xl p-6 shadow-xl relative overflow-hidden animate-fade-in group">
+    <div className="bg-white rounded-3xl p-4 md:p-6 shadow-xl relative overflow-hidden animate-fade-in group">
         
-        {/* Header */}
-        <div className="flex justify-between items-start mb-6">
-            <div className="flex items-center gap-4">
+        {/* Header - Mobile: Stacked, Desktop: Side by side */}
+        <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-4 md:mb-6 gap-3 md:gap-0">
+            <div className="flex items-center gap-3 md:gap-4 flex-1 min-w-0">
                 
                 {/* NEW: Queue Position Box (Matches your White/Gray Theme) */}
                 {!isOrderComplete && !isOrderCancelled && queuePosition !== null && (
-                    <div className="bg-gray-50 border border-gray-100 p-3 rounded-2xl text-center min-w-[70px] flex flex-col justify-center">
-                        <div className="text-[10px] uppercase font-bold text-gray-400 leading-none mb-1">Queue</div>
-                        <div className="text-2xl font-black text-[#004876] leading-none">#{queuePosition}</div>
+                    <div className="bg-gray-50 border border-gray-100 p-2 md:p-3 rounded-xl md:rounded-2xl text-center min-w-[60px] md:min-w-[70px] flex flex-col justify-center flex-shrink-0">
+                        <div className="text-[9px] md:text-[10px] uppercase font-bold text-gray-400 leading-none mb-0.5 md:mb-1">Queue</div>
+                        <div className="text-xl md:text-2xl font-black text-[#004876] leading-none">#{queuePosition}</div>
                     </div>
                 )}
 
-                <div>
-                    <h3 className="text-[#004876] font-black text-2xl tracking-tight">
+                <div className="min-w-0 flex-1">
+                    <h3 className="text-[#004876] font-black text-lg md:text-2xl tracking-tight truncate">
                         {isOrderComplete ? "Order Ready" : isOrderCancelled ? "Order Cancelled" : "In Progress"}
                     </h3>
-                    <p className="text-gray-500 text-sm font-bold mt-1">
+                    <p className="text-gray-500 text-xs md:text-sm font-bold mt-0.5 md:mt-1">
                         {activeOrder.items.length} Item{activeOrder.items.length !== 1 ? 's' : ''} • {new Date(activeOrder.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                     </p>
                 </div>
             </div>
             
-            {/* Status Badge */}
+            {/* Status Badge - Mobile: Full width, Desktop: Auto */}
             {isOrderComplete ? (
-                <div className="bg-green-500 text-white px-5 py-2 rounded-xl font-bold text-sm shadow-md shadow-green-200 flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                <div className="bg-green-500 text-white px-4 md:px-5 py-2 rounded-xl font-bold text-xs md:text-sm shadow-md shadow-green-200 flex items-center justify-center md:justify-start gap-2 w-full md:w-auto flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 md:w-5 md:h-5">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
                     COMPLETED
                 </div>
             ) : isOrderCancelled ? (
-                <div className="bg-red-500 text-white px-5 py-2 rounded-xl font-bold text-sm shadow-md shadow-red-200 flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                <div className="bg-red-500 text-white px-4 md:px-5 py-2 rounded-xl font-bold text-xs md:text-sm shadow-md shadow-red-200 flex items-center justify-center md:justify-start gap-2 w-full md:w-auto flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 md:w-5 md:h-5">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clipRule="evenodd" />
                     </svg>
                     CANCELLED
                 </div>
             ) : (
-                <div className="bg-[#32A5DC] text-white px-5 py-2 rounded-xl font-bold text-sm shadow-md shadow-blue-200 flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                <div className="bg-[#32A5DC] text-white px-4 md:px-5 py-2 rounded-xl font-bold text-xs md:text-sm shadow-md shadow-blue-200 flex items-center justify-center md:justify-start gap-2 w-full md:w-auto flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 md:w-5 md:h-5">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
                     </svg>
                     IN-PROGRESS
@@ -174,8 +174,8 @@ export default function RecentOrderTracker({ order }: RecentOrderTrackerProps) {
             )}
         </div>
 
-        {/* Drinks List */}
-        <div className="space-y-3">
+        {/* Drinks List - Mobile: Stacked, Desktop: Side by side */}
+        <div className="space-y-2 md:space-y-3">
             {activeOrder.items.map((item: any) => {
                 // Prioritize cancelled over completed - check cancelled first
                 const isCancelled = item.cancelled === true;
@@ -188,19 +188,19 @@ export default function RecentOrderTracker({ order }: RecentOrderTrackerProps) {
                 item.modifiers.forEach((m:any) => details.push(`${m.ingredient.name}`));
 
                 return (
-                    <div key={item.id} className={`relative flex justify-between items-center bg-gray-50 p-4 rounded-2xl border hover:bg-gray-100 transition-colors ${
+                    <div key={item.id} className={`relative flex flex-col md:flex-row md:justify-between md:items-center bg-gray-50 p-3 md:p-4 rounded-xl md:rounded-2xl border hover:bg-gray-100 transition-colors gap-3 md:gap-0 ${
                         isCancelled ? 'border-red-300 bg-red-50/30' : 'border-gray-100'
                     }`}>
-                        <div className="flex items-center gap-4">
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg shadow-sm ${
+                        <div className="flex items-center gap-3 md:gap-4 flex-1 min-w-0">
+                            <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-base md:text-lg shadow-sm flex-shrink-0 ${
                                 isCancelled ? 'bg-red-100 text-red-600' :
                                 isItemDone ? 'bg-green-100 text-green-600' : 
                                 'bg-white text-gray-400 border border-gray-200'
                             }`}>
                                 {item.product.category === 'coffee' ? '☕' : '🥤'}
                             </div>
-                            <div>
-                                <p className={`font-bold text-base ${
+                            <div className="min-w-0 flex-1">
+                                <p className={`font-bold text-sm md:text-base truncate ${
                                     isCancelled ? 'text-red-600 line-through opacity-70' :
                                     isItemDone ? 'text-green-600 line-through opacity-60' : 
                                     'text-gray-800'
@@ -208,7 +208,7 @@ export default function RecentOrderTracker({ order }: RecentOrderTrackerProps) {
                                     {item.product.name}
                                 </p>
                                 {details.length > 0 && (
-                                    <p className={`text-xs mt-0.5 font-bold ${
+                                    <p className={`text-[10px] md:text-xs mt-0.5 font-bold line-clamp-2 ${
                                         isCancelled ? 'text-red-400' : 'text-gray-400'
                                     }`}>
                                         {details.join(" • ")}
@@ -217,23 +217,23 @@ export default function RecentOrderTracker({ order }: RecentOrderTrackerProps) {
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center justify-between md:justify-end gap-2 flex-shrink-0">
                             {/* Cancel Button - Two states: initial (small secondary) and confirming (red with Go Back) */}
                             {showCancelButton && (
                                 <>
                                     {confirmingItemId === item.id ? (
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-2 flex-1 md:flex-initial">
                                             <button
                                                 onClick={() => handleCancelItem(item.id)}
                                                 disabled={isCancelling}
-                                                className="px-3 py-1.5 text-xs font-bold text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+                                                className="px-2 md:px-3 py-1.5 text-[10px] md:text-xs font-bold text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors cursor-pointer disabled:opacity-50 flex-1 md:flex-initial"
                                             >
                                                 {isCancelling ? 'Cancelling...' : 'Confirm Cancel'}
                                             </button>
                                             <button
                                                 onClick={() => setConfirmingItemId(null)}
                                                 disabled={isCancelling}
-                                                className="px-3 py-1.5 text-xs font-bold text-gray-600 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+                                                className="px-2 md:px-3 py-1.5 text-[10px] md:text-xs font-bold text-gray-600 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors cursor-pointer disabled:opacity-50 flex-1 md:flex-initial"
                                             >
                                                 Go Back
                                             </button>
@@ -241,7 +241,7 @@ export default function RecentOrderTracker({ order }: RecentOrderTrackerProps) {
                                     ) : (
                                         <button
                                             onClick={() => setConfirmingItemId(item.id)}
-                                            className="px-2 py-1 text-xs font-bold text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 rounded border border-gray-300 transition-colors cursor-pointer"
+                                            className="px-2 py-1 text-[10px] md:text-xs font-bold text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 rounded border border-gray-300 transition-colors cursor-pointer whitespace-nowrap"
                                             disabled={isCancelling}
                                         >
                                             Cancel
@@ -252,12 +252,12 @@ export default function RecentOrderTracker({ order }: RecentOrderTrackerProps) {
 
                             {/* Item Status Icon - Prioritize cancelled */}
                             {isCancelled ? (
-                                <div className="bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs shadow-md font-bold">✕</div>
+                                <div className="bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px] md:text-xs shadow-md font-bold flex-shrink-0">✕</div>
                             ) : isItemDone ? (
-                                <div className="bg-green-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs shadow-md">✓</div>
+                                <div className="bg-green-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px] md:text-xs shadow-md flex-shrink-0">✓</div>
                             ) : (
-                                <div className="bg-[#32A5DC]/20 text-[#32A5DC] w-6 h-6 rounded-full flex items-center justify-center animate-pulse">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
+                                <div className="bg-[#32A5DC]/20 text-[#32A5DC] w-6 h-6 rounded-full flex items-center justify-center animate-pulse flex-shrink-0">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3 h-3 md:w-4 md:h-4">
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
                                 </div>
@@ -270,7 +270,7 @@ export default function RecentOrderTracker({ order }: RecentOrderTrackerProps) {
 
         {/* Notification Preferences */}
         {!isOrderComplete && !isOrderCancelled && (
-            <div className="mt-6 pt-6 border-t border-gray-200">
+            <div className="mt-4 md:mt-6 pt-4 md:pt-6 border-t border-gray-200">
                 <NotificationControls
                     order={activeOrder}
                     onUpdate={handleUpdateNotifications}
@@ -341,10 +341,10 @@ function NotificationControls({ order, onUpdate, isUpdating }: { order: any; onU
   };
 
   return (
-    <div className="space-y-4">
-      <label className="flex items-center justify-between cursor-pointer">
-        <span className="text-sm font-bold text-[#004876]">Notify me when this order is completed</span>
-        <label className="relative inline-flex items-center cursor-pointer">
+    <div className="space-y-3 md:space-y-4">
+      <label className="flex items-center justify-between cursor-pointer gap-2">
+        <span className="text-xs md:text-sm font-bold text-[#004876] flex-1">Notify me when this order is completed</span>
+        <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
           <input
             type="checkbox"
             checked={notificationsEnabled}
@@ -361,10 +361,10 @@ function NotificationControls({ order, onUpdate, isUpdating }: { order: any; onU
           showMethods ? 'max-h-32 opacity-100' : 'max-h-0 opacity-0'
         }`}
       >
-        <div className="ml-4 space-y-3 pl-4 border-l-2 border-gray-200 pt-2">
-          <label className="flex items-center justify-between cursor-pointer">
-            <span className="text-sm font-bold text-gray-700">Email</span>
-            <label className="relative inline-flex items-center cursor-pointer">
+        <div className="ml-2 md:ml-4 space-y-2 md:space-y-3 pl-2 md:pl-4 border-l-2 border-gray-200 pt-2">
+          <label className="flex items-center justify-between cursor-pointer gap-2">
+            <span className="text-xs md:text-sm font-bold text-gray-700 flex-1">Email</span>
+            <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
               <input
                 type="checkbox"
                 checked={emailEnabled}
@@ -376,9 +376,9 @@ function NotificationControls({ order, onUpdate, isUpdating }: { order: any; onU
             </label>
           </label>
           
-          <label className="flex items-center justify-between cursor-not-allowed opacity-50">
-            <span className="text-sm font-bold text-gray-500">SMS</span>
-            <label className="relative inline-flex items-center cursor-not-allowed">
+          <label className="flex items-center justify-between cursor-not-allowed opacity-50 gap-2">
+            <span className="text-xs md:text-sm font-bold text-gray-500 flex-1">SMS</span>
+            <label className="relative inline-flex items-center cursor-not-allowed flex-shrink-0">
               <input
                 type="checkbox"
                 checked={smsEnabled}

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useMemo, useRef } from "react";
-import { useRouter } from "next/navigation"; // Added for manual refresh backup
 import { completeOrderItem } from "./actions"; // New Action
 
 const MILK_COLORS: Record<string, string> = {
@@ -65,7 +64,6 @@ export default function TicketCard({ item }: { item: any }) {
   const [loading, setLoading] = useState(false);
   const [isPressing, setIsPressing] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
-  const router = useRouter();
   const cardRef = useRef<HTMLDivElement>(null);
 
   // Calculate time displays
@@ -78,21 +76,26 @@ export default function TicketCard({ item }: { item: any }) {
     setIsPressing(false);
     setLoading(true);
     
-    // Wait for animation to complete before removing from DOM
-    setTimeout(async () => {
-      // Call Server Action
+    // Call Server Action immediately (don't wait for animation)
+    // The socket event will trigger a refresh via QueueListener
+    try {
       const result = await completeOrderItem(item.id);
       
-      if (result.success) {
-        // Force a refresh after animation completes
-        router.refresh(); 
-      } else {
+      if (!result.success) {
         // Error: Reset state and alert
         alert("Failed to complete item. Check server console for errors.");
         setIsExiting(false);
         setLoading(false);
       }
-    }, 500); // Match animation duration
+      // If successful, the socket event will handle the refresh
+      // No need to call router.refresh() manually
+    } catch (error) {
+      // Error: Reset state and alert
+      console.error("Error completing item:", error);
+      alert("Failed to complete item. Check server console for errors.");
+      setIsExiting(false);
+      setLoading(false);
+    }
   };
 
   const handleMouseDown = () => {
@@ -240,8 +243,10 @@ export default function TicketCard({ item }: { item: any }) {
                  const key = Object.keys(MILK_COLORS).find(k => finalMilkName.includes(k));
                  if (key) colorClass = MILK_COLORS[key];
 
-                 // Add milk amount if present
-                 const milkDisplay = item.milkAmount ? `${item.milkAmount} ${finalMilkName}` : finalMilkName;
+                 // Add milk amount if present and not "Normal"
+                 const milkDisplay = item.milkAmount && item.milkAmount !== "Normal" 
+                     ? `${item.milkAmount} ${finalMilkName}` 
+                     : finalMilkName;
 
                  return (
                     <li className="flex">
@@ -253,11 +258,12 @@ export default function TicketCard({ item }: { item: any }) {
                })()
             )}
 
-            {/* FOAM LEVEL DISPLAY */}
-            {item.foamLevel && (
-                <li className="flex">
-                    <span className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-bold uppercase shadow-sm">
-                        Foam: {item.foamLevel}
+            {/* FOAM LEVEL DISPLAY (only show if not "Normal") */}
+            {item.foamLevel && item.foamLevel !== "Normal" && (
+                <li className="text-lg font-semibold text-gray-300 flex items-start gap-2.5">
+                    <span className="mt-2 w-1.5 h-1.5 bg-yellow-400 rounded-full shrink-0"></span>
+                    <span>
+                        {item.foamLevel} foam
                     </span>
                 </li>
             )}

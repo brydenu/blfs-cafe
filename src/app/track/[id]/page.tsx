@@ -67,7 +67,7 @@ export default async function GuestTrackerPage({ params }: Props) {
       </div>
 
       {/* Main Content */}
-      <div className="bg-white rounded-3xl p-8 text-center max-w-lg w-full shadow-2xl relative z-10 animate-fade-in">
+      <div className="bg-white rounded-3xl p-4 md:p-6 lg:p-8 text-center max-w-lg w-full shadow-2xl relative z-10 animate-fade-in mx-2 md:mx-0">
         
         {/* CLIENT COMPONENT: Handles Socket Listening & Live Updates */}
         <OrderTracker 

@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCart, CartItem } from "@/providers/CartProvider";
 import { useToast } from "@/providers/ToastProvider";
 import { placeOrder } from "@/app/cart/actions";
+import ErrorModal from "@/components/ErrorModal";
 
 interface CustomizeFormProps {
   product: Product;
@@ -25,6 +26,7 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
   const { addToCart, removeFromCart, clearCart, setOrderMode } = useCart();
   const { showToast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorModal, setErrorModal] = useState<{ isOpen: boolean; message: string }>({ isOpen: false, message: '' });
 
   // --- QUERY PARAMS ---
   const configParam = searchParams.get('config');
@@ -111,13 +113,30 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
   const [shots, setShots] = useState(initialConfig?.shots ?? product.defaultShots);
   
   const [selectedMilk, setSelectedMilk] = useState<number | null>(() => {
-    if (initialConfig?.milkId !== undefined) return initialConfig.milkId;
+    if (initialConfig?.milkId !== undefined) {
+      // If editing, check if the selected milk is still available
+      const milk = milks.find(m => m.id === initialConfig.milkId);
+      if (milk && milk.isAvailable) return initialConfig.milkId;
+      // If unavailable, try to find an available milk
+      const availableMilk = milks.find(m => m.isAvailable);
+      return availableMilk ? availableMilk.id : null;
+    }
     // Check if we can infer milk from name if editing from cart (legacy support)
     if (initialConfig?.milkName && initialConfig.milkName !== "No Milk") {
         const found = milks.find(m => m.name === initialConfig.milkName);
-        if (found) return found.id;
+        if (found && found.isAvailable) return found.id;
+        // If found but unavailable, try to find an available milk
+        if (found) {
+          const availableMilk = milks.find(m => m.isAvailable);
+          return availableMilk ? availableMilk.id : null;
+        }
     }
-    return product.requiresMilk && milks.length > 0 ? milks[0].id : null;
+    // For new orders, prefer available milks
+    if (product.requiresMilk && milks.length > 0) {
+      const availableMilk = milks.find(m => m.isAvailable);
+      return availableMilk ? availableMilk.id : null;
+    }
+    return null;
   });
 
   const [modifiers, setModifiers] = useState<Record<number, number>>(initialConfig?.modifiers || {});
@@ -133,6 +152,12 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
 
   // --- HANDLERS ---
   const handleModifierChange = (id: number, increment: boolean) => {
+    // Prevent adding unavailable ingredients
+    const ingredient = ingredients.find(i => i.id === id);
+    if (increment && ingredient && !ingredient.isAvailable) {
+      return; // Don't allow adding unavailable ingredients
+    }
+    
     setModifiers(prev => {
       const current = prev[id] || 0;
       const next = increment ? current + 1 : Math.max(0, current - 1);
@@ -247,12 +272,12 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
         clearCart();
         router.push(`/order-confirmation/${result.orderId}`);
       } else {
-        showToast(result.message || "Something went wrong.");
+        setErrorModal({ isOpen: true, message: result.message || "Something went wrong." });
         setIsSubmitting(false);
       }
     } catch (e) {
       console.error(e);
-      showToast("Network error. Please try again.");
+      setErrorModal({ isOpen: true, message: "Network error. Please try again." });
       setIsSubmitting(false);
     }
   };
@@ -270,16 +295,16 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
     router.push('/menu');
   };
 
-  const Counter = ({ count, onMinus, onPlus, colorClass = "text-[#32A5DC]" }: any) => (
-    <div className="flex items-center gap-3 bg-white rounded-full border border-gray-200 px-1 py-1 shadow-sm">
-      <button onClick={onMinus} disabled={count === 0} className="w-8 h-8 rounded-full bg-gray-100 text-gray-600 disabled:opacity-30 flex items-center justify-center hover:bg-gray-200 font-bold transition-colors cursor-pointer">-</button>
-      <span className={`w-6 text-center font-extrabold ${colorClass}`}>{count}</span>
-      <button onClick={onPlus} className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white transition-colors cursor-pointer ${colorClass.includes('32A5DC') ? 'bg-[#32A5DC] hover:bg-[#288bba]' : 'bg-[#004876] hover:bg-[#003355]'}`}>+</button>
+  const Counter = ({ count, onMinus, onPlus, colorClass = "text-[#32A5DC]", disabled = false }: any) => (
+    <div className={`flex items-center gap-3 bg-white rounded-full border border-gray-200 px-1 py-1 shadow-sm ${disabled ? 'opacity-50' : ''}`}>
+      <button onClick={onMinus} disabled={count === 0 || disabled} className="w-8 h-8 rounded-full bg-gray-100 text-gray-600 disabled:opacity-30 flex items-center justify-center hover:bg-gray-200 font-bold transition-colors cursor-pointer disabled:cursor-not-allowed">-</button>
+      <span className={`w-6 text-center font-extrabold ${colorClass} ${disabled ? 'text-gray-400' : ''}`}>{count}</span>
+      <button onClick={onPlus} disabled={disabled} className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white transition-colors ${disabled ? 'bg-gray-400 cursor-not-allowed' : colorClass.includes('32A5DC') ? 'bg-[#32A5DC] hover:bg-[#288bba] cursor-pointer' : 'bg-[#004876] hover:bg-[#003355] cursor-pointer'}`}>+</button>
     </div>
   );
 
   // Quantity Selector for Toppings (None, Light, Medium, Extra)
-  const QuantitySelector = ({ currentValue, onChange, ingredientId }: { currentValue: number, onChange: (value: number) => void, ingredientId: number }) => {
+  const QuantitySelector = ({ currentValue, onChange, ingredientId, disabled = false }: { currentValue: number, onChange: (value: number) => void, ingredientId: number, disabled?: boolean }) => {
     const options = [
       { label: "None", value: 0 },
       { label: "Light", value: 1 },
@@ -288,20 +313,26 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
     ];
 
     return (
-      <div className="flex bg-gray-100 p-1 rounded-lg gap-1">
-        {options.map((opt) => (
-          <button
-            key={opt.value}
-            onClick={() => onChange(opt.value)}
-            className={`flex-1 py-1.5 px-2 rounded text-xs font-bold transition-all ${
-              currentValue === opt.value
-                ? 'bg-white text-[#004876] shadow-sm'
-                : 'text-gray-600 hover:text-gray-800 cursor-pointer'
-            }`}
-          >
-            {opt.label}
-          </button>
-        ))}
+      <div className={`flex bg-gray-100 p-1 rounded-lg gap-1 ${disabled ? 'opacity-50' : ''}`}>
+        {options.map((opt) => {
+          const isDisabled = disabled && opt.value !== 0;
+          return (
+            <button
+              key={opt.value}
+              onClick={() => !isDisabled && onChange(opt.value)}
+              disabled={isDisabled}
+              className={`flex-1 py-1.5 px-2 rounded text-xs font-bold transition-all ${
+                isDisabled
+                  ? 'text-gray-400 cursor-not-allowed'
+                  : currentValue === opt.value
+                    ? 'bg-white text-[#004876] shadow-sm'
+                    : 'text-gray-600 hover:text-gray-800 cursor-pointer'
+              }`}
+            >
+              {opt.label}
+            </button>
+          );
+        })}
       </div>
     );
   };
@@ -472,9 +503,26 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <button onClick={() => setSelectedMilk(-1)} disabled={product.requiresMilk} className={`px-3 py-3 rounded-xl border-2 text-center text-sm font-bold transition-all ${product.requiresMilk ? 'opacity-40 cursor-not-allowed bg-gray-50 border-gray-100 text-gray-400' : selectedMilk === -1 ? 'border-gray-500 bg-gray-100 text-gray-800' : 'border-gray-100 text-gray-600 hover:border-gray-200 cursor-pointer'}`}>No Milk</button>
-            {milks.map((milk) => (
-              <button key={milk.id} onClick={() => setSelectedMilk(milk.id)} className={`px-3 py-3 rounded-xl border-2 text-center text-sm font-bold transition-all cursor-pointer ${selectedMilk === milk.id ? 'border-[#32A5DC] bg-[#32A5DC]/5 text-[#004876]' : 'border-gray-100 text-gray-600 hover:border-gray-200'}`}>{milk.name}</button>
-            ))}
+            {milks.map((milk) => {
+              const isUnavailable = !milk.isAvailable;
+              return (
+                <button 
+                  key={milk.id} 
+                  onClick={() => !isUnavailable && setSelectedMilk(milk.id)} 
+                  disabled={isUnavailable}
+                  className={`px-3 py-3 rounded-xl border-2 text-center text-sm font-bold transition-all ${
+                    isUnavailable 
+                      ? 'opacity-50 cursor-not-allowed bg-gray-50 border-gray-200 text-gray-400' 
+                      : selectedMilk === milk.id 
+                        ? 'border-[#32A5DC] bg-[#32A5DC]/5 text-[#004876] cursor-pointer' 
+                        : 'border-gray-100 text-gray-600 hover:border-gray-200 cursor-pointer'
+                  }`}
+                  title={isUnavailable ? 'Out of stock' : undefined}
+                >
+                  {milk.name}{isUnavailable && <span className="text-xs text-gray-400 ml-1">(Out of Stock)</span>}
+                </button>
+              );
+            })}
           </div>
         </section>
 
@@ -572,24 +620,47 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
                             <>
                                 <h4 className="text-sm font-bold text-[#004876] uppercase tracking-wide">Featured</h4>
                                 <div className="grid md:grid-cols-2 gap-3">
-                                    {featuredSyrups.map((item) => (
-                                        <div key={item.id} className="flex justify-between items-center bg-[#32A5DC]/5 border border-[#32A5DC]/20 p-2 px-3 rounded-lg shadow-sm">
-                                            <span className="text-sm font-bold text-[#004876]">{item.name}</span>
-                                            <Counter count={modifiers[item.id] || 0} onMinus={() => handleModifierChange(item.id, false)} onPlus={() => handleModifierChange(item.id, true)} />
+                                    {featuredSyrups.map((item) => {
+                                      const isUnavailable = !item.isAvailable;
+                                      return (
+                                        <div key={item.id} className={`flex justify-between items-center bg-[#32A5DC]/5 border border-[#32A5DC]/20 p-2 px-3 rounded-lg shadow-sm ${isUnavailable ? 'opacity-60' : ''}`}>
+                                            <span className={`text-sm font-bold ${isUnavailable ? 'text-gray-500' : 'text-[#004876]'}`}>
+                                              {item.name}
+                                              {isUnavailable && <span className="text-xs text-gray-400 ml-1">(Out of Stock)</span>}
+                                            </span>
+                                            <Counter 
+                                              count={modifiers[item.id] || 0} 
+                                              onMinus={() => handleModifierChange(item.id, false)} 
+                                              onPlus={() => handleModifierChange(item.id, true)} 
+                                              disabled={isUnavailable}
+                                            />
                                         </div>
-                                    ))}
+                                      );
+                                    })}
                                 </div>
                             </>
                         )}
                         {/* Other */}
                         {otherSyrups.length > 0 && (
                             <div className="grid md:grid-cols-2 gap-3 mt-2">
-                              {otherSyrups.map((item) => (
-                                  <div key={item.id} className="flex justify-between items-center bg-white p-2 px-3 rounded-lg shadow-sm border border-gray-100">
-                                      <span className="text-sm font-medium text-gray-700">{item.name}</span>
-                                      <Counter count={modifiers[item.id] || 0} onMinus={() => handleModifierChange(item.id, false)} onPlus={() => handleModifierChange(item.id, true)} colorClass="text-gray-600" />
+                              {otherSyrups.map((item) => {
+                                const isUnavailable = !item.isAvailable;
+                                return (
+                                  <div key={item.id} className={`flex justify-between items-center bg-white p-2 px-3 rounded-lg shadow-sm border border-gray-100 ${isUnavailable ? 'opacity-60' : ''}`}>
+                                      <span className={`text-sm font-medium ${isUnavailable ? 'text-gray-400' : 'text-gray-700'}`}>
+                                        {item.name}
+                                        {isUnavailable && <span className="text-xs text-gray-400 ml-1">(Out of Stock)</span>}
+                                      </span>
+                                      <Counter 
+                                        count={modifiers[item.id] || 0} 
+                                        onMinus={() => handleModifierChange(item.id, false)} 
+                                        onPlus={() => handleModifierChange(item.id, true)} 
+                                        colorClass="text-gray-600"
+                                        disabled={isUnavailable}
+                                      />
                                   </div>
-                              ))}
+                                );
+                              })}
                             </div>
                         )}
                     </div>
@@ -607,11 +678,16 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
                     </button>
                     {openSection === key && (
                         <div className="p-4 bg-gray-50 border-t border-gray-100 grid md:grid-cols-2 gap-3 accordion-expand">
-                            {list.map((item) => (
+                            {list.map((item) => {
+                              const isUnavailable = !item.isAvailable;
+                              return (
                                 idx === 0 ? (
                                     // Toppings: Use QuantitySelector with vertical layout
-                                    <div key={item.id} className="flex flex-col gap-2 bg-white p-3 rounded-lg shadow-sm border border-gray-100">
-                                        <span className="text-sm font-medium text-gray-700">{item.name}</span>
+                                    <div key={item.id} className={`flex flex-col gap-2 bg-white p-3 rounded-lg shadow-sm border border-gray-100 ${isUnavailable ? 'opacity-60' : ''}`}>
+                                        <span className={`text-sm font-medium ${isUnavailable ? 'text-gray-400' : 'text-gray-700'}`}>
+                                          {item.name}
+                                          {isUnavailable && <span className="text-xs text-gray-400 ml-1">(Out of Stock)</span>}
+                                        </span>
                                         <QuantitySelector
                                             currentValue={modifiers[item.id] || 0}
                                             onChange={(value) => {
@@ -626,16 +702,26 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
                                                 }
                                             }}
                                             ingredientId={item.id}
+                                            disabled={isUnavailable}
                                         />
                                     </div>
                                 ) : (
                                     // Sweeteners: Use Counter with same layout as syrups
-                                    <div key={item.id} className="flex justify-between items-center bg-white p-2 px-3 rounded-lg shadow-sm border border-gray-100">
-                                        <span className="text-sm font-medium text-gray-700">{item.name}</span>
-                                        <Counter count={modifiers[item.id] || 0} onMinus={() => handleModifierChange(item.id, false)} onPlus={() => handleModifierChange(item.id, true)} />
+                                    <div key={item.id} className={`flex justify-between items-center bg-white p-2 px-3 rounded-lg shadow-sm border border-gray-100 ${isUnavailable ? 'opacity-60' : ''}`}>
+                                        <span className={`text-sm font-medium ${isUnavailable ? 'text-gray-400' : 'text-gray-700'}`}>
+                                          {item.name}
+                                          {isUnavailable && <span className="text-xs text-gray-400 ml-1">(Out of Stock)</span>}
+                                        </span>
+                                        <Counter 
+                                          count={modifiers[item.id] || 0} 
+                                          onMinus={() => handleModifierChange(item.id, false)} 
+                                          onPlus={() => handleModifierChange(item.id, true)} 
+                                          disabled={isUnavailable}
+                                        />
                                     </div>
                                 )
-                            ))}
+                              );
+                            })}
                         </div>
                     )}
                 </div>
@@ -694,6 +780,13 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
         )}
 
       </div>
+      
+      {/* Error Modal */}
+      <ErrorModal
+        isOpen={errorModal.isOpen}
+        onClose={() => setErrorModal({ isOpen: false, message: '' })}
+        message={errorModal.message}
+      />
     </div>
   );
 }

@@ -5,12 +5,14 @@ import { useState, useEffect } from "react";
 import { placeOrder } from "./actions";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/providers/ToastProvider";
+import ErrorModal from "@/components/ErrorModal";
 
 export default function CartPage() {
   const { items, removeFromCart, clearCart, setOrderMode, updateItemName } = useCart(); 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
   const { showToast } = useToast();
+  const [errorModal, setErrorModal] = useState<{ isOpen: boolean; message: string }>({ isOpen: false, message: '' });
 
   const handleCheckout = async () => {
     setIsSubmitting(true);
@@ -23,12 +25,12 @@ export default function CartPage() {
         // FIX: Changed from 'order-confirmed' to 'order-confirmation' to match your folder structure
         router.push(`/order-confirmation/${result.orderId}`); 
       } else {
-        alert(result.message || "Something went wrong.");
+        setErrorModal({ isOpen: true, message: result.message || "Something went wrong." });
         setIsSubmitting(false);
       }
     } catch (e) {
       console.error(e);
-      alert("Network error.");
+      setErrorModal({ isOpen: true, message: "Network error. Please try again." });
       setIsSubmitting(false);
     }
   };
@@ -177,6 +179,13 @@ export default function CartPage() {
          </div>
 
        </div>
+       
+       {/* Error Modal */}
+       <ErrorModal
+         isOpen={errorModal.isOpen}
+         onClose={() => setErrorModal({ isOpen: false, message: '' })}
+         message={errorModal.message}
+       />
     </main>
   );
 }
