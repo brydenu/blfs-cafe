@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { io } from "socket.io-client";
 import { useToast } from "@/providers/ToastProvider";
-import { cancelOrderItem, updateOrderNotificationPreferences } from "@/app/dashboard/actions";
-import { cancelGuestOrderItem, updateGuestOrderNotifications } from "@/app/track/actions";
+import { cancelOrderItem, updateOrderNotificationPreferences, getQueuePosition } from "@/app/dashboard/actions";
+import { cancelGuestOrderItem, updateGuestOrderNotifications, getQueuePositionForOrder } from "@/app/track/actions";
 import { updateGuestEmail } from "../actions";
 
 export default function OrderTracker({ order, ordersAhead, estimatedMinutes }: any) {
@@ -13,6 +13,14 @@ export default function OrderTracker({ order, ordersAhead, estimatedMinutes }: a
   const { showToast } = useToast();
   const [isConnected, setIsConnected] = useState(false);
   const [activeOrder, setActiveOrder] = useState(order);
+  const [queuePosition, setQueuePosition] = useState<number | null>(ordersAhead === 0 ? 1 : ordersAhead + 1);
+  const [currentEstimatedMinutes, setCurrentEstimatedMinutes] = useState(estimatedMinutes);
+  const [queuePositionAnimating, setQueuePositionAnimating] = useState(false);
+  const completedItemsRef = useRef<Set<number>>(new Set());
+  const cancelledItemsRef = useRef<Set<number>>(new Set());
+  const isInitialLoadRef = useRef<boolean>(true);
+  const [animatingItems, setAnimatingItems] = useState<Set<number>>(new Set());
+  const [cancellingItems, setCancellingItems] = useState<Set<number>>(new Set());
   const [confirmingItemId, setConfirmingItemId] = useState<number | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
   const [updatingNotif, setUpdatingNotif] = useState(false);
@@ -25,14 +33,162 @@ export default function OrderTracker({ order, ordersAhead, estimatedMinutes }: a
   // Detect if this is a guest order
   const isGuestOrder = !order.userId;
 
+  // Track previous queue position to detect changes
+  const [prevQueuePosition, setPrevQueuePosition] = useState<number | null>(ordersAhead === 0 ? 1 : ordersAhead + 1);
+
   // Update activeOrder when order prop changes
   useEffect(() => {
     setActiveOrder(order);
     setEmail(order.guestEmail || '');
     setEmailSubmitted(!!order.guestEmail);
-  }, [order]);
+    // Initialize queue position from prop
+    const initialPos = ordersAhead === 0 ? 1 : ordersAhead + 1;
+    setQueuePosition(initialPos);
+    setPrevQueuePosition(initialPos);
+    setCurrentEstimatedMinutes(estimatedMinutes);
+    // Initialize completed and cancelled items refs and reset initial load flag
+    const initialCompleted = new Set<number>();
+    const initialCancelled = new Set<number>();
+    order.items.forEach((item: any) => {
+      if (item.completed_at !== null && !item.cancelled) {
+        initialCompleted.add(item.id);
+      }
+      if (item.cancelled === true) {
+        initialCancelled.add(item.id);
+      }
+    });
+    completedItemsRef.current = initialCompleted;
+    cancelledItemsRef.current = initialCancelled;
+    isInitialLoadRef.current = true; // Reset on new order
+  }, [order, ordersAhead, estimatedMinutes]);
+
+  // Detect queue position changes and trigger animation
+  useEffect(() => {
+    // Only animate if both positions are non-null and different (not on initial load)
+    if (queuePosition !== null && prevQueuePosition !== null && queuePosition !== prevQueuePosition) {
+      setQueuePositionAnimating(true);
+      // Reset animation state after animation completes
+      const timer = setTimeout(() => {
+        setQueuePositionAnimating(false);
+      }, 600); // Match animation duration
+      return () => clearTimeout(timer);
+    }
+    // Update previous position after checking
+    if (queuePosition !== null) {
+      setPrevQueuePosition(queuePosition);
+    }
+  }, [queuePosition, prevQueuePosition]);
+
+  // Detect newly completed/cancelled items and trigger animation
+  useEffect(() => {
+    // Skip animation detection on initial load
+    if (isInitialLoadRef.current) {
+      // Just update the refs without triggering animations
+      const initialCompletedSet = new Set<number>();
+      const initialCancelledSet = new Set<number>();
+      activeOrder.items.forEach((item: any) => {
+        if (item.completed_at !== null && !item.cancelled) {
+          initialCompletedSet.add(item.id);
+        }
+        if (item.cancelled === true) {
+          initialCancelledSet.add(item.id);
+        }
+      });
+      completedItemsRef.current = initialCompletedSet;
+      cancelledItemsRef.current = initialCancelledSet;
+      isInitialLoadRef.current = false;
+      return;
+    }
+
+    // After initial load, detect changes and trigger animations
+    const newlyCompleted: number[] = [];
+    const newlyCancelled: number[] = [];
+    
+    activeOrder.items.forEach((item: any) => {
+      const wasCompleted = completedItemsRef.current.has(item.id);
+      const wasCancelled = cancelledItemsRef.current.has(item.id);
+      const isNowCompleted = item.completed_at !== null && !item.cancelled;
+      const isNowCancelled = item.cancelled === true;
+      
+      // Only animate if transitioning from not-completed to completed
+      if (isNowCompleted && !wasCompleted && !wasCancelled) {
+        newlyCompleted.push(item.id);
+      }
+      
+      // Only animate if transitioning from not-cancelled to cancelled
+      if (isNowCancelled && !wasCancelled) {
+        newlyCancelled.push(item.id);
+      }
+    });
+
+    // Update completed items ref
+    const newCompletedSet = new Set<number>();
+    activeOrder.items.forEach((item: any) => {
+      if (item.completed_at !== null && !item.cancelled) {
+        newCompletedSet.add(item.id);
+      }
+    });
+    completedItemsRef.current = newCompletedSet;
+
+    // Update cancelled items ref
+    const newCancelledSet = new Set<number>();
+    activeOrder.items.forEach((item: any) => {
+      if (item.cancelled === true) {
+        newCancelledSet.add(item.id);
+      }
+    });
+    cancelledItemsRef.current = newCancelledSet;
+
+    // Trigger animations for newly completed items
+    if (newlyCompleted.length > 0) {
+      setAnimatingItems(new Set(newlyCompleted));
+      setTimeout(() => {
+        setAnimatingItems((prev) => {
+          const next = new Set(prev);
+          newlyCompleted.forEach(id => next.delete(id));
+          return next;
+        });
+      }, 600);
+    }
+
+    // Trigger animations for newly cancelled items
+    if (newlyCancelled.length > 0) {
+      setCancellingItems(new Set(newlyCancelled));
+      setTimeout(() => {
+        setCancellingItems((prev) => {
+          const next = new Set(prev);
+          newlyCancelled.forEach(id => next.delete(id));
+          return next;
+        });
+      }, 500);
+    }
+  }, [activeOrder.items]);
 
   const isOrderComplete = activeOrder.status === 'completed';
+
+  // Function to refresh queue position
+  const refreshQueuePosition = useCallback(async () => {
+    if (isOrderComplete || activeOrder.status === 'cancelled') {
+      setQueuePosition(null);
+      return;
+    }
+
+    try {
+      const pos = isGuestOrder 
+        ? await getQueuePositionForOrder(activeOrder.id)
+        : await getQueuePosition(activeOrder.id);
+      
+      if (pos !== null) {
+        setQueuePosition(pos);
+        // Update estimated minutes based on new queue position
+        setCurrentEstimatedMinutes((pos - 1) * 3 + 3);
+      } else {
+        setQueuePosition(null);
+      }
+    } catch (error) {
+      console.error('Error refreshing queue position:', error);
+    }
+  }, [activeOrder.id, activeOrder.status, isGuestOrder, isOrderComplete]);
 
   // --- Update Notification Preferences Handler ---
   const handleUpdateNotifications = async (enabled: boolean, emailEnabled?: boolean, smsEnabled?: boolean) => {
@@ -149,27 +305,41 @@ export default function OrderTracker({ order, ordersAhead, estimatedMinutes }: a
       console.log("🔔 Order Update Received:", data);
 
       // Match by orderId or publicId
-      if (String(data.orderId) !== String(activeOrder.id) && data.publicId !== activeOrder.publicId) return;
+      const isMyOrder = String(data.orderId) === String(activeOrder.id) || data.publicId === activeOrder.publicId;
 
-      if (data.type === 'item-completed') {
-        showToast(`☕ ${data.recipientName}'s ${data.itemName} is ready!`);
-        router.refresh();
+      if (isMyOrder) {
+        if (data.type === 'item-completed') {
+          showToast(`☕ ${data.recipientName}'s ${data.itemName} is ready!`);
+          router.refresh();
+        }
+
+        if (data.type === 'order-completed') {
+          showToast(`✅ Order Complete!`);
+          router.refresh();
+        }
+
+        if (data.type === 'item-cancelled' || data.type === 'order-cancelled') {
+          router.refresh();
+        }
       }
 
-      if (data.type === 'order-completed') {
-        showToast(`✅ Order Complete!`);
-        router.refresh();
+      // Update queue position when ANY order's items are completed/cancelled
+      // (because it affects our position in the queue)
+      if (data.type === 'item-completed' || data.type === 'item-cancelled' || data.type === 'order-completed' || data.type === 'order-cancelled') {
+        refreshQueuePosition();
       }
+    });
 
-      if (data.type === 'item-cancelled' || data.type === 'order-cancelled') {
-        router.refresh();
-      }
+    // Listen for global queue refresh events (when admin completes items, etc.)
+    socket.on("refresh-queue", () => {
+      console.log("🔄 Queue refresh event received");
+      refreshQueuePosition();
     });
 
     return () => {
       socket.disconnect();
     };
-  }, [activeOrder.id, activeOrder.publicId, router, showToast]);
+  }, [activeOrder.id, activeOrder.publicId, refreshQueuePosition, router, showToast]);
 
   return (
     <div className="relative w-full">
@@ -220,18 +390,22 @@ export default function OrderTracker({ order, ordersAhead, estimatedMinutes }: a
         )}
 
         {/* STATS (Hide if complete) */}
-        {!isOrderComplete && (
+        {!isOrderComplete && queuePosition !== null && (
             <div className="grid grid-cols-2 gap-3 md:gap-4 mb-6 md:mb-8 px-2 md:px-0">
-                <div className="bg-gray-50 rounded-xl p-3 md:p-4 border border-gray-200">
+                <div className={`relative bg-gray-50 rounded-xl p-3 md:p-4 border border-gray-200 ${
+                    queuePositionAnimating ? 'animate-queue-burst' : ''
+                }`}>
                     <span className="block text-gray-500 text-[9px] md:text-[10px] uppercase font-extrabold tracking-widest mb-1">Queue Position</span>
-                    <span className="text-2xl md:text-3xl font-extrabold text-[#004876] leading-none">
-                        {ordersAhead === 0 ? "1st" : `#${ordersAhead + 1}`}
+                    <span className={`relative inline-block text-2xl md:text-3xl font-extrabold text-[#004876] leading-none transition-all duration-300 ${
+                        queuePositionAnimating ? 'text-green-600 scale-110' : 'scale-100'
+                    }`}>
+                        {queuePosition === 1 ? "1st" : `#${queuePosition}`}
                     </span>
                 </div>
                 <div className="bg-gray-50 rounded-xl p-3 md:p-4 border border-gray-200">
                     <span className="block text-gray-500 text-[9px] md:text-[10px] uppercase font-extrabold tracking-widest mb-1">Est. Wait</span>
                     <span className="text-2xl md:text-3xl font-extrabold text-[#004876] leading-none">
-                        {estimatedMinutes} <span className="text-xs md:text-sm font-bold text-gray-500">min</span>
+                        {currentEstimatedMinutes} <span className="text-xs md:text-sm font-bold text-gray-500">min</span>
                     </span>
                 </div>
             </div>
@@ -253,10 +427,12 @@ export default function OrderTracker({ order, ordersAhead, estimatedMinutes }: a
                     const isItemDone = item.completed_at !== null && !isCancelled;
                     const isInProgress = item.completed_at === null && !isCancelled;
                     const showCancelButton = isInProgress;
+                    const isAnimating = animatingItems.has(item.id);
+                    const isCancellingAnim = cancellingItems.has(item.id);
                     return (
                         <div key={item.id} className={`relative p-3 md:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 transition-colors hover:bg-gray-100 bg-white ${
-                            isCancelled ? 'border-l-4 border-red-400 bg-red-50/30' : ''
-                        }`}>
+                            isCancelled ? 'bg-red-50/30' : ''
+                        } ${isAnimating ? 'animate-drink-completed' : ''} ${isCancellingAnim ? 'animate-drink-cancelled' : ''}`}>
                             <div className="flex-1 min-w-0">
                                 <p className={`font-bold text-xs md:text-sm truncate ${
                                     isCancelled ? 'text-red-600 line-through opacity-70' :
@@ -305,21 +481,38 @@ export default function OrderTracker({ order, ordersAhead, estimatedMinutes }: a
                                     </>
                                 )}
 
-                                {/* Status Icon - Prioritize cancelled */}
+                                {/* Status Icon - Mobile: Text tag, Desktop: Symbol */}
                                 {isCancelled ? (
-                                    <span className="bg-red-100 text-red-600 px-1.5 md:px-2 py-1 rounded text-[9px] md:text-[10px] font-bold uppercase tracking-wide border border-red-200 whitespace-nowrap">
-                                        Cancelled
-                                    </span>
+                                    <>
+                                        <span className="sm:hidden bg-red-100 text-red-600 px-2 py-1 rounded text-[9px] md:text-[10px] font-bold uppercase tracking-wide whitespace-nowrap">
+                                            Cancelled
+                                        </span>
+                                        <span className="hidden sm:inline-block bg-red-100 text-red-600 px-1.5 md:px-2 py-1 rounded text-[9px] md:text-[10px] font-bold uppercase tracking-wide whitespace-nowrap">
+                                            Cancelled
+                                        </span>
+                                    </>
                                 ) : isItemDone ? (
-                                    <span className="bg-green-100 text-green-600 p-1 md:p-1.5 rounded-full flex-shrink-0">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-3 h-3 md:w-4 md:h-4">
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                                        </svg>
-                                    </span>
+                                    <>
+                                        <span className="sm:hidden bg-green-100 text-green-600 px-2 py-1 rounded text-[9px] md:text-[10px] font-bold uppercase tracking-wide whitespace-nowrap">
+                                            Completed
+                                        </span>
+                                        <span className={`hidden sm:inline-flex bg-green-100 text-green-600 p-1 md:p-1.5 rounded-full flex-shrink-0 items-center justify-center transition-all duration-300 ${
+                                            isAnimating ? 'scale-125' : ''
+                                        }`}>
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-3 h-3 md:w-4 md:h-4">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                            </svg>
+                                        </span>
+                                    </>
                                 ) : (
-                                    <span className="bg-[#32A5DC]/10 text-[#32A5DC] px-1.5 md:px-2 py-1 rounded text-[9px] md:text-[10px] font-bold uppercase tracking-wide whitespace-nowrap">
-                                        In-progress
-                                    </span>
+                                    <>
+                                        <span className="sm:hidden bg-[#32A5DC]/10 text-[#32A5DC] px-2 py-1 rounded text-[9px] md:text-[10px] font-bold uppercase tracking-wide whitespace-nowrap">
+                                            In Progress
+                                        </span>
+                                        <span className="hidden sm:inline-block bg-[#32A5DC]/10 text-[#32A5DC] px-1.5 md:px-2 py-1 rounded text-[9px] md:text-[10px] font-bold uppercase tracking-wide whitespace-nowrap">
+                                            In-progress
+                                        </span>
+                                    </>
                                 )}
                             </div>
                         </div>

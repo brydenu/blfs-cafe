@@ -127,6 +127,40 @@ export async function updateGuestOrderNotifications(
   }
 }
 
+// Get queue position for any order (works for both authenticated and guest orders)
+export async function getQueuePositionForOrder(orderId: number) {
+  try {
+    // 1. Get current order info
+    const currentOrder = await prisma.order.findUnique({
+      where: { id: orderId },
+      select: { createdAt: true, status: true }
+    });
+
+    if (!currentOrder) return null;
+    
+    // If my order is done, I don't have a queue position
+    if (currentOrder.status === 'completed' || currentOrder.status === 'cancelled') return null;
+
+    // 2. Count ONLY items that are NOT completed (completed_at IS NULL) and NOT cancelled, from orders OLDER than mine
+    const itemsAhead = await prisma.orderItem.count({
+      where: {
+        completed_at: null, // strictly items yet to be made
+        cancelled: false, // exclude cancelled items
+        order: {
+          createdAt: { lt: currentOrder.createdAt }, // strictly older orders
+          status: { in: ['queued', 'preparing'] } // from active orders only
+        }
+      }
+    });
+
+    // 3. My position is (Items Ahead) + 1
+    return itemsAhead + 1;
+  } catch (error) {
+    console.error("Failed to get queue position:", error);
+    return null;
+  }
+}
+
 // Cancel order item for guest orders
 export async function cancelGuestOrderItem(itemId: number, publicId: string) {
   try {

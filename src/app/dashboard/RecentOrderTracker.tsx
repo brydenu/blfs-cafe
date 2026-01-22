@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { io } from "socket.io-client";
 import { fetchSingleOrder, getQueuePosition, cancelOrderItem, updateOrderNotificationPreferences } from "./actions";
 
@@ -11,6 +11,13 @@ interface RecentOrderTrackerProps {
 export default function RecentOrderTracker({ order }: RecentOrderTrackerProps) {
   const [activeOrder, setActiveOrder] = useState(order);
   const [queuePosition, setQueuePosition] = useState<number | null>(null);
+  const [queuePositionAnimating, setQueuePositionAnimating] = useState(false);
+  const [prevQueuePosition, setPrevQueuePosition] = useState<number | null>(null);
+  const completedItemsRef = useRef<Set<number>>(new Set());
+  const cancelledItemsRef = useRef<Set<number>>(new Set());
+  const isInitialLoadRef = useRef<boolean>(true);
+  const [animatingItems, setAnimatingItems] = useState<Set<number>>(new Set());
+  const [cancellingItems, setCancellingItems] = useState<Set<number>>(new Set());
   const [confirmingItemId, setConfirmingItemId] = useState<number | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
   const [updatingNotif, setUpdatingNotif] = useState(false);
@@ -20,7 +27,88 @@ export default function RecentOrderTracker({ order }: RecentOrderTrackerProps) {
     // 1. Update Order Details
     const updatedOrder = await fetchSingleOrder(activeOrder.publicId);
     if (updatedOrder) {
-      setActiveOrder(updatedOrder);
+      // On initial load, just set the refs without triggering animations
+      if (isInitialLoadRef.current) {
+        const initialCompletedSet = new Set<number>();
+        const initialCancelledSet = new Set<number>();
+        updatedOrder.items.forEach((item: any) => {
+          if (item.completed_at !== null && !item.cancelled) {
+            initialCompletedSet.add(item.id);
+          }
+          if (item.cancelled === true) {
+            initialCancelledSet.add(item.id);
+          }
+        });
+        completedItemsRef.current = initialCompletedSet;
+        cancelledItemsRef.current = initialCancelledSet;
+        isInitialLoadRef.current = false;
+        setActiveOrder(updatedOrder);
+      } else {
+        // After initial load, detect changes and trigger animations
+        const newlyCompleted: number[] = [];
+        const newlyCancelled: number[] = [];
+        
+        updatedOrder.items.forEach((item: any) => {
+          const wasCompleted = completedItemsRef.current.has(item.id);
+          const wasCancelled = cancelledItemsRef.current.has(item.id);
+          const isNowCompleted = item.completed_at !== null && !item.cancelled;
+          const isNowCancelled = item.cancelled === true;
+          
+          // Only animate if transitioning from not-completed to completed
+          if (isNowCompleted && !wasCompleted && !wasCancelled) {
+            newlyCompleted.push(item.id);
+          }
+          
+          // Only animate if transitioning from not-cancelled to cancelled
+          if (isNowCancelled && !wasCancelled) {
+            newlyCancelled.push(item.id);
+          }
+        });
+
+        // Update completed items ref
+        const newCompletedSet = new Set<number>();
+        updatedOrder.items.forEach((item: any) => {
+          if (item.completed_at !== null && !item.cancelled) {
+            newCompletedSet.add(item.id);
+          }
+        });
+        completedItemsRef.current = newCompletedSet;
+
+        // Update cancelled items ref
+        const newCancelledSet = new Set<number>();
+        updatedOrder.items.forEach((item: any) => {
+          if (item.cancelled === true) {
+            newCancelledSet.add(item.id);
+          }
+        });
+        cancelledItemsRef.current = newCancelledSet;
+
+        // Trigger animations for newly completed items
+        if (newlyCompleted.length > 0) {
+          setAnimatingItems(new Set(newlyCompleted));
+          setTimeout(() => {
+            setAnimatingItems((prev) => {
+              const next = new Set(prev);
+              newlyCompleted.forEach(id => next.delete(id));
+              return next;
+            });
+          }, 600);
+        }
+
+        // Trigger animations for newly cancelled items
+        if (newlyCancelled.length > 0) {
+          setCancellingItems(new Set(newlyCancelled));
+          setTimeout(() => {
+            setCancellingItems((prev) => {
+              const next = new Set(prev);
+              newlyCancelled.forEach(id => next.delete(id));
+              return next;
+            });
+          }, 500);
+        }
+
+        setActiveOrder(updatedOrder);
+      }
     }
 
     // 2. Update Queue Position (Only if not complete)
@@ -32,9 +120,40 @@ export default function RecentOrderTracker({ order }: RecentOrderTrackerProps) {
     }
   }, [activeOrder.publicId]);
 
+  // Detect queue position changes and trigger animation
+  useEffect(() => {
+    // Only animate if both positions are non-null and different (not on initial load)
+    if (queuePosition !== null && prevQueuePosition !== null && queuePosition !== prevQueuePosition) {
+      setQueuePositionAnimating(true);
+      // Reset animation state after animation completes
+      const timer = setTimeout(() => {
+        setQueuePositionAnimating(false);
+      }, 600); // Match animation duration
+      return () => clearTimeout(timer);
+    }
+    // Update previous position after checking
+    if (queuePosition !== null) {
+      setPrevQueuePosition(queuePosition);
+    }
+  }, [queuePosition, prevQueuePosition]);
+
   // Update activeOrder when order prop changes
   useEffect(() => {
     setActiveOrder(order);
+    // Initialize completed and cancelled items refs and reset initial load flag
+    const initialCompleted = new Set<number>();
+    const initialCancelled = new Set<number>();
+    order.items.forEach((item: any) => {
+      if (item.completed_at !== null && !item.cancelled) {
+        initialCompleted.add(item.id);
+      }
+      if (item.cancelled === true) {
+        initialCancelled.add(item.id);
+      }
+    });
+    completedItemsRef.current = initialCompleted;
+    cancelledItemsRef.current = initialCancelled;
+    isInitialLoadRef.current = true; // Reset on new order
   }, [order]);
 
   // --- Initial Load ---
@@ -133,9 +252,15 @@ export default function RecentOrderTracker({ order }: RecentOrderTrackerProps) {
                 
                 {/* NEW: Queue Position Box (Matches your White/Gray Theme) */}
                 {!isOrderComplete && !isOrderCancelled && queuePosition !== null && (
-                    <div className="bg-gray-50 border border-gray-100 p-2 md:p-3 rounded-xl md:rounded-2xl text-center min-w-[60px] md:min-w-[70px] flex flex-col justify-center flex-shrink-0">
+                    <div className={`relative bg-gray-50 border border-gray-100 p-2 md:p-3 rounded-xl md:rounded-2xl text-center min-w-[60px] md:min-w-[70px] flex flex-col justify-center flex-shrink-0 ${
+                        queuePositionAnimating ? 'animate-queue-burst' : ''
+                    }`}>
                         <div className="text-[9px] md:text-[10px] uppercase font-bold text-gray-400 leading-none mb-0.5 md:mb-1">Queue</div>
-                        <div className="text-xl md:text-2xl font-black text-[#004876] leading-none">#{queuePosition}</div>
+                        <div className={`relative inline-block text-xl md:text-2xl font-black leading-none transition-all duration-300 ${
+                            queuePositionAnimating ? 'text-green-600 scale-110' : 'text-[#004876] scale-100'
+                        }`}>
+                            #{queuePosition}
+                        </div>
                     </div>
                 )}
 
@@ -187,10 +312,13 @@ export default function RecentOrderTracker({ order }: RecentOrderTrackerProps) {
                 if (item.shots > 0) details.push(`${item.shots} Shots`);
                 item.modifiers.forEach((m:any) => details.push(`${m.ingredient.name}`));
 
+                const isAnimating = animatingItems.has(item.id);
+                const isCancellingAnim = cancellingItems.has(item.id);
+
                 return (
                     <div key={item.id} className={`relative flex flex-col md:flex-row md:justify-between md:items-center bg-gray-50 p-3 md:p-4 rounded-xl md:rounded-2xl border hover:bg-gray-100 transition-colors gap-3 md:gap-0 ${
-                        isCancelled ? 'border-red-300 bg-red-50/30' : 'border-gray-100'
-                    }`}>
+                        isCancelled ? 'bg-red-50/30' : 'border-gray-100'
+                    } ${isAnimating ? 'animate-drink-completed' : ''} ${isCancellingAnim ? 'animate-drink-cancelled' : ''}`}>
                         <div className="flex items-center gap-3 md:gap-4 flex-1 min-w-0">
                             <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-base md:text-lg shadow-sm flex-shrink-0 ${
                                 isCancelled ? 'bg-red-100 text-red-600' :
@@ -250,17 +378,32 @@ export default function RecentOrderTracker({ order }: RecentOrderTrackerProps) {
                                 </>
                             )}
 
-                            {/* Item Status Icon - Prioritize cancelled */}
+                            {/* Item Status Icon - Mobile: Text tag, Desktop: Symbol */}
                             {isCancelled ? (
-                                <div className="bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px] md:text-xs shadow-md font-bold flex-shrink-0">✕</div>
+                                <>
+                                    <span className="md:hidden bg-red-100 text-red-600 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide whitespace-nowrap">
+                                        Cancelled
+                                    </span>
+                                    <div className="hidden md:flex bg-red-500 text-white w-6 h-6 rounded-full items-center justify-center text-[10px] md:text-xs shadow-md font-bold flex-shrink-0">✕</div>
+                                </>
                             ) : isItemDone ? (
-                                <div className="bg-green-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px] md:text-xs shadow-md flex-shrink-0">✓</div>
+                                <>
+                                    <span className="md:hidden bg-green-100 text-green-600 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide whitespace-nowrap">
+                                        Completed
+                                    </span>
+                                    <div className="hidden md:flex bg-green-500 text-white w-6 h-6 rounded-full items-center justify-center text-[10px] md:text-xs shadow-md flex-shrink-0">✓</div>
+                                </>
                             ) : (
-                                <div className="bg-[#32A5DC]/20 text-[#32A5DC] w-6 h-6 rounded-full flex items-center justify-center animate-pulse flex-shrink-0">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3 h-3 md:w-4 md:h-4">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                </div>
+                                <>
+                                    <span className="md:hidden bg-[#32A5DC]/10 text-[#32A5DC] px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide whitespace-nowrap">
+                                        In Progress
+                                    </span>
+                                    <div className="hidden md:flex bg-[#32A5DC]/20 text-[#32A5DC] w-6 h-6 rounded-full items-center justify-center animate-pulse flex-shrink-0">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3 h-3 md:w-4 md:h-4">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                    </div>
+                                </>
                             )}
                         </div>
                     </div>
