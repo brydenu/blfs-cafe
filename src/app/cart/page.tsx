@@ -50,7 +50,7 @@ export default function CartPage() {
         milkId: item.milkId,
         modifiers: item.modifiers,
         recipientName: item.recipientName,
-        personalCup: item.personalCup,
+        cupType: item.cupType,
         caffeineType: item.caffeineType,
         notes: item.notes
     };

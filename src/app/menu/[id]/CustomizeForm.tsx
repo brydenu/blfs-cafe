@@ -205,7 +205,7 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
   const [openSection, setOpenSection] = useState<string | null>(getInitialOpenSection());
   
   // New customization fields
-  const [personalCup, setPersonalCup] = useState(initialConfig?.personalCup || false);
+  const [cupType, setCupType] = useState(initialConfig?.cupType || initialConfig?.personalCup === true ? 'personal' : 'to-go');
   const [caffeineType, setCaffeineType] = useState(initialConfig?.caffeineType || "Normal");
   
   // London Fog preset: steamed whole milk
@@ -243,7 +243,7 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
       temperature: `${baseTemp}${tempLevel !== 'Standard' ? ` - ${tempLevel}` : ''}`,
       milkId: selectedMilk !== null && selectedMilk !== -1 ? selectedMilk : null,
       modifiers: modifiers,
-      personalCup: personalCup,
+      cupType: cupType,
       caffeineType: shots > 0 ? caffeineType : undefined,
       milkSteamed: (baseTemp === "Hot" && !product.requiresMilk && selectedMilk !== null && selectedMilk !== -1) ? milkSteamed : undefined,
       foamLevel: (baseTemp === "Hot" && (milkSteamed || product.requiresMilk)) ? foamLevel : undefined,
@@ -258,7 +258,7 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
       onConfigChange(buildConfiguration());
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shots, baseTemp, tempLevel, selectedMilk, modifiers, personalCup, caffeineType, milkSteamed, foamLevel, milkAmount, notes]);
+  }, [shots, baseTemp, tempLevel, selectedMilk, modifiers, cupType, caffeineType, milkSteamed, foamLevel, milkAmount, notes]);
 
   const createCartItem = (): CartItem => {
     let milkName = "No Milk";
@@ -293,7 +293,7 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
       modifiers: config.modifiers,
       // Pass config back so it can be re-edited later
       milkId: config.milkId || undefined,
-      personalCup: config.personalCup,
+      cupType: config.cupType,
       caffeineType: config.caffeineType,
       milkSteamed: config.milkSteamed,
       foamLevel: config.foamLevel,
@@ -551,17 +551,20 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
 
         <hr className="border-gray-100" />
         
-        {/* Personal Cup Checkbox */}
+        {/* Cup Type Selection */}
         <section>
-            <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                    type="checkbox"
-                    checked={personalCup}
-                    onChange={(e) => setPersonalCup(e.target.checked)}
-                    className="w-5 h-5 rounded border-gray-300 text-[#32A5DC] focus:ring-[#32A5DC] cursor-pointer"
-                />
-                <span className="text-sm font-bold text-[#004876]">Personal Cup</span>
+            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-2">
+                Cup Type
             </label>
+            <select
+                value={cupType}
+                onChange={(e) => setCupType(e.target.value)}
+                className="w-full p-3 rounded-xl border-2 border-gray-200 text-sm font-medium text-[#004876] focus:border-[#32A5DC] outline-none bg-gray-50 focus:bg-white transition-all cursor-pointer"
+            >
+                <option value="to-go">To-Go Cup</option>
+                <option value="for-here">For-Here Mug/Glass</option>
+                <option value="personal">Personal Cup</option>
+            </select>
         </section>
 
         <hr className="border-gray-100" />

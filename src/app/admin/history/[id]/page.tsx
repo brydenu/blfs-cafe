@@ -262,8 +262,9 @@ export default async function AdminHistoryDetailPage({ params }: Props) {
               customizations.push(item.caffeineType);
             }
             
-            if (item.personalCup) {
-              customizations.push('Personal Cup');
+            if (item.cupType && item.cupType !== 'to-go') {
+              const cupTypeLabel = item.cupType === 'for-here' ? 'For-Here Mug/Glass' : item.cupType === 'personal' ? 'Personal Cup' : item.cupType;
+              customizations.push(cupTypeLabel);
             }
 
             // Modifiers (syrups, toppings, etc.)

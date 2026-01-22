@@ -14,7 +14,7 @@ export type CartItem = {
   syrupDetails: string[];
   modifiers: Record<number, number>;
   milkId?: number; // For editing support
-  personalCup?: boolean;
+  cupType?: string; // "to-go" | "for-here" | "personal"
   caffeineType?: string; // "Normal" | "Decaf" | "Half-Caff"
   milkSteamed?: boolean; // Whether milk is steamed
   foamLevel?: string; // 'No foam' | 'Light' | 'Normal' | 'Extra'
