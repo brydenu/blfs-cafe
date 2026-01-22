@@ -132,10 +132,12 @@ export default async function DashboardPage() {
                 </button>
             </Link>
             
-            <button disabled className="w-full bg-[#003355] border border-white/5 text-white/40 p-6 rounded-3xl flex flex-col items-center gap-2 cursor-not-allowed">
-                <span className="text-4xl grayscale opacity-30">⚡</span>
-                <span className="font-bold text-lg">Quick Order</span>
-            </button>
+            <Link href="/dashboard/quick-order" className="block">
+                <button className="w-full bg-[#32A5DC] hover:bg-[#288bba] text-white p-6 rounded-3xl shadow-xl transition-all hover:scale-[1.02] flex flex-col items-center gap-2 cursor-pointer group border border-white/10">
+                    <span className="text-4xl group-hover:scale-110 transition-transform duration-300">⚡</span>
+                    <span className="font-black text-lg">Quick Order</span>
+                </button>
+            </Link>
         </div>
 
         {/* --- ROW 2: LATEST ORDER TRACKER (White) --- */}
@@ -145,12 +147,14 @@ export default async function DashboardPage() {
 
         {/* --- ROW 3: SECONDARY ACTIONS (Navy Blue) --- */}
         <div className="grid grid-cols-2 gap-4">
-            <button className="w-full bg-[#003355] hover:bg-[#002a4d] border border-white/10 text-white p-4 rounded-2xl font-bold text-sm shadow-md transition-colors flex items-center justify-center gap-2 cursor-pointer">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-yellow-400">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
-                </svg>
-                Edit Favorites
-            </button>
+            <Link href="/dashboard/favorites" className="block">
+                <button className="w-full bg-[#003355] hover:bg-[#002a4d] border border-white/10 text-white p-4 rounded-2xl font-bold text-sm shadow-md transition-colors flex items-center justify-center gap-2 cursor-pointer">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-yellow-400">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
+                    </svg>
+                    Edit Favorites
+                </button>
+            </Link>
             
             {/* LINKED SETTINGS BUTTON */}
             <Link href="/dashboard/settings" className="block">

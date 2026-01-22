@@ -14,9 +14,12 @@ interface CustomizeFormProps {
   defaultName: string;
   defaultDisplayName?: string;
   userLastName?: string | null;
+  onConfigChange?: (config: any) => void; // Optional callback for configuration changes
+  hideNameField?: boolean; // Hide the name/recipient field
+  hideOrderButtons?: boolean; // Hide the order action buttons
 }
 
-export default function CustomizeForm({ product, ingredients, defaultName, defaultDisplayName, userLastName }: CustomizeFormProps) {
+export default function CustomizeForm({ product, ingredients, defaultName, defaultDisplayName, userLastName, onConfigChange, hideNameField = false, hideOrderButtons = false }: CustomizeFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { addToCart, removeFromCart, clearCart, setOrderMode } = useCart();
@@ -96,8 +99,11 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
   });
 
   const [tempLevel, setTempLevel] = useState(() => {
-      if (initialConfig?.temperature && initialConfig.temperature.includes("-")) {
-          return initialConfig.temperature.split("-")[1].trim().replace("(", "").replace(")", "");
+      if (initialConfig?.temperature && initialConfig.temperature.includes(" - ")) {
+          const parts = initialConfig.temperature.split(" - ");
+          if (parts.length > 1) {
+              return parts[1].trim();
+          }
       }
       return "Standard";
   });
@@ -135,6 +141,29 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
     });
   };
 
+  const buildConfiguration = () => {
+    return {
+      shots: shots,
+      temperature: `${baseTemp}${tempLevel !== 'Standard' ? ` - ${tempLevel}` : ''}`,
+      milkId: selectedMilk !== null && selectedMilk !== -1 ? selectedMilk : null,
+      modifiers: modifiers,
+      personalCup: personalCup,
+      caffeineType: shots > 0 ? caffeineType : undefined,
+      milkSteamed: (baseTemp === "Hot" && !product.requiresMilk && selectedMilk !== null && selectedMilk !== -1) ? milkSteamed : undefined,
+      foamLevel: (baseTemp === "Hot" && (milkSteamed || product.requiresMilk)) ? foamLevel : undefined,
+      milkAmount: (!product.requiresMilk && selectedMilk !== null && selectedMilk !== -1) ? milkAmount : undefined,
+      notes: notes,
+    };
+  };
+
+  // Call onConfigChange whenever relevant state changes
+  useEffect(() => {
+    if (onConfigChange) {
+      onConfigChange(buildConfiguration());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shots, baseTemp, tempLevel, selectedMilk, modifiers, personalCup, caffeineType, milkSteamed, foamLevel, milkAmount, notes]);
+
   const createCartItem = (): CartItem => {
     let milkName = "No Milk";
     if (selectedMilk !== -1 && selectedMilk !== null) {
@@ -153,25 +182,27 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
     // Get basePrice from product (serialized as number in page.tsx)
     const productWithPrice = product as Product & { basePrice?: number };
 
+    const config = buildConfiguration();
+
     return {
       internalId: editId ? editId : Date.now().toString(), // Keep ID if editing
       productId: product.id,
       productName: product.name,
       productCategory: product.category,
       recipientName: recipientName || (shouldLockName ? defaultName : ""), 
-      shots: shots,
-      temperature: `${baseTemp}${tempLevel !== 'Standard' ? ` - ${tempLevel}` : ''}`,
+      shots: config.shots,
+      temperature: config.temperature,
       milkName: milkName,
       syrupDetails: syrupDetails,
-      modifiers: modifiers,
+      modifiers: config.modifiers,
       // Pass config back so it can be re-edited later
-      milkId: selectedMilk || undefined,
-      personalCup: personalCup,
-      caffeineType: shots > 0 ? caffeineType : undefined,
-      milkSteamed: (baseTemp === "Hot" && !product.requiresMilk && selectedMilk !== null && selectedMilk !== -1) ? milkSteamed : undefined,
-      foamLevel: (baseTemp === "Hot" && (milkSteamed || product.requiresMilk)) ? foamLevel : undefined,
-      milkAmount: (!product.requiresMilk && selectedMilk !== null && selectedMilk !== -1) ? milkAmount : undefined,
-      notes: notes,
+      milkId: config.milkId || undefined,
+      personalCup: config.personalCup,
+      caffeineType: config.caffeineType,
+      milkSteamed: config.milkSteamed,
+      foamLevel: config.foamLevel,
+      milkAmount: config.milkAmount,
+      notes: config.notes,
       basePrice: productWithPrice.basePrice || 0
     };
   };
@@ -321,43 +352,45 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
       <div className="p-6 md:p-8 space-y-8">
         
         {/* Name Input */}
-        <section className="animate-fade-in">
-            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-2">
-                Who is this drink for?<span className="text-red-500 ml-1">*</span>
-            </label>
-            <input 
-                type="text" 
-                value={recipientName} 
-                onChange={(e) => {
-                    setRecipientName(e.target.value);
-                    if (nameError) setNameError(""); // Clear error when typing
-                }}
-                disabled={!isNameEditable}
-                required
-                className={`w-full p-4 rounded-xl border-2 text-lg font-bold text-[#004876] focus:border-[#32A5DC] outline-none transition-all placeholder-gray-300 ${
-                    nameError 
-                        ? 'border-red-300 bg-red-50' 
-                        : isNameEditable 
-                            ? 'border-gray-200 bg-gray-50 focus:bg-white' 
-                            : 'border-gray-100 bg-gray-100 cursor-not-allowed opacity-75'
-                }`}
-                placeholder="Please enter a name"
-            />
-            {shouldLockName && !isNameEditable && (
-                <p className="text-xs text-gray-500 mt-1 flex items-center gap-2">
-                    <span>Ordering for someone else?</span>
-                    <button
-                        onClick={() => setIsNameEditable(!isNameEditable)}
-                        className="text-xs font-bold text-[#32A5DC] hover:text-[#288bba] transition-colors cursor-pointer underline"
-                    >
-                        Change Name
-                    </button>
-                </p>
-            )}
-            {nameError && (
-                <p className="text-red-500 text-sm font-medium mt-1">{nameError}</p>
-            )}
-        </section>
+        {!hideNameField && (
+          <section className="animate-fade-in">
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-2">
+                  Who is this drink for?<span className="text-red-500 ml-1">*</span>
+              </label>
+              <input 
+                  type="text" 
+                  value={recipientName} 
+                  onChange={(e) => {
+                      setRecipientName(e.target.value);
+                      if (nameError) setNameError(""); // Clear error when typing
+                  }}
+                  disabled={!isNameEditable}
+                  required
+                  className={`w-full p-4 rounded-xl border-2 text-lg font-bold text-[#004876] focus:border-[#32A5DC] outline-none transition-all placeholder-gray-300 ${
+                      nameError 
+                          ? 'border-red-300 bg-red-50' 
+                          : isNameEditable 
+                              ? 'border-gray-200 bg-gray-50 focus:bg-white' 
+                              : 'border-gray-100 bg-gray-100 cursor-not-allowed opacity-75'
+                  }`}
+                  placeholder="Please enter a name"
+              />
+              {shouldLockName && !isNameEditable && (
+                  <p className="text-xs text-gray-500 mt-1 flex items-center gap-2">
+                      <span>Ordering for someone else?</span>
+                      <button
+                          onClick={() => setIsNameEditable(!isNameEditable)}
+                          className="text-xs font-bold text-[#32A5DC] hover:text-[#288bba] transition-colors cursor-pointer underline"
+                      >
+                          Change Name
+                      </button>
+                  </p>
+              )}
+              {nameError && (
+                  <p className="text-red-500 text-sm font-medium mt-1">{nameError}</p>
+              )}
+          </section>
+        )}
 
         {/* Temperature & Shots */}
         <div className="grid md:grid-cols-2 gap-8">
@@ -625,36 +658,40 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
         </section>
 
         {/* --- ACTIONS --- */}
-        {nameError && (
-          <p className="text-red-500 text-sm font-medium text-center mb-2">{nameError}</p>
+        {!hideOrderButtons && (
+          <>
+            {nameError && (
+              <p className="text-red-500 text-sm font-medium text-center mb-2">{nameError}</p>
+            )}
+            <div className={`flex flex-col sm:flex-row gap-4 ${nameError ? 'pt-2' : 'pt-6'}`}>
+              <Link href="/menu" className="py-4 px-6 rounded-xl border-2 border-gray-200 text-gray-500 font-bold text-center hover:bg-gray-50 hover:text-gray-700 transition-all cursor-pointer">
+                Cancel
+              </Link>
+              
+              {isSoloOrder && !editId ? (
+                <>
+                  <button 
+                    onClick={handleSwitchToGroupOrder}
+                    className="flex-1 bg-[#32A5DC] text-white font-bold py-4 rounded-xl shadow-lg hover:bg-[#288bba] transition-all transform hover:scale-[1.02] cursor-pointer"
+                  >
+                    Add to Group Order
+                  </button>
+                  <button 
+                    onClick={handleSoloOrder} 
+                    disabled={isSubmitting}
+                    className="flex-1 bg-[#004876] text-white font-bold py-4 rounded-xl shadow-lg hover:bg-[#32A5DC] transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  >
+                    {isSubmitting ? "Processing..." : "Place Order"}
+                  </button>
+                </>
+              ) : (
+                <button onClick={() => processOrder('/cart')} className="flex-1 bg-[#004876] text-white font-bold py-4 rounded-xl shadow-lg hover:bg-[#32A5DC] transition-all transform hover:scale-[1.02] cursor-pointer">
+                  {editId ? "Update Order" : "Add to Order"}
+                </button>
+              )}
+            </div>
+          </>
         )}
-        <div className={`flex flex-col sm:flex-row gap-4 ${nameError ? 'pt-2' : 'pt-6'}`}>
-          <Link href="/menu" className="py-4 px-6 rounded-xl border-2 border-gray-200 text-gray-500 font-bold text-center hover:bg-gray-50 hover:text-gray-700 transition-all cursor-pointer">
-            Cancel
-          </Link>
-          
-          {isSoloOrder && !editId ? (
-            <>
-              <button 
-                onClick={handleSwitchToGroupOrder}
-                className="flex-1 bg-[#32A5DC] text-white font-bold py-4 rounded-xl shadow-lg hover:bg-[#288bba] transition-all transform hover:scale-[1.02] cursor-pointer"
-              >
-                Add to Group Order
-              </button>
-              <button 
-                onClick={handleSoloOrder} 
-                disabled={isSubmitting}
-                className="flex-1 bg-[#004876] text-white font-bold py-4 rounded-xl shadow-lg hover:bg-[#32A5DC] transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-              >
-                {isSubmitting ? "Processing..." : "Place Order"}
-              </button>
-            </>
-          ) : (
-            <button onClick={() => processOrder('/cart')} className="flex-1 bg-[#004876] text-white font-bold py-4 rounded-xl shadow-lg hover:bg-[#32A5DC] transition-all transform hover:scale-[1.02] cursor-pointer">
-              {editId ? "Update Order" : "Add to Order"}
-            </button>
-          )}
-        </div>
 
       </div>
     </div>
