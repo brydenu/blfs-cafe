@@ -15,7 +15,32 @@ export async function placeOrder(items: CartItem[]) {
   }
 
   try {
-    // 1. Validate ingredient availability
+    // 1. Validate product availability
+    // Collect all unique product IDs from items
+    const productIds = new Set<number>();
+    items.forEach(item => {
+      productIds.add(item.productId);
+    });
+
+    // Check availability of all products
+    if (productIds.size > 0) {
+      const products = await prisma.product.findMany({
+        where: { id: { in: Array.from(productIds) } },
+        select: { id: true, name: true, isActive: true, deletedAt: true }
+      });
+
+      const unavailableProducts = products.filter(p => !p.isActive || p.deletedAt !== null);
+      
+      if (unavailableProducts.length > 0) {
+        const productNames = unavailableProducts.map(p => p.name).join(', ');
+        return { 
+          success: false, 
+          message: `We're sorry, but the following item(s) are currently unavailable: ${productNames}. Please remove them from your order and try again.` 
+        };
+      }
+    }
+
+    // 2. Validate ingredient availability
     // Collect all ingredient IDs from modifiers and milk selections
     const ingredientIds = new Set<number>();
     items.forEach(item => {
@@ -47,7 +72,7 @@ export async function placeOrder(items: CartItem[]) {
       }
     }
 
-    // 2. Resolve User
+    // 3. Resolve User
     let userId = null;
     let guestEmail = null;
     let guestName = null; // We could capture this from a form if needed
@@ -101,7 +126,7 @@ export async function placeOrder(items: CartItem[]) {
                 milkName: item.milkName,
                 recipientName: item.recipientName,
                 specialInstructions: item.notes || "", // Use notes field
-                personalCup: item.personalCup || false,
+                cupType: item.cupType || 'to-go',
                 caffeineType: item.caffeineType || null,
                 milkSteamed: item.milkSteamed ?? null,
                 foamLevel: item.foamLevel || null,

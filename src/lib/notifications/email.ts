@@ -62,9 +62,10 @@ export const EmailProvider: NotificationProvider = {
               });
             }
             
-            // Personal cup
-            if (item.personalCup) {
-              details.push('Personal Cup');
+            // Cup type
+            if (item.cupType && item.cupType !== 'to-go') {
+              const cupTypeLabel = item.cupType === 'for-here' ? 'For-Here Mug/Glass' : item.cupType === 'personal' ? 'Personal Cup' : item.cupType;
+              details.push(cupTypeLabel);
             }
             
             // Special instructions

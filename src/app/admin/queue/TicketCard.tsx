@@ -223,10 +223,10 @@ export default function TicketCard({ item }: { item: any }) {
                          {item.temperature}
                      </p>
                  </div>
-                 {/* Personal Cup Badge */}
-                 {item.personalCup && (
+                 {/* Cup Type Badge */}
+                 {item.cupType && item.cupType !== 'to-go' && (
                      <span className="bg-green-600 text-white text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wide shrink-0">
-                         Personal Cup
+                         {item.cupType === 'for-here' ? 'For-Here' : item.cupType === 'personal' ? 'Personal Cup' : item.cupType}
                      </span>
                  )}
              </div>

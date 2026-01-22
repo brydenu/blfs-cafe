@@ -15,14 +15,15 @@ export default function ErrorModal({
 }: ErrorModalProps) {
   if (!isOpen) return null;
 
-  // Check if this is an out-of-stock error
-  const isOutOfStockError = message.includes("out of the following ingredient(s):");
+  // Check if this is an out-of-stock error (ingredients or products)
+  const isIngredientError = message.includes("out of the following ingredient(s):");
+  const isProductError = message.includes("the following item(s) are currently unavailable:");
   
   // Parse the message for out-of-stock errors
   let formattedMessage = message;
   let displayTitle = title || "Order Error";
   
-  if (isOutOfStockError) {
+  if (isIngredientError) {
     displayTitle = "Out of stock";
     
     // Extract the parts of the message
@@ -46,6 +47,40 @@ export default function ErrorModal({
           <ul className="list-disc list-inside ml-4 space-y-2 bg-gray-50 p-4 rounded-lg border border-gray-200">
             {ingredients.map((ingredient, index) => (
               <li key={index} className="text-gray-800 font-medium">{ingredient}</li>
+            ))}
+          </ul>
+          {restOfMessage && (
+            <p className="text-gray-700 leading-relaxed">
+              {restOfMessage}
+            </p>
+          )}
+        </div>
+      );
+    }
+  } else if (isProductError) {
+    displayTitle = "Item unavailable";
+    
+    // Extract the parts of the message
+    const parts = message.split("the following item(s) are currently unavailable:");
+    if (parts.length === 2) {
+      const beforeItems = parts[0] + "the following item(s) are currently unavailable:";
+      const afterPart = parts[1];
+      
+      // Extract product names (everything before the period)
+      const itemPart = afterPart.split(".")[0].trim();
+      const restOfMessage = afterPart.split(".").slice(1).join(".").trim();
+      
+      // Split items by comma
+      const items = itemPart.split(",").map(item => item.trim());
+      
+      formattedMessage = (
+        <div className="space-y-4">
+          <p className="text-gray-700 leading-relaxed">
+            {beforeItems}
+          </p>
+          <ul className="list-disc list-inside ml-4 space-y-2 bg-gray-50 p-4 rounded-lg border border-gray-200">
+            {items.map((item, index) => (
+              <li key={index} className="text-gray-800 font-medium">{item}</li>
             ))}
           </ul>
           {restOfMessage && (

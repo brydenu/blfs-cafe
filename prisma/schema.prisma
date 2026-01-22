@@ -159,7 +159,7 @@ model OrderItem {
   cancelled    Boolean   @default(false)
 
   // Customization fields
-  personalCup  Boolean  @default(false)
+  cupType      String   @default("to-go") // 'to-go', 'for-here', 'personal'
   caffeineType String? // 'Normal', 'Decaf', 'Half-Caff'
   milkSteamed  Boolean? // Whether milk is steamed (for hot drinks with optional milk)
   foamLevel    String? // 'No foam', 'Light', 'Normal', 'Extra'

@@ -61,7 +61,7 @@ export async function getLastOrderedDrink() {
       ? (await prisma.ingredient.findFirst({ where: { name: item.milkName, category: 'milk' } }))?.id || null
       : null,
     modifiers: modifiers,
-    personalCup: item.personalCup,
+    cupType: item.cupType || 'to-go',
     caffeineType: item.caffeineType || undefined,
     milkSteamed: item.milkSteamed || undefined,
     foamLevel: item.foamLevel || undefined,
@@ -85,7 +85,7 @@ export async function getLastOrderedDrink() {
 export async function placeQuickOrder(
   productId: number,
   configuration: any,
-  personalCup: boolean,
+  cupType: string,
   notes?: string
 ) {
   const session = await auth();
@@ -145,7 +145,7 @@ export async function placeQuickOrder(
     syrupDetails: syrupDetails,
     modifiers: configuration.modifiers || {},
     milkId: configuration.milkId || undefined,
-    personalCup: personalCup,
+    cupType: cupType || 'to-go',
     caffeineType: configuration.caffeineType,
     milkSteamed: configuration.milkSteamed,
     foamLevel: configuration.foamLevel,

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/providers/ToastProvider";
 import { placeQuickOrder } from "./actions";
+import ErrorModal from "@/components/ErrorModal";
 
 interface QuickOrderModalProps {
   item: {
@@ -16,13 +17,17 @@ interface QuickOrderModalProps {
 export default function QuickOrderModal({ item, onClose }: QuickOrderModalProps) {
   const router = useRouter();
   const { showToast } = useToast();
-  const [personalCup, setPersonalCup] = useState(false);
+  const [cupType, setCupType] = useState('to-go');
   const [notes, setNotes] = useState(item.data.configuration?.notes || "");
   const [isOrdering, setIsOrdering] = useState(false);
+  const [errorModal, setErrorModal] = useState<{ isOpen: boolean; message: string }>({ isOpen: false, message: '' });
 
   const product = item.data.product;
-  const config = item.data.configuration;
+  const rawConfig = item.data.configuration;
   const name = item.type === 'favorite' ? item.data.name : item.data.recipientName;
+
+  // Parse config if it's a string (from savedOrder JSON field)
+  const config = typeof rawConfig === 'string' ? JSON.parse(rawConfig) : rawConfig;
 
   // Get ingredients for display (we'll need to fetch these or pass them)
   // For now, we'll display what we can from the config
@@ -73,8 +78,8 @@ export default function QuickOrderModal({ item, onClose }: QuickOrderModalProps)
     try {
       const result = await placeQuickOrder(
         product.id,
-        { ...config, personalCup, notes: notes.trim() || undefined },
-        personalCup,
+        { ...config, cupType, notes: notes.trim() || undefined },
+        cupType,
         notes.trim() || undefined
       );
 
@@ -82,14 +87,38 @@ export default function QuickOrderModal({ item, onClose }: QuickOrderModalProps)
         showToast("Order placed!");
         router.push(`/order-confirmation/${result.orderId}`);
       } else {
-        showToast(result.message || "Failed to place order");
+        setErrorModal({ isOpen: true, message: result.message || "Failed to place order" });
         setIsOrdering(false);
       }
     } catch (error) {
       console.error("Error placing order:", error);
-      showToast("An error occurred");
+      setErrorModal({ isOpen: true, message: "An error occurred. Please try again." });
       setIsOrdering(false);
     }
+  };
+
+  const handleCustomize = () => {
+    // Config is already parsed at component level
+    // Build the configuration object with all fields needed by CustomizeForm
+    const customizeConfig = {
+      shots: config.shots || 0,
+      temperature: config.temperature || "Hot",
+      milkId: config.milkId || null,
+      modifiers: config.modifiers || {},
+      cupType: cupType || config.cupType || 'to-go',
+      caffeineType: config.caffeineType || undefined,
+      milkSteamed: config.milkSteamed || undefined,
+      foamLevel: config.foamLevel || undefined,
+      milkAmount: config.milkAmount || undefined,
+      notes: notes.trim() || config.notes || undefined,
+      recipientName: item.type === 'favorite' ? name : config.recipientName || undefined,
+    };
+
+    // Encode the config as a URL parameter
+    const configStr = encodeURIComponent(JSON.stringify(customizeConfig));
+    
+    // Navigate to the customize page with the config
+    router.push(`/menu/${product.id}?config=${configStr}`);
   };
 
   return (
@@ -139,17 +168,20 @@ export default function QuickOrderModal({ item, onClose }: QuickOrderModalProps)
             </div>
           </div>
 
-          {/* Personal Cup Option */}
+          {/* Cup Type Selection */}
           <div>
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={personalCup}
-                onChange={(e) => setPersonalCup(e.target.checked)}
-                className="w-5 h-5 rounded border-gray-300 text-[#32A5DC] focus:ring-[#32A5DC] cursor-pointer"
-              />
-              <span className="text-sm font-bold text-[#004876]">Personal Cup</span>
+            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-2">
+              Cup Type
             </label>
+            <select
+              value={cupType}
+              onChange={(e) => setCupType(e.target.value)}
+              className="w-full p-3 rounded-xl border-2 border-gray-200 text-sm font-medium text-[#004876] focus:border-[#32A5DC] outline-none bg-gray-50 focus:bg-white transition-all cursor-pointer"
+            >
+              <option value="to-go">To-Go Cup</option>
+              <option value="for-here">For-Here Mug/Glass</option>
+              <option value="personal">Personal Cup</option>
+            </select>
           </div>
 
           {/* Notes Field */}
@@ -175,6 +207,12 @@ export default function QuickOrderModal({ item, onClose }: QuickOrderModalProps)
               Cancel
             </button>
             <button
+              onClick={handleCustomize}
+              className="flex-1 py-3 px-6 rounded-xl border-2 border-[#32A5DC] text-[#32A5DC] font-bold hover:bg-[#32A5DC] hover:text-white transition-all cursor-pointer"
+            >
+              Customize
+            </button>
+            <button
               onClick={handleOrder}
               disabled={isOrdering}
               className="flex-1 bg-[#32A5DC] hover:bg-[#288bba] text-white font-bold py-3 rounded-xl shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
@@ -184,6 +222,13 @@ export default function QuickOrderModal({ item, onClose }: QuickOrderModalProps)
           </div>
         </div>
       </div>
+      
+      {/* Error Modal */}
+      <ErrorModal
+        isOpen={errorModal.isOpen}
+        onClose={() => setErrorModal({ isOpen: false, message: '' })}
+        message={errorModal.message}
+      />
     </div>
   );
 }
