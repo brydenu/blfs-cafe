@@ -239,3 +239,27 @@ body {
 .animate-drink-cancelled {
   animation: drinkCancelled 0.5s ease-out forwards;
 }
+
+/* Timer completed border animation */
+@keyframes timerBorderPulse {
+  0%, 100% {
+    border-color: rgb(55, 65, 81); /* gray-700 */
+  }
+  50% {
+    border-color: rgb(251, 146, 60); /* orange-400 */
+  }
+}
+
+.timer-completed-border {
+  animation: timerBorderPulse 1.5s ease-in-out infinite;
+}
+
+/* Hide scrollbar for timer picker */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}

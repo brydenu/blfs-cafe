@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useToast } from "@/providers/ToastProvider";
 import { placeQuickOrder } from "./actions";
 import ErrorModal from "@/components/ErrorModal";
 
@@ -16,7 +15,6 @@ interface QuickOrderModalProps {
 
 export default function QuickOrderModal({ item, onClose }: QuickOrderModalProps) {
   const router = useRouter();
-  const { showToast } = useToast();
   const [cupType, setCupType] = useState('to-go');
   const [notes, setNotes] = useState(item.data.configuration?.notes || "");
   const [isOrdering, setIsOrdering] = useState(false);
@@ -84,7 +82,6 @@ export default function QuickOrderModal({ item, onClose }: QuickOrderModalProps)
       );
 
       if (result.success && result.orderId) {
-        showToast("Order placed!");
         router.push(`/order-confirmation/${result.orderId}`);
       } else {
         setErrorModal({ isOpen: true, message: result.message || "Failed to place order" });
@@ -179,7 +176,7 @@ export default function QuickOrderModal({ item, onClose }: QuickOrderModalProps)
               className="w-full p-3 rounded-xl border-2 border-gray-200 text-sm font-medium text-[#004876] focus:border-[#32A5DC] outline-none bg-gray-50 focus:bg-white transition-all cursor-pointer"
             >
               <option value="to-go">To-Go Cup</option>
-              <option value="for-here">For-Here Mug/Glass</option>
+              <option value="for-here">For-Here {(config.temperature || "Hot").startsWith("Iced") ? "Glass" : "Mug"}</option>
               <option value="personal">Personal Cup</option>
             </select>
           </div>

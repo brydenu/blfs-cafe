@@ -18,9 +18,10 @@ interface CustomizeFormProps {
   onConfigChange?: (config: any) => void; // Optional callback for configuration changes
   hideNameField?: boolean; // Hide the name/recipient field
   hideOrderButtons?: boolean; // Hide the order action buttons
+  initialConfigProp?: any; // Optional initial config passed as prop (overrides URL params)
 }
 
-export default function CustomizeForm({ product, ingredients, defaultName, defaultDisplayName, userLastName, onConfigChange, hideNameField = false, hideOrderButtons = false }: CustomizeFormProps) {
+export default function CustomizeForm({ product, ingredients, defaultName, defaultDisplayName, userLastName, onConfigChange, hideNameField = false, hideOrderButtons = false, initialConfigProp }: CustomizeFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { addToCart, removeFromCart, clearCart, setOrderMode } = useCart();
@@ -33,9 +34,13 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
   const editId = searchParams.get('editId'); // If present, we are editing this cart item
   const mode = searchParams.get('mode');
 
-  // Parse Initial Configuration (From URL or Default)
+  // Parse Initial Configuration (From prop, URL, or Default)
   let initialConfig: any = {};
-  if (configParam) {
+  if (initialConfigProp) {
+    // Use prop if provided (for favorite editor)
+    initialConfig = initialConfigProp;
+  } else if (configParam) {
+    // Otherwise use URL param
     try {
         initialConfig = JSON.parse(decodeURIComponent(configParam));
     } catch (e) {
@@ -205,7 +210,16 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
   const [openSection, setOpenSection] = useState<string | null>(getInitialOpenSection());
   
   // New customization fields
-  const [cupType, setCupType] = useState(initialConfig?.cupType || initialConfig?.personalCup === true ? 'personal' : 'to-go');
+  // Fix cupType initialization: prioritize cupType from config, fallback to personalCup check, default to 'to-go'
+  const [cupType, setCupType] = useState(() => {
+    if (initialConfig?.cupType) {
+      return initialConfig.cupType;
+    }
+    if (initialConfig?.personalCup === true) {
+      return 'personal';
+    }
+    return 'to-go';
+  });
   const [caffeineType, setCaffeineType] = useState(initialConfig?.caffeineType || "Normal");
   
   // London Fog preset: steamed whole milk
@@ -562,7 +576,7 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
                 className="w-full p-3 rounded-xl border-2 border-gray-200 text-sm font-medium text-[#004876] focus:border-[#32A5DC] outline-none bg-gray-50 focus:bg-white transition-all cursor-pointer"
             >
                 <option value="to-go">To-Go Cup</option>
-                <option value="for-here">For-Here Mug/Glass</option>
+                <option value="for-here">For-Here {baseTemp === "Hot" ? "Mug" : "Glass"}</option>
                 <option value="personal">Personal Cup</option>
             </select>
         </section>

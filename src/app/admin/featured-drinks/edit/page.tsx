@@ -6,7 +6,7 @@ import FeaturedDrinkBuilder from "../FeaturedDrinkBuilder";
 export const dynamic = 'force-dynamic';
 
 interface Props {
-  searchParams: { [key: string]: string | string[] | undefined };
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export default async function EditFeaturedDrinkPage({ searchParams }: Props) {
@@ -24,7 +24,8 @@ export default async function EditFeaturedDrinkPage({ searchParams }: Props) {
     redirect("/");
   }
 
-  const featuredDrinkId = searchParams.id ? parseInt(searchParams.id as string) : null;
+  const resolvedSearchParams = await searchParams;
+  const featuredDrinkId = resolvedSearchParams.id ? parseInt(resolvedSearchParams.id as string) : null;
 
   if (!featuredDrinkId) {
     redirect("/admin/featured-drinks");

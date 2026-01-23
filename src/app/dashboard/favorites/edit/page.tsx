@@ -6,7 +6,7 @@ import FavoriteBuilder from "../FavoriteBuilder";
 export const dynamic = 'force-dynamic';
 
 interface Props {
-  searchParams: { [key: string]: string | string[] | undefined };
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export default async function EditFavoritePage({ searchParams }: Props) {
@@ -22,7 +22,8 @@ export default async function EditFavoritePage({ searchParams }: Props) {
 
   if (!user) redirect("/");
 
-  const favoriteId = searchParams.id ? parseInt(searchParams.id as string) : null;
+  const resolvedSearchParams = await searchParams;
+  const favoriteId = resolvedSearchParams.id ? parseInt(resolvedSearchParams.id as string) : null;
 
   if (!favoriteId) {
     redirect("/dashboard/favorites");

@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import TicketCard from "./TicketCard";
 import QueueListener from "./QueueListener";
+import QueueUtilitiesButton from "./QueueUtilitiesButton";
 
 export const dynamic = 'force-dynamic';
 
@@ -154,7 +155,7 @@ export default async function AdminQueuePage() {
       <QueueListener /> 
 
       {/* --- STATS DASHBOARD --- */}
-      <div className="bg-gray-800 rounded-3xl p-6 shadow-xl border border-gray-700">
+      <div className="bg-gray-800 rounded-3xl p-6 shadow-xl border border-gray-700 relative">
          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <div className="bg-gray-900 rounded-2xl p-4 text-center border border-gray-700">
                 <span className="block text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">Caff Shots</span>
@@ -195,6 +196,9 @@ export default async function AdminQueuePage() {
                     <span className="text-gray-500 italic text-sm">No milk required.</span>
                 )}
             </div>
+         </div>
+         <div className="absolute bottom-4 right-4">
+            <QueueUtilitiesButton />
          </div>
       </div>
 
