@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import Link from "next/link";
 import { getTodayStatistics } from "../actions";
+import SuggestionsBadgeInline from "./SuggestionsBadgeInline";
 
 export const dynamic = 'force-dynamic';
 
@@ -227,6 +228,24 @@ export default async function AdminDashboard() {
               <div>
                 <h2 className="text-xl font-black text-white">Communications</h2>
                 <p className="text-sm text-gray-400">Manage announcements and messages</p>
+              </div>
+            </div>
+          </div>
+        </Link>
+
+        {/* Suggestions Card */}
+        <Link href="/admin/suggestions" className="order-9 md:order-none">
+          <div className="bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-700 hover:border-[#32A5DC] transition-all cursor-pointer group h-full flex flex-col">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-16 h-16 bg-[#32A5DC]/20 text-[#32A5DC] rounded-xl flex items-center justify-center text-3xl group-hover:bg-[#32A5DC]/30 transition-colors">
+                💡
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-xl font-black text-white">Suggestions</h2>
+                  <SuggestionsBadgeInline />
+                </div>
+                <p className="text-sm text-gray-400">View user suggestions and feedback</p>
               </div>
             </div>
           </div>
