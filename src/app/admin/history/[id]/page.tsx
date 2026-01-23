@@ -263,7 +263,15 @@ export default async function AdminHistoryDetailPage({ params }: Props) {
             }
             
             if (item.cupType && item.cupType !== 'to-go') {
-              const cupTypeLabel = item.cupType === 'for-here' ? 'For-Here Mug/Glass' : item.cupType === 'personal' ? 'Personal Cup' : item.cupType;
+              let cupTypeLabel = '';
+              if (item.cupType === 'for-here') {
+                const isIced = item.temperature && item.temperature.startsWith('Iced');
+                cupTypeLabel = isIced ? 'For-Here Glass' : 'For-Here Mug';
+              } else if (item.cupType === 'personal') {
+                cupTypeLabel = 'Personal Cup';
+              } else {
+                cupTypeLabel = item.cupType;
+              }
               customizations.push(cupTypeLabel);
             }
 

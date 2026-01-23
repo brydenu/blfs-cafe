@@ -279,7 +279,7 @@ function FavoriteCustomizeForm({
   initialConfig?: any;
   onConfigurationChange: (config: any) => void;
 }) {
-  // Set initial config
+  // Set initial config when it changes (for editing)
   useEffect(() => {
     if (initialConfig) {
       onConfigurationChange(initialConfig);
@@ -296,6 +296,7 @@ function FavoriteCustomizeForm({
       onConfigChange={onConfigurationChange}
       hideNameField={true}
       hideOrderButtons={true}
+      initialConfigProp={initialConfig}
     />
   );
 }

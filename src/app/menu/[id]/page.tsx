@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 interface Props {
   params: { id: string };
-  searchParams: { [key: string]: string | string[] | undefined };
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export default async function ProductPage({ params, searchParams }: Props) {
