@@ -7,6 +7,7 @@ import ScheduleWidget from "./ScheduleWidget";
 import Link from "next/link";
 import SignOutButton from "./SignOutButton";
 import CommunicationBanner from "@/components/CommunicationBanner";
+import { CoffeeIcon, LightningIcon, LightbulbIcon } from "@/components/icons";
 
 export const dynamic = 'force-dynamic';
 
@@ -127,14 +128,14 @@ export default async function DashboardPage() {
         <div className="grid grid-cols-2 gap-4">
             <Link href="/menu" className="block">
                 <button className="w-full bg-[#32A5DC] hover:bg-[#288bba] text-white p-4 md:p-6 rounded-3xl shadow-xl transition-all hover:scale-[1.02] active:scale-[0.97] active:translate-y-[2px] flex flex-col items-center justify-center gap-2 cursor-pointer group border border-white/10 h-[110px] md:h-auto md:min-h-[120px]">
-                    <span className="text-3xl md:text-4xl group-hover:scale-110 transition-transform duration-300">☕</span>
+                    <CoffeeIcon size={48} className="group-hover:scale-110 transition-transform duration-300" />
                     <span className="font-black text-sm md:text-lg text-center leading-tight">Order Now</span>
                 </button>
             </Link>
             
             <Link href="/dashboard/quick-order" className="block">
                 <button className="w-full bg-[#32A5DC] hover:bg-[#288bba] text-white p-4 md:p-6 rounded-3xl shadow-xl transition-all hover:scale-[1.02] active:scale-[0.97] active:translate-y-[2px] flex flex-col items-center justify-center gap-2 cursor-pointer group border border-white/10 h-[110px] md:h-auto md:min-h-[120px]">
-                    <span className="text-3xl md:text-4xl group-hover:scale-110 transition-transform duration-300">⚡</span>
+                    <LightningIcon size={48} className="group-hover:scale-110 transition-transform duration-300" />
                     <span className="font-black text-sm md:text-lg text-center leading-tight">Quick Order</span>
                 </button>
             </Link>
@@ -161,7 +162,7 @@ export default async function DashboardPage() {
             {/* Suggestions & Settings: share a row on mobile, all three inline on desktop */}
             <Link href="/dashboard/suggestions" className="block">
                 <button className="w-full bg-[#003355] hover:bg-[#002a4d] border border-white/10 text-white p-4 rounded-2xl font-bold text-sm shadow-md transition-all active:scale-[0.97] active:translate-y-[2px] flex items-center justify-center gap-2 cursor-pointer">
-                    <span className="w-5 h-5 flex items-center justify-center text-base leading-none">💡</span>
+                    <LightbulbIcon size={20} />
                     Suggestions
                 </button>
             </Link>

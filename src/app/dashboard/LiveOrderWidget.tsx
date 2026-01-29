@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { io } from "socket.io-client";
-import { fetchDailyHistory, cancelOrderItem, updateOrderNotificationPreferences } from "./actions"; 
+import { fetchDailyHistory, cancelOrderItem, updateOrderNotificationPreferences } from "./actions";
+import { CoffeeIcon } from "@/components/icons"; 
 
 interface LiveOrderWidgetProps {
   initialOrders: any[]; 
@@ -162,7 +163,7 @@ export default function LiveOrderWidget({ initialOrders }: LiveOrderWidgetProps)
 
         {orders.length === 0 ? (
            <div className="text-center py-12 opacity-40">
-               <div className="text-4xl mb-2 grayscale">☕</div>
+               <div className="mb-2"><CoffeeIcon size={40} className="text-gray-400" /></div>
                <p className="text-sm text-gray-400 font-bold">No orders found.</p>
            </div>
         ) : (

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import QuickOrderModal from "./QuickOrderModal";
+import { CoffeeIcon, TeaIcon, DrinkIcon, LightningIcon, ClockIcon } from "@/components/icons";
 
 interface Favorite {
   id: number;
@@ -43,7 +44,7 @@ export default function QuickOrderList({ favorites, lastDrink }: QuickOrderListP
   if (favorites.length === 0 && !lastDrink) {
     return (
       <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-12 text-center">
-        <div className="text-6xl mb-4">⚡</div>
+        <div className="mb-4"><LightningIcon size={64} className="text-[#32A5DC]" /></div>
         <h3 className="text-xl font-bold text-white mb-2">No quick order options</h3>
         <p className="text-blue-200 text-sm mb-6">
           Create favorites or place an order to see quick order options here.
@@ -58,7 +59,7 @@ export default function QuickOrderList({ favorites, lastDrink }: QuickOrderListP
       {lastDrink && (
         <div>
           <h2 className="text-white text-lg font-bold mb-4 flex items-center gap-2 opacity-90">
-            <span className="text-[#32A5DC]">🕐</span> Last Ordered
+            <ClockIcon size={16} className="text-[#32A5DC]" /> Last Ordered
           </h2>
           <div
             onClick={() => setSelectedItem({ type: 'last', data: lastDrink })}
@@ -66,7 +67,7 @@ export default function QuickOrderList({ favorites, lastDrink }: QuickOrderListP
           >
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center text-2xl shadow-lg shrink-0">
-                {lastDrink.product.category === 'coffee' ? '☕' : lastDrink.product.category === 'tea' ? '🍵' : '🥤'}
+                {lastDrink.product.category === 'coffee' ? <CoffeeIcon size={32} className="text-gray-400" /> : lastDrink.product.category === 'tea' ? <TeaIcon size={32} className="text-gray-400" /> : <DrinkIcon size={32} className="text-gray-400" />}
               </div>
               <div className="flex-1">
                 <h3 className="text-white font-bold text-lg">{lastDrink.product.name}</h3>
@@ -93,7 +94,7 @@ export default function QuickOrderList({ favorites, lastDrink }: QuickOrderListP
               >
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-xl shadow-lg shrink-0">
-                    {favorite.product.category === 'coffee' ? '☕' : favorite.product.category === 'tea' ? '🍵' : '🥤'}
+                    {favorite.product.category === 'coffee' ? <CoffeeIcon size={32} className="text-gray-400" /> : favorite.product.category === 'tea' ? <TeaIcon size={32} className="text-gray-400" /> : <DrinkIcon size={32} className="text-gray-400" />}
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="text-white font-bold truncate">{favorite.name}</h3>

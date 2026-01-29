@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { placeQuickOrder } from "./actions";
 import ErrorModal from "@/components/ErrorModal";
+import { CoffeeIcon, TeaIcon, DrinkIcon } from "@/components/icons";
 
 interface QuickOrderModalProps {
   item: {
@@ -139,7 +140,7 @@ export default function QuickOrderModal({ item, onClose }: QuickOrderModalProps)
           {/* Product Info */}
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center text-3xl">
-              {product.category === 'coffee' ? '☕' : product.category === 'tea' ? '🍵' : '🥤'}
+              {product.category === 'coffee' ? <CoffeeIcon size={48} className="text-gray-400" /> : product.category === 'tea' ? <TeaIcon size={48} className="text-gray-400" /> : <DrinkIcon size={48} className="text-gray-400" />}
             </div>
             <div>
               <h3 className="text-xl font-bold text-[#004876]">{name}</h3>

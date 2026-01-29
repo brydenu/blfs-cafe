@@ -10,6 +10,7 @@ import CafeStatusBanner from "@/components/CafeStatusBanner";
 import OrderWarningModal from "@/components/OrderWarningModal";
 import { getCafeStatusAction } from "@/app/menu/actions";
 import { CafeStatus } from "@/lib/schedule-status";
+import { CoffeeIcon, TeaIcon, DrinkIcon } from "@/components/icons";
 
 export default function CartPage() {
   const { items, removeFromCart, clearCart, setOrderMode, updateItemName } = useCart(); 
@@ -146,7 +147,7 @@ export default function CartPage() {
                 <div className="flex gap-4">
                    {/* Icon */}
                    <div className="w-16 h-16 bg-[#32A5DC]/10 rounded-xl flex items-center justify-center text-3xl shrink-0">
-                      {item.productCategory === 'coffee' ? '☕' : item.productCategory === 'tea' ? '🍵' : '🥤'}
+                      {item.productCategory === 'coffee' ? <CoffeeIcon size={32} className="text-gray-400" /> : item.productCategory === 'tea' ? <TeaIcon size={32} className="text-gray-400" /> : <DrinkIcon size={32} className="text-gray-400" />}
                    </div>
 
                    {/* Details */}

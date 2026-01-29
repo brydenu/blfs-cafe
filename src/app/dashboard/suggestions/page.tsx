@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { submitSuggestion } from "./actions";
+import { LightbulbIcon } from "@/components/icons";
 
 export default function SuggestionsPage() {
   const [status, setStatus] = useState<'idle' | 'loading' | 'success'>('idle');
@@ -61,7 +62,7 @@ export default function SuggestionsPage() {
         {/* --- SUGGESTIONS FORM --- */}
         <div className="bg-white rounded-3xl shadow-2xl p-6 sm:p-8 border border-white/10">
             <h2 className="text-xl font-black text-[#004876] mb-6 border-b pb-2 flex items-center gap-2">
-                <span>💡</span> Share Your Ideas
+                <LightbulbIcon size={20} /> Share Your Ideas
             </h2>
             
             <p className="text-sm text-gray-600 mb-6">

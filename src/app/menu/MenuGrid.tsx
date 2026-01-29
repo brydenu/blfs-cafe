@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/providers/CartProvider";
 import { useToast } from "@/providers/ToastProvider";
+import { CoffeeIcon, TeaIcon, DrinkIcon } from "@/components/icons";
 
 type AnyProduct = { id: number; name: string; description?: string | null; category: string; isActive?: boolean; imageUrl?: string | null };
 
@@ -129,15 +130,15 @@ export default function MenuGrid({ products = [], favorites = [], featuredDrinks
     showToast(`Added ${fav.product.name} for ${item.recipientName}`);
   };
 
-  // Helper function for category emoji
-  const getCategoryEmoji = (category: string) => {
+  // Helper function for category icon
+  const getCategoryIcon = (category: string, size: number = 48) => {
     switch (category.toLowerCase()) {
       case 'coffee':
-        return '☕';
+        return <CoffeeIcon size={size} className="drop-shadow-sm" />;
       case 'tea':
-        return '🍵';
+        return <TeaIcon size={size} className="drop-shadow-sm" />;
       default:
-        return '🥤';
+        return <DrinkIcon size={size} className="drop-shadow-sm" />;
     }
   };
 
@@ -236,9 +237,9 @@ export default function MenuGrid({ products = [], favorites = [], featuredDrinks
                               className="w-full h-full object-cover"
                             />
                           ) : (
-                            <span className="text-4xl sm:text-5xl drop-shadow-sm filter grayscale group-hover:grayscale-0 transition-all duration-300">
-                              {getCategoryEmoji(featured.product.category)}
-                            </span>
+                            <div className="text-gray-400 group-hover:text-gray-600 transition-all duration-300">
+                              {getCategoryIcon(featured.product.category, 48)}
+                            </div>
                           )}
                         </div>
 
@@ -307,9 +308,9 @@ export default function MenuGrid({ products = [], favorites = [], featuredDrinks
                               className="w-full h-full object-cover"
                             />
                           ) : (
-                            <span className="text-4xl sm:text-5xl drop-shadow-sm filter grayscale group-hover:grayscale-0 transition-all duration-300">
-                              {getCategoryEmoji(fav.product.category)}
-                            </span>
+                            <div className="text-gray-400 group-hover:text-gray-600 transition-all duration-300">
+                              {getCategoryIcon(fav.product.category, 48)}
+                            </div>
                           )}
                         </div>
 
@@ -387,9 +388,9 @@ export default function MenuGrid({ products = [], favorites = [], featuredDrinks
                                     className="w-full h-full object-cover grayscale"
                                   />
                                 ) : (
-                                  <span className="text-4xl sm:text-5xl drop-shadow-sm filter grayscale">
-                                    {getCategoryEmoji(product.category)}
-                                  </span>
+                                  <div className="text-gray-400">
+                                    {getCategoryIcon(product.category, 48)}
+                                  </div>
                                 )}
                               </div>
 
@@ -422,9 +423,9 @@ export default function MenuGrid({ products = [], favorites = [], featuredDrinks
                                   className="w-full h-full object-cover"
                                 />
                               ) : (
-                                <span className="text-4xl sm:text-5xl drop-shadow-sm filter grayscale group-hover:grayscale-0 transition-all duration-300">
-                                  {getCategoryEmoji(product.category)}
-                                </span>
+                                <div className="text-gray-400 group-hover:text-gray-600 transition-all duration-300">
+                                  {getCategoryIcon(product.category, 48)}
+                                </div>
                               )}
                             </div>
 
@@ -476,9 +477,9 @@ export default function MenuGrid({ products = [], favorites = [], featuredDrinks
                                     className="w-full h-full object-cover grayscale"
                                   />
                                 ) : (
-                                  <span className="text-4xl sm:text-5xl drop-shadow-sm filter grayscale">
-                                    {getCategoryEmoji(product.category)}
-                                  </span>
+                                  <div className="text-gray-400">
+                                    {getCategoryIcon(product.category, 48)}
+                                  </div>
                                 )}
                               </div>
                               <div className="flex-1 p-5 flex flex-col justify-center">
@@ -508,9 +509,9 @@ export default function MenuGrid({ products = [], favorites = [], featuredDrinks
                                   className="w-full h-full object-cover"
                                 />
                               ) : (
-                                <span className="text-4xl sm:text-5xl drop-shadow-sm filter grayscale group-hover:grayscale-0 transition-all duration-300">
-                                  {getCategoryEmoji(product.category)}
-                                </span>
+                                <div className="text-gray-400 group-hover:text-gray-600 transition-all duration-300">
+                                  {getCategoryIcon(product.category, 48)}
+                                </div>
                               )}
                             </div>
                             <div className="flex-1 p-5 flex flex-col justify-center">

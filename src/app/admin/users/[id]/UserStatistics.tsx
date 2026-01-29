@@ -340,7 +340,11 @@ export default function UserStatistics({ userId, stats, currentTimeframe }: User
                       <div className="flex items-center gap-2">
                         <span className={`text-white font-bold ${isFavorite ? 'text-[#32A5DC]' : ''}`}>
                           {day}
-                          {isFavorite && <span className="ml-2 text-xs">⭐ Favorite</span>}
+                          {isFavorite && (
+                            <span className="ml-2 text-xs flex items-center gap-1">
+                              <StarIcon size={12} className="text-yellow-400" /> Favorite
+                            </span>
+                          )}
                         </span>
                       </div>
                       <div className="flex items-center gap-3">
