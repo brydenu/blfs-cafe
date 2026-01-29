@@ -144,6 +144,7 @@ export default async function AdminQueuePage() {
             parentPublicId: order.publicId,
             orderCreatedAt: order.createdAt,
             orderOwnerName: order.guestName || order.user?.firstName || "Guest",
+            isGuestOrder: !order.user, // Flag to identify guest orders
         });
     });
   });
