@@ -7,8 +7,49 @@ import { useToast } from "@/providers/ToastProvider";
 import { cancelOrderItem, updateOrderNotificationPreferences, getQueuePosition } from "@/app/dashboard/actions";
 import { cancelGuestOrderItem, updateGuestOrderNotifications, getQueuePositionForOrder } from "@/app/track/actions";
 import { updateGuestEmail } from "../actions";
+import { CafeStatus } from "@/lib/schedule-status";
 
-export default function OrderTracker({ order, ordersAhead, estimatedMinutes }: any) {
+// Helper function to get the appropriate order message based on cafe status
+function getOrderMessage(status: CafeStatus): string {
+  if (status.type === 'open') {
+    return "Your order has been added to the queue and will be prepared shortly.";
+  }
+  
+  switch (status.type) {
+    case 'not-opened-yet':
+      return `Your order has been added to the queue and will be prepared when the cafe opens at ${status.nextOpenTime}.`;
+    case 'closed-between-periods':
+      return `Your order has been added to the queue and will be prepared when the cafe reopens at ${status.nextOpenTime}.`;
+    case 'closed-for-day':
+      return "Your order has been added to the queue, but the cafe has closed for the day. Your drinks may not be made.";
+    case 'not-scheduled':
+      return "Your order has been added to the queue, but the cafe is closed today. Your drinks may not be made.";
+    default:
+      return "Your order has been added to the queue and will be prepared shortly.";
+  }
+}
+
+// Helper function to get the appropriate wait time label based on cafe status
+function getWaitTimeLabel(status: CafeStatus): string {
+  if (status.type === 'open') {
+    return "Est. Wait";
+  }
+  
+  switch (status.type) {
+    case 'not-opened-yet':
+      return "Est. Wait (Once cafe opens)";
+    case 'closed-between-periods':
+      return "Est. Wait (Once cafe reopens)";
+    case 'closed-for-day':
+      return "Est. Wait (Cafe closed)";
+    case 'not-scheduled':
+      return "Est. Wait (Cafe closed)";
+    default:
+      return "Est. Wait";
+  }
+}
+
+export default function OrderTracker({ order, ordersAhead, estimatedMinutes, cafeStatus }: { order: any; ordersAhead: number; estimatedMinutes: number; cafeStatus: CafeStatus }) {
   const router = useRouter();
   const { showToast } = useToast();
   const [isConnected, setIsConnected] = useState(false);
@@ -359,6 +400,12 @@ export default function OrderTracker({ order, ordersAhead, estimatedMinutes }: a
                     <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                 </svg>
             </div>
+        ) : (cafeStatus.type === 'closed-for-day' || cafeStatus.type === 'not-scheduled') ? (
+            <div className="w-16 h-16 md:w-20 md:h-20 bg-amber-500 rounded-full flex items-center justify-center text-3xl md:text-4xl text-white mx-auto mb-4 md:mb-6 shadow-lg shadow-amber-500/20">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-8 h-8 md:w-10 md:h-10">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                </svg>
+            </div>
         ) : (
             <div className="w-16 h-16 md:w-20 md:h-20 bg-[#32A5DC] rounded-full flex items-center justify-center text-3xl md:text-4xl text-white mx-auto mb-4 md:mb-6 shadow-lg shadow-blue-500/20 animate-pulse">
                 ⏳
@@ -371,7 +418,7 @@ export default function OrderTracker({ order, ordersAhead, estimatedMinutes }: a
         <p className="text-gray-600 text-xs md:text-sm lg:text-base mb-6 md:mb-8 font-medium px-2">
             {isOrderComplete 
                 ? "Please head to the pickup counter." 
-                : "Your order has been added to the queue and will be prepared shortly."}
+                : getOrderMessage(cafeStatus)}
         </p>
 
         {/* ORDER ID - Prominently Displayed for Guests */}
@@ -403,9 +450,15 @@ export default function OrderTracker({ order, ordersAhead, estimatedMinutes }: a
                     </span>
                 </div>
                 <div className="bg-gray-50 rounded-xl p-3 md:p-4 border border-gray-200">
-                    <span className="block text-gray-500 text-[9px] md:text-[10px] uppercase font-extrabold tracking-widest mb-1">Est. Wait</span>
+                    <span className="block text-gray-500 text-[9px] md:text-[10px] uppercase font-extrabold tracking-widest mb-1">{getWaitTimeLabel(cafeStatus)}</span>
                     <span className="text-2xl md:text-3xl font-extrabold text-[#004876] leading-none">
-                        {currentEstimatedMinutes} <span className="text-xs md:text-sm font-bold text-gray-500">min</span>
+                        {cafeStatus.type === 'closed-for-day' || cafeStatus.type === 'not-scheduled' 
+                            ? 'N/A' 
+                            : (
+                                <>
+                                    {currentEstimatedMinutes} <span className="text-xs md:text-sm font-bold text-gray-500">min</span>
+                                </>
+                            )}
                     </span>
                 </div>
             </div>

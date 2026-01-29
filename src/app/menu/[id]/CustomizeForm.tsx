@@ -8,6 +8,9 @@ import { useCart, CartItem } from "@/providers/CartProvider";
 import { useToast } from "@/providers/ToastProvider";
 import { placeOrder } from "@/app/cart/actions";
 import ErrorModal from "@/components/ErrorModal";
+import OrderWarningModal from "@/components/OrderWarningModal";
+import { getCafeStatusAction } from "@/app/menu/actions";
+import { CafeStatus } from "@/lib/schedule-status";
 
 interface CustomizeFormProps {
   product: Product;
@@ -28,6 +31,8 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
   const { showToast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorModal, setErrorModal] = useState<{ isOpen: boolean; message: string }>({ isOpen: false, message: '' });
+  const [cafeStatus, setCafeStatus] = useState<CafeStatus | null>(null);
+  const [warningModalOpen, setWarningModalOpen] = useState(false);
 
   // --- QUERY PARAMS ---
   const configParam = searchParams.get('config');
@@ -340,6 +345,15 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
     router.push(redirectPath);
   };
 
+  // Fetch cafe status on mount
+  useEffect(() => {
+    async function fetchStatus() {
+      const status = await getCafeStatusAction();
+      setCafeStatus(status);
+    }
+    fetchStatus();
+  }, []);
+
   const handleSoloOrder = async () => {
     // Validate name field - always required
     if (!recipientName.trim()) {
@@ -347,7 +361,19 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
       return;
     }
 
+    // Check if cafe is closed and show warning modal
+    if (cafeStatus && cafeStatus.type !== 'open') {
+      setWarningModalOpen(true);
+      return;
+    }
+
+    // Proceed with order if open or if user acknowledged warning
+    await proceedWithSoloOrder();
+  };
+
+  const proceedWithSoloOrder = async () => {
     setIsSubmitting(true);
+    setWarningModalOpen(false);
 
     try {
       const newItem = createCartItem();
@@ -931,6 +957,16 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
         onClose={() => setErrorModal({ isOpen: false, message: '' })}
         message={errorModal.message}
       />
+      
+      {/* Order Warning Modal */}
+      {cafeStatus && (
+        <OrderWarningModal
+          isOpen={warningModalOpen}
+          onClose={() => setWarningModalOpen(false)}
+          onContinue={proceedWithSoloOrder}
+          status={cafeStatus}
+        />
+      )}
     </div>
   );
 }

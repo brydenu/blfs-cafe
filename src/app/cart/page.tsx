@@ -6,6 +6,10 @@ import { placeOrder } from "./actions";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/providers/ToastProvider";
 import ErrorModal from "@/components/ErrorModal";
+import CafeStatusBanner from "@/components/CafeStatusBanner";
+import OrderWarningModal from "@/components/OrderWarningModal";
+import { getCafeStatusAction } from "@/app/menu/actions";
+import { CafeStatus } from "@/lib/schedule-status";
 
 export default function CartPage() {
   const { items, removeFromCart, clearCart, setOrderMode, updateItemName } = useCart(); 
@@ -13,9 +17,32 @@ export default function CartPage() {
   const router = useRouter();
   const { showToast } = useToast();
   const [errorModal, setErrorModal] = useState<{ isOpen: boolean; message: string }>({ isOpen: false, message: '' });
+  const [cafeStatus, setCafeStatus] = useState<CafeStatus | null>(null);
+  const [warningModalOpen, setWarningModalOpen] = useState(false);
+
+  // Fetch cafe status on mount
+  useEffect(() => {
+    async function fetchStatus() {
+      const status = await getCafeStatusAction();
+      setCafeStatus(status);
+    }
+    fetchStatus();
+  }, []);
 
   const handleCheckout = async () => {
+    // Check if cafe is closed and show warning modal
+    if (cafeStatus && cafeStatus.type !== 'open') {
+      setWarningModalOpen(true);
+      return;
+    }
+
+    // Proceed with order if open or if user acknowledged warning
+    await proceedWithOrder();
+  };
+
+  const proceedWithOrder = async () => {
     setIsSubmitting(true);
+    setWarningModalOpen(false);
     
     try {
       const result = await placeOrder(items);
@@ -77,7 +104,10 @@ export default function CartPage() {
   // --- CART LIST ---
   return (
     <main className="min-h-screen bg-gray-50 p-6 pb-32">
-       <div className="max-w-2xl mx-auto">
+      {/* Cafe Status Banner */}
+      {cafeStatus && <CafeStatusBanner status={cafeStatus} />}
+      
+      <div className={`max-w-2xl mx-auto ${cafeStatus && cafeStatus.type !== 'open' ? 'pt-[60px]' : ''}`}>
          
          <div className="mb-8">
             <h1 className="text-3xl font-extrabold text-[#004876]">Review Order</h1>
@@ -186,6 +216,16 @@ export default function CartPage() {
          onClose={() => setErrorModal({ isOpen: false, message: '' })}
          message={errorModal.message}
        />
+       
+       {/* Order Warning Modal */}
+       {cafeStatus && (
+         <OrderWarningModal
+           isOpen={warningModalOpen}
+           onClose={() => setWarningModalOpen(false)}
+           onContinue={proceedWithOrder}
+           status={cafeStatus}
+         />
+       )}
     </main>
   );
 }
