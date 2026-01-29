@@ -1,6 +1,7 @@
 'use server'
 
 import { prisma } from "@/lib/db"
+import { getCafeStatus } from "@/lib/schedule-status"
 
 export type MenuCategory = 'coffee' | 'tea' | 'other'
 
@@ -22,4 +23,9 @@ export async function getMenu() {
   }
 
   return menu
+}
+
+// Export cafe status getter for client components
+export async function getCafeStatusAction() {
+  return await getCafeStatus();
 }

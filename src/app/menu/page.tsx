@@ -4,6 +4,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { auth } from "@/auth";
 import CommunicationBanner from "@/components/CommunicationBanner";
+import CafeStatusBanner from "@/components/CafeStatusBanner";
+import { getCafeStatus } from "@/lib/schedule-status";
 
 export const dynamic = 'force-dynamic'; 
 
@@ -87,17 +89,23 @@ export default async function MenuPage() {
   const backHref = isGuest ? "/" : "/dashboard";
   const backLabel = isGuest ? "← Back to landing page" : "← Back to Dashboard";
 
+  // Fetch cafe status
+  const cafeStatus = await getCafeStatus();
+
   return (
     <main className="relative min-h-screen p-6 overflow-hidden">
       
+      {/* Cafe Status Banner */}
+      <CafeStatusBanner status={cafeStatus} />
+      
       {/* Background */}
-      <div className="absolute inset-0 z-0 bg-[#004876] fixed">
+      <div className="fixed inset-0 z-0 bg-[#004876]">
         <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-[#32A5DC] rounded-full mix-blend-multiply filter blur-[128px] opacity-20 animate-pulse"></div>
         <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-[#32A5DC] rounded-full mix-blend-multiply filter blur-[128px] opacity-20"></div>
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(#ffffff 1px, transparent 1px)', backgroundSize: '30px 30px' }}></div>
       </div>
 
-      <div className="relative z-10 flex flex-col items-center">
+      <div className={`relative z-10 flex flex-col items-center ${cafeStatus.type !== 'open' ? 'pt-[60px]' : ''}`}>
         
         {/* Communications Banner */}
         <div className="w-full max-w-4xl mb-6">
