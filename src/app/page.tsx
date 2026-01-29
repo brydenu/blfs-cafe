@@ -52,7 +52,7 @@ export default async function LandingPage() {
         </h1>
         
         <p className="text-xl md:text-2xl text-blue-100 mb-12 max-w-2xl font-light leading-relaxed">
-          Fuel your day. Order fresh, artisanal beverages directly from your device.
+          Streamlined ordering for your workday.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-6 w-full max-w-lg justify-center mb-10">
