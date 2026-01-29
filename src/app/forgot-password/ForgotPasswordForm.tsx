@@ -55,7 +55,7 @@ export default function ForgotPasswordForm() {
                     <p className="text-gray-500 text-sm">{message}</p>
                 </div>
                 <Link href="/login">
-                    <button className="w-full bg-[#32A5DC] hover:bg-[#288bba] text-white font-bold py-3 px-4 rounded-xl transition-colors">
+                    <button className="w-full bg-[#32A5DC] hover:bg-[#288bba] text-white font-bold py-3 px-4 rounded-xl transition-all active:scale-[0.97] active:translate-y-[2px]">
                         Back to Login
                     </button>
                 </Link>
@@ -90,7 +90,7 @@ export default function ForgotPasswordForm() {
                 <button
                     type="submit"
                     disabled={status === 'loading'}
-                    className="w-full bg-[#32A5DC] hover:bg-[#288bba] text-white font-bold py-3 px-4 rounded-xl transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] disabled:opacity-70 disabled:hover:scale-100 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    className="w-full bg-[#32A5DC] hover:bg-[#288bba] text-white font-bold py-3 px-4 rounded-xl transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.97] active:translate-y-[2px] disabled:opacity-70 disabled:hover:scale-100 disabled:active:scale-100 disabled:active:translate-y-0 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                     {status === 'loading' ? (
                         <>

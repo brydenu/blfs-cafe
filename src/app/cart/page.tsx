@@ -93,7 +93,7 @@ export default function CartPage() {
                     {/* EDIT BUTTON */}
                     <button 
                       onClick={() => handleEdit(item)}
-                      className="text-gray-300 hover:text-[#32A5DC] transition-colors p-2 cursor-pointer"
+                      className="text-gray-300 hover:text-[#32A5DC] transition-all p-2 cursor-pointer active:scale-90"
                       title="Edit Item"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
@@ -104,7 +104,7 @@ export default function CartPage() {
                     {/* DELETE BUTTON */}
                     <button 
                       onClick={() => removeFromCart(item.internalId)}
-                      className="text-gray-300 hover:text-red-500 transition-colors p-2 cursor-pointer"
+                      className="text-gray-300 hover:text-red-500 transition-all p-2 cursor-pointer active:scale-90"
                       title="Remove Item"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
@@ -163,7 +163,7 @@ export default function CartPage() {
             <div className="grid grid-cols-2 gap-4">
               <button 
                 onClick={handleAddMore}
-                className="bg-white border-2 border-[#32A5DC] text-[#32A5DC] font-bold py-4 rounded-xl shadow-lg hover:bg-[#32A5DC]/5 transition-all transform hover:scale-[1.02] flex justify-center items-center gap-2 cursor-pointer"
+                className="bg-white border-2 border-[#32A5DC] text-[#32A5DC] font-bold py-4 rounded-xl shadow-lg hover:bg-[#32A5DC]/5 transition-all transform hover:scale-[1.02] active:scale-[0.97] active:translate-y-[2px] flex justify-center items-center gap-2 cursor-pointer"
               >
                 Order More
               </button>
@@ -171,7 +171,7 @@ export default function CartPage() {
               <button 
                 onClick={handleCheckout}
                 disabled={isSubmitting}
-                className="bg-[#004876] text-white font-bold py-4 rounded-xl shadow-xl hover:bg-[#32A5DC] transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2 cursor-pointer"
+                className="bg-[#004876] text-white font-bold py-4 rounded-xl shadow-xl hover:bg-[#32A5DC] transition-all transform hover:scale-[1.02] active:scale-[0.97] active:translate-y-[2px] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 disabled:active:translate-y-0 flex justify-center items-center gap-2 cursor-pointer"
               >
                 {isSubmitting ? "Processing..." : "Confirm & Place Order"}
               </button>

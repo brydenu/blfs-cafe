@@ -196,23 +196,25 @@ export default function QuickOrderModal({ item, onClose }: QuickOrderModalProps)
           </div>
 
           {/* Actions */}
-          <div className="flex gap-4 pt-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-4">
+            {/* Cancel & Customize: share a row on mobile, all three inline on desktop */}
             <button
               onClick={onClose}
-              className="flex-1 py-3 px-6 rounded-xl border-2 border-gray-200 text-gray-600 font-bold hover:bg-gray-50 transition-all cursor-pointer"
+              className="py-3 px-6 rounded-xl border-2 border-gray-200 text-gray-600 font-bold hover:bg-gray-50 transition-all cursor-pointer"
             >
               Cancel
             </button>
             <button
               onClick={handleCustomize}
-              className="flex-1 py-3 px-6 rounded-xl border-2 border-[#32A5DC] text-[#32A5DC] font-bold hover:bg-[#32A5DC] hover:text-white transition-all cursor-pointer"
+              className="py-3 px-6 rounded-xl border-2 border-[#32A5DC] text-[#32A5DC] font-bold hover:bg-[#32A5DC] hover:text-white transition-all cursor-pointer"
             >
               Customize
             </button>
+            {/* Order Now: full-width row on mobile (rightmost), single column on desktop */}
             <button
               onClick={handleOrder}
               disabled={isOrdering}
-              className="flex-1 bg-[#32A5DC] hover:bg-[#288bba] text-white font-bold py-3 rounded-xl shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="col-span-2 md:col-span-1 md:col-start-3 bg-[#32A5DC] hover:bg-[#288bba] text-white font-bold py-3 rounded-xl shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               {isOrdering ? "Placing Order..." : "Order Now"}
             </button>

@@ -18,6 +18,41 @@
   }
 }
 
+/* --- BUTTON PRESS ANIMATION --- */
+/* Professional press-down effect for all buttons, especially on mobile */
+/* Apply smooth transition to all buttons and button-styled links */
+button:not(:disabled),
+a[class*="rounded-full"],
+a[class*="rounded-xl"],
+a[class*="rounded-2xl"],
+a[class*="rounded-3xl"],
+a[class*="rounded-lg"] {
+  transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1), 
+              box-shadow 0.1s cubic-bezier(0.4, 0, 0.2, 1),
+              background-color 0.2s ease,
+              scale 0.2s ease;
+}
+
+/* Press-down effect on active state */
+button:active:not(:disabled),
+a[class*="rounded-full"]:active,
+a[class*="rounded-xl"]:active,
+a[class*="rounded-2xl"]:active,
+a[class*="rounded-3xl"]:active,
+a[class*="rounded-lg"]:active {
+  transform: scale(0.97) translateY(2px) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Enhanced press effect for primary action buttons (blue and white) */
+button[class*="bg-[#32A5DC]"]:active:not(:disabled),
+a[class*="bg-[#32A5DC]"]:active,
+button[class*="bg-white"]:active:not(:disabled),
+a[class*="bg-white"]:active {
+  transform: scale(0.96) translateY(3px) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) !important;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

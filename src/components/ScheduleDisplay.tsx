@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 
 interface Schedule {
   id: number;
@@ -67,18 +66,19 @@ export default function ScheduleDisplay({ schedules }: ScheduleDisplayProps) {
     return schedules.find(s => s.dayOfWeek === currentDayOfWeek);
   };
 
-  const getDisplaySchedule = (schedule: Schedule | undefined): string => {
+  const getDisplayPeriods = (schedule: Schedule | undefined): string[] => {
     if (!schedule || !schedule.isOpen) {
-      return 'Out';
+      return [];
     }
     
-    let display = `${formatTime(schedule.openTime1)} - ${formatTime(schedule.closeTime1)}`;
+    const periods: string[] = [];
+    periods.push(`${formatTime(schedule.openTime1)} - ${formatTime(schedule.closeTime1)}`);
     
     if (schedule.isSecondPeriodActive && schedule.openTime2 && schedule.closeTime2) {
-      display += `, ${formatTime(schedule.openTime2)} - ${formatTime(schedule.closeTime2)}`;
+      periods.push(`${formatTime(schedule.openTime2)} - ${formatTime(schedule.closeTime2)}`);
     }
     
-    return display;
+    return periods;
   };
 
   const todaySchedule = getTodaySchedule();
@@ -109,8 +109,10 @@ export default function ScheduleDisplay({ schedules }: ScheduleDisplayProps) {
               <div className="text-white font-bold text-base mb-0.5 drop-shadow-sm">
                 {todayDayInfo?.name}, {formatDate(todayDayOfWeek)}
               </div>
-              <div className="text-white/90 font-medium text-sm drop-shadow-sm">
-                {getDisplaySchedule(todaySchedule)}
+              <div className="text-white/90 font-medium text-sm drop-shadow-sm space-y-0.5">
+                {getDisplayPeriods(todaySchedule).map((period, index) => (
+                  <div key={index}>{period}</div>
+                ))}
               </div>
             </div>
           ) : (
@@ -142,7 +144,7 @@ export default function ScheduleDisplay({ schedules }: ScheduleDisplayProps) {
           )}
 
           {/* Full Week Schedule */}
-          <div className="grid grid-cols-5 gap-2">
+          <div className="flex flex-col gap-2 md:grid md:grid-cols-5 md:gap-2">
             {DAYS_OF_WEEK.map((day) => {
               const schedule = scheduleMap.get(day.dayOfWeek);
               const isToday = day.dayOfWeek === todayDayOfWeek;
@@ -151,21 +153,51 @@ export default function ScheduleDisplay({ schedules }: ScheduleDisplayProps) {
               return (
                 <div
                   key={day.dayOfWeek}
-                  className={`p-2.5 rounded-lg backdrop-blur-sm ${
+                  className={`p-3 rounded-lg backdrop-blur-sm border border-white/10 transition-all duration-200 ${
                     isToday && !isClosed
-                      ? 'bg-white/20'
+                      ? 'bg-white/25 shadow-md shadow-black/20 scale-[1.01]'
                       : isClosed
-                      ? 'bg-white/10'
+                      ? 'bg-white/5'
                       : 'bg-white/15'
                   }`}
                 >
-                  <div className="text-xs font-bold text-white/90 mb-0.5 drop-shadow-sm">
-                    {day.abbr}, {formatDateShort(day.dayOfWeek)}
-                  </div>
-                  <div className={`text-xs font-medium drop-shadow-sm ${
-                    isToday && !isClosed ? 'text-white' : 'text-white/90'
-                  }`}>
-                    {isClosed ? 'Out' : getDisplaySchedule(schedule)}
+                  <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-1.5">
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 w-2 rounded-full shadow-sm"
+                        style={{
+                          backgroundColor: isClosed
+                            ? 'rgba(255,255,255,0.4)'
+                            : isToday
+                            ? '#32A5DC'
+                            : 'rgba(255,255,255,0.8)',
+                        }}
+                      />
+                      <div className="flex flex-col">
+                        <span className="text-xs font-semibold text-white/90 drop-shadow-sm">
+                          {day.name}
+                        </span>
+                        <span className="text-[11px] text-white/70 drop-shadow-sm">
+                          {formatDateShort(day.dayOfWeek)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col items-start xs:items-end gap-0.5 text-xs font-medium drop-shadow-sm text-white/90">
+                      {isClosed ? (
+                        <span className="inline-flex items-center rounded-full bg-white/10 px-2 py-0.5 text-[11px] uppercase tracking-wide">
+                          Out
+                        </span>
+                      ) : (
+                        getDisplayPeriods(schedule).map((period, index) => (
+                          <span
+                            key={index}
+                            className="inline-flex items-center rounded-full bg-white/15 px-2 py-0.5"
+                          >
+                            {period}
+                          </span>
+                        ))
+                      )}
+                    </div>
                   </div>
                 </div>
               );
