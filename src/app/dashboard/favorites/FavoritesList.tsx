@@ -5,6 +5,7 @@ import Link from "next/link";
 import { deleteFavorite } from "./actions";
 import { useToast } from "@/providers/ToastProvider";
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
+import { CoffeeIcon, TeaIcon, DrinkIcon, StarIcon } from "@/components/icons";
 
 interface Favorite {
   id: number;
@@ -60,7 +61,7 @@ export default function FavoritesList({ favorites }: FavoritesListProps) {
   if (favorites.length === 0) {
     return (
       <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-12 text-center">
-        <div className="text-6xl mb-4">⭐</div>
+        <div className="mb-4"><StarIcon size={64} className="text-yellow-400" /></div>
         <h3 className="text-xl font-bold text-white mb-2">No favorites yet</h3>
         <p className="text-blue-200 text-sm mb-6">
           Create your first favorite drink to get started!
@@ -85,7 +86,7 @@ export default function FavoritesList({ favorites }: FavoritesListProps) {
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
                 <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-xl shadow-lg shrink-0">
-                  {favorite.product.category === 'coffee' ? '☕' : favorite.product.category === 'tea' ? '🍵' : '🥤'}
+                  {favorite.product.category === 'coffee' ? <CoffeeIcon size={32} className="text-gray-400" /> : favorite.product.category === 'tea' ? <TeaIcon size={32} className="text-gray-400" /> : <DrinkIcon size={32} className="text-gray-400" />}
                 </div>
                 <div>
                   <h3 className="text-white font-bold text-lg">{favorite.name}</h3>

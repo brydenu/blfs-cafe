@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { updateProfile, updatePassword, updateNotificationPreferences } from "./actions";
+import { BellIcon } from "@/components/icons";
 
 interface UserData {
   firstName: string;
@@ -227,7 +228,7 @@ export default function SettingsForm({ user }: { user: UserData }) {
         {/* --- SECTION 3: NOTIFICATION PREFERENCES --- */}
         <div className="bg-white rounded-3xl shadow-2xl p-6 sm:p-8 border border-white/10">
             <h2 className="text-xl font-black text-[#004876] mb-6 border-b pb-2 flex items-center gap-2">
-                <span>🔔</span> Notification Preferences
+                <BellIcon size={20} /> Notification Preferences
             </h2>
             
             <div className="space-y-5">

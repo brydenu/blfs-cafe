@@ -2,6 +2,7 @@
 
 import { updateProductAvailability } from './actions';
 import { useToast } from '@/providers/ToastProvider';
+import { CoffeeIcon, TeaIcon, DrinkIcon } from '@/components/icons';
 
 interface Product {
   id: number;
@@ -22,14 +23,14 @@ interface ProductCardProps {
 export default function ProductCard({ product, onEdit, onDelete }: ProductCardProps) {
   const { showToast } = useToast();
 
-  const getCategoryEmoji = (category: string) => {
+  const getCategoryIcon = (category: string, size: number = 32) => {
     switch (category.toLowerCase()) {
       case 'coffee':
-        return '☕';
+        return <CoffeeIcon size={size} className="text-gray-400" />;
       case 'tea':
-        return '🍵';
+        return <TeaIcon size={size} className="text-gray-400" />;
       default:
-        return '🥤';
+        return <DrinkIcon size={size} className="text-gray-400" />;
     }
   };
 
@@ -56,7 +57,7 @@ export default function ProductCard({ product, onEdit, onDelete }: ProductCardPr
             className="w-full h-full object-cover"
           />
         ) : (
-          <span className="text-5xl">{getCategoryEmoji(product.category)}</span>
+          <div className="text-gray-400">{getCategoryIcon(product.category, 48)}</div>
         )}
       </div>
 

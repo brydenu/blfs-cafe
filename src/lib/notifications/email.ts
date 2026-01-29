@@ -90,7 +90,7 @@ export const EmailProvider: NotificationProvider = {
         subject = `Your Order is Ready!`;
         html = `
           <div style="font-family: sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #004876; margin-bottom: 20px;">Your Order is Ready! ☕</h1>
+            <h1 style="color: #004876; margin-bottom: 20px;">Your Order is Ready!</h1>
             <p style="font-size: 16px; margin-bottom: 20px;">Hey ${data.name},</p>
             <p style="font-size: 16px; margin-bottom: 20px;">Your order of:</p>
             <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #32A5DC;">
@@ -116,10 +116,10 @@ export const EmailProvider: NotificationProvider = {
             <p style="font-size: 12px; color: gray; margin-top: 20px;">If this wasn't you, ignore this email.</p>
           </div>
         `;
-            break;
+        break;
         
-        case 'WELCOME':
-        subject = 'Welcome to the BioLife Cafe! ☕';
+      case 'WELCOME':
+        subject = 'Welcome to the BioLife Cafe!';
         html = `
           <div style="font-family: sans-serif; padding: 20px; color: #333;">
             <h1 style="color: #004876;">Welcome, ${data.name}!</h1>

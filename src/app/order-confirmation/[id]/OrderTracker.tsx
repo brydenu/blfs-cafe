@@ -1,5 +1,7 @@
 'use client';
 
+import { HourglassIcon } from "@/components/icons";
+
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { io } from "socket.io-client";
@@ -350,12 +352,12 @@ export default function OrderTracker({ order, ordersAhead, estimatedMinutes, caf
 
       if (isMyOrder) {
         if (data.type === 'item-completed') {
-          showToast(`☕ ${data.recipientName}'s ${data.itemName} is ready!`);
+          showToast(`${data.recipientName}'s ${data.itemName} is ready!`);
           router.refresh();
         }
 
         if (data.type === 'order-completed') {
-          showToast(`✅ Order Complete!`);
+          showToast(`Order Complete!`);
           router.refresh();
         }
 
@@ -407,8 +409,8 @@ export default function OrderTracker({ order, ordersAhead, estimatedMinutes, caf
                 </svg>
             </div>
         ) : (
-            <div className="w-16 h-16 md:w-20 md:h-20 bg-[#32A5DC] rounded-full flex items-center justify-center text-3xl md:text-4xl text-white mx-auto mb-4 md:mb-6 shadow-lg shadow-blue-500/20 animate-pulse">
-                ⏳
+            <div className="w-16 h-16 md:w-20 md:h-20 bg-[#32A5DC] rounded-full flex items-center justify-center text-white mx-auto mb-4 md:mb-6 shadow-lg shadow-blue-500/20 animate-pulse">
+                <HourglassIcon size={32} className="text-white" />
             </div>
         )}
 

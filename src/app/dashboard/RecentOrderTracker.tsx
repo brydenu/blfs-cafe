@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { io } from "socket.io-client";
 import { fetchSingleOrder, getQueuePosition, cancelOrderItem, updateOrderNotificationPreferences } from "./actions";
+import { CoffeeIcon, TeaIcon, DrinkIcon } from "@/components/icons";
 
 interface RecentOrderTrackerProps {
   order: any;
@@ -325,7 +326,13 @@ export default function RecentOrderTracker({ order }: RecentOrderTrackerProps) {
                                 isItemDone ? 'bg-green-100 text-green-600' : 
                                 'bg-white text-gray-400 border border-gray-200'
                             }`}>
-                                {item.product.category === 'coffee' ? '☕' : '🥤'}
+                                {item.product.category === 'coffee' ? (
+                                    <CoffeeIcon size={24} className="text-gray-400" />
+                                ) : item.product.category === 'tea' ? (
+                                    <TeaIcon size={24} className="text-gray-400" />
+                                ) : (
+                                    <DrinkIcon size={24} className="text-gray-400" />
+                                )}
                             </div>
                             <div className="min-w-0 flex-1">
                                 <p className={`font-bold text-sm md:text-base truncate ${

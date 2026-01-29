@@ -5,6 +5,7 @@ import ProductCard from './ProductCard';
 import CreateProductForm from './CreateProductForm';
 import EditProductModal from './EditProductModal';
 import DeleteProductModal from './DeleteProductModal';
+import { CoffeeIcon, TeaIcon, DrinkIcon } from '@/components/icons';
 
 interface Product {
   id: number;
@@ -46,16 +47,6 @@ export default function MenuManager({ products }: MenuManagerProps) {
     ? products
     : products.filter(p => p.category === activeCategory);
 
-  const getCategoryEmoji = (category: string) => {
-    switch (category.toLowerCase()) {
-      case 'coffee':
-        return '☕';
-      case 'tea':
-        return '🍵';
-      default:
-        return '🥤';
-    }
-  };
 
   return (
     <div className="space-y-8">
@@ -71,7 +62,12 @@ export default function MenuManager({ products }: MenuManagerProps) {
                 : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
             }`}
           >
-            {category === 'all' ? 'All' : `${getCategoryEmoji(category)} ${category.charAt(0).toUpperCase() + category.slice(1)}`}
+            {category === 'all' ? 'All' : (
+              <span className="flex items-center gap-2">
+                {getCategoryIcon(category, 20)}
+                <span>{category.charAt(0).toUpperCase() + category.slice(1)}</span>
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -93,7 +89,7 @@ export default function MenuManager({ products }: MenuManagerProps) {
           {Object.entries(productsByCategory).map(([category, categoryProducts]) => (
             <div key={category} className="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
               <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                <span className="text-2xl">{getCategoryEmoji(category)}</span>
+                <div>{getCategoryIcon(category, 24)}</div>
                 {category.charAt(0).toUpperCase() + category.slice(1)} ({categoryProducts.length})
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

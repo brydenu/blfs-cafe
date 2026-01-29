@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { ChartIcon, ScrollIcon, CoffeeIcon, StarIcon, BoxIcon, CalendarIcon, FireIcon } from "@/components/icons";
 
 interface AdminSidebarProps {
   queueCount: number;
@@ -14,12 +15,12 @@ export default function AdminSidebar({ queueCount }: AdminSidebarProps) {
   const pathname = usePathname();
 
   const navItems = [
-    { label: "Overview", href: "/admin", icon: "📊" },
-    { label: "Order History", href: "/admin/history", icon: "📜" },
-    { label: "Menu", href: "/admin/menu", icon: "☕" },
-    { label: "Featured Drinks", href: "/admin/featured-drinks", icon: "⭐" },
-    { label: "Inventory", href: "/admin/inventory", icon: "📦" },
-    { label: "Schedule", href: "/admin/schedule", icon: "📅" },
+    { label: "Overview", href: "/admin", icon: ChartIcon },
+    { label: "Order History", href: "/admin/history", icon: ScrollIcon },
+    { label: "Menu", href: "/admin/menu", icon: CoffeeIcon },
+    { label: "Featured Drinks", href: "/admin/featured-drinks", icon: StarIcon },
+    { label: "Inventory", href: "/admin/inventory", icon: BoxIcon },
+    { label: "Schedule", href: "/admin/schedule", icon: CalendarIcon },
   ];
 
   return (
@@ -67,7 +68,9 @@ export default function AdminSidebar({ queueCount }: AdminSidebarProps) {
                             className={`flex items-center ${isCollapsed ? "justify-center px-0" : "px-4 gap-3"} py-3 rounded-xl transition-all duration-200 cursor-pointer group relative
                             ${isActive ? "bg-[#32A5DC] text-white shadow-lg" : "hover:bg-white/10 text-blue-100 hover:text-white"}`}
                         >
-                            <span className="text-xl shrink-0">{item.icon}</span>
+                            <span className="shrink-0">
+                              <item.icon size={20} className="text-current" />
+                            </span>
                             
                             {!isCollapsed && (
                                 <span className="text-sm font-bold whitespace-nowrap">{item.label}</span>
@@ -92,7 +95,9 @@ export default function AdminSidebar({ queueCount }: AdminSidebarProps) {
                         ${isCollapsed ? "bg-transparent" : "bg-gradient-to-r from-[#32A5DC] to-[#288bba] shadow-lg border border-white/20"}`}
                     >
                         <div className="flex items-center gap-3">
-                            <span className={`${isCollapsed ? "text-2xl animate-pulse" : "text-lg"} shrink-0`}>🔥</span>
+                            <span className={`${isCollapsed ? "animate-pulse" : ""} shrink-0`}>
+                              <FireIcon size={isCollapsed ? 24 : 18} className="text-current" />
+                            </span>
                             {!isCollapsed && <span className="font-bold text-sm text-white">Live Queue</span>}
                         </div>
                         

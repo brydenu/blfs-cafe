@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import Link from "next/link";
 import { getTodayStatistics } from "../actions";
 import SuggestionsBadgeInline from "./SuggestionsBadgeInline";
+import { FireIcon, TVIcon, CalendarIcon, CoffeeIcon, StarIcon, BoxIcon, ScrollIcon, ChartIcon, UsersIcon, MegaphoneIcon, LightbulbIcon } from "@/components/icons";
 
 export const dynamic = 'force-dynamic';
 
@@ -80,8 +81,8 @@ export default async function AdminDashboard() {
         <Link href="/admin/queue" className="order-1 md:order-none">
           <div className="bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-700 hover:border-[#32A5DC] transition-all cursor-pointer group h-full flex flex-col">
             <div className="flex items-center gap-4 mb-4">
-              <div className="w-16 h-16 bg-[#32A5DC]/20 text-[#32A5DC] rounded-xl flex items-center justify-center text-3xl group-hover:bg-[#32A5DC]/30 transition-colors">
-                🔥
+              <div className="w-16 h-16 bg-[#32A5DC]/20 text-[#32A5DC] rounded-xl flex items-center justify-center group-hover:bg-[#32A5DC]/30 transition-colors">
+                <FireIcon size={32} className="text-[#32A5DC]" />
               </div>
               <div>
                 <h2 className="text-xl font-black text-white">Active Queue</h2>
@@ -102,8 +103,8 @@ export default async function AdminDashboard() {
         <Link href="/admin/observer" className="order-6 md:order-none">
           <div className="bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-700 hover:border-[#32A5DC] transition-all cursor-pointer group h-full flex flex-col">
             <div className="flex items-center gap-4 mb-4">
-              <div className="w-16 h-16 bg-[#32A5DC]/20 text-[#32A5DC] rounded-xl flex items-center justify-center text-3xl group-hover:bg-[#32A5DC]/30 transition-colors">
-                📺
+              <div className="w-16 h-16 bg-[#32A5DC]/20 text-[#32A5DC] rounded-xl flex items-center justify-center group-hover:bg-[#32A5DC]/30 transition-colors">
+                <TVIcon size={32} className="text-[#32A5DC]" />
               </div>
               <div>
                 <h2 className="text-xl font-black text-white">Observer Screen</h2>
@@ -117,8 +118,8 @@ export default async function AdminDashboard() {
         <Link href="/admin/schedule" className="order-2 md:order-none">
           <div className="bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-700 hover:border-[#32A5DC] transition-all cursor-pointer group h-full flex flex-col">
             <div className="flex items-center gap-4 mb-4">
-              <div className="w-16 h-16 bg-[#32A5DC]/20 text-[#32A5DC] rounded-xl flex items-center justify-center text-3xl group-hover:bg-[#32A5DC]/30 transition-colors">
-                📅
+              <div className="w-16 h-16 bg-[#32A5DC]/20 text-[#32A5DC] rounded-xl flex items-center justify-center group-hover:bg-[#32A5DC]/30 transition-colors">
+                <CalendarIcon size={32} className="text-[#32A5DC]" />
               </div>
               <div>
                 <h2 className="text-xl font-black text-white">Schedule</h2>
@@ -132,8 +133,8 @@ export default async function AdminDashboard() {
         <Link href="/admin/menu" className="order-3 md:order-none">
           <div className="bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-700 hover:border-[#32A5DC] transition-all cursor-pointer group h-full flex flex-col">
             <div className="flex items-center gap-4 mb-4">
-              <div className="w-16 h-16 bg-[#32A5DC]/20 text-[#32A5DC] rounded-xl flex items-center justify-center text-3xl group-hover:bg-[#32A5DC]/30 transition-colors">
-                ☕
+              <div className="w-16 h-16 bg-[#32A5DC]/20 text-[#32A5DC] rounded-xl flex items-center justify-center group-hover:bg-[#32A5DC]/30 transition-colors">
+                <CoffeeIcon size={32} className="text-[#32A5DC]" />
               </div>
               <div>
                 <h2 className="text-xl font-black text-white">Menu</h2>
@@ -147,8 +148,8 @@ export default async function AdminDashboard() {
         <Link href="/admin/featured-drinks" className="order-9 md:order-none">
           <div className="bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-700 hover:border-[#32A5DC] transition-all cursor-pointer group h-full flex flex-col">
             <div className="flex items-center gap-4 mb-4">
-              <div className="w-16 h-16 bg-[#32A5DC]/20 text-[#32A5DC] rounded-xl flex items-center justify-center text-3xl group-hover:bg-[#32A5DC]/30 transition-colors">
-                ⭐
+              <div className="w-16 h-16 bg-[#32A5DC]/20 text-[#32A5DC] rounded-xl flex items-center justify-center group-hover:bg-[#32A5DC]/30 transition-colors">
+                <StarIcon size={32} className="text-[#32A5DC]" />
               </div>
               <div>
                 <h2 className="text-xl font-black text-white">Featured Drinks</h2>
@@ -162,8 +163,8 @@ export default async function AdminDashboard() {
         <Link href="/admin/inventory" className="order-4 md:order-none">
           <div className="bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-700 hover:border-[#32A5DC] transition-all cursor-pointer group h-full flex flex-col">
             <div className="flex items-center gap-4 mb-4">
-              <div className="w-16 h-16 bg-[#32A5DC]/20 text-[#32A5DC] rounded-xl flex items-center justify-center text-3xl group-hover:bg-[#32A5DC]/30 transition-colors">
-                📦
+              <div className="w-16 h-16 bg-[#32A5DC]/20 text-[#32A5DC] rounded-xl flex items-center justify-center group-hover:bg-[#32A5DC]/30 transition-colors">
+                <BoxIcon size={32} className="text-[#32A5DC]" />
               </div>
               <div>
                 <h2 className="text-xl font-black text-white">Inventory</h2>
@@ -177,8 +178,8 @@ export default async function AdminDashboard() {
         <Link href="/admin/history" className="order-5 md:order-none">
           <div className="bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-700 hover:border-[#32A5DC] transition-all cursor-pointer group h-full flex flex-col">
             <div className="flex items-center gap-4 mb-4">
-              <div className="w-16 h-16 bg-[#32A5DC]/20 text-[#32A5DC] rounded-xl flex items-center justify-center text-3xl group-hover:bg-[#32A5DC]/30 transition-colors">
-                📜
+              <div className="w-16 h-16 bg-[#32A5DC]/20 text-[#32A5DC] rounded-xl flex items-center justify-center group-hover:bg-[#32A5DC]/30 transition-colors">
+                <ScrollIcon size={32} className="text-[#32A5DC]" />
               </div>
               <div>
                 <h2 className="text-xl font-black text-white">Order History</h2>
@@ -192,8 +193,8 @@ export default async function AdminDashboard() {
         <Link href="/admin/statistics" className="order-6 md:order-none">
           <div className="bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-700 hover:border-[#32A5DC] transition-all cursor-pointer group h-full flex flex-col">
             <div className="flex items-center gap-4 mb-4">
-              <div className="w-16 h-16 bg-[#32A5DC]/20 text-[#32A5DC] rounded-xl flex items-center justify-center text-3xl group-hover:bg-[#32A5DC]/30 transition-colors">
-                📊
+              <div className="w-16 h-16 bg-[#32A5DC]/20 text-[#32A5DC] rounded-xl flex items-center justify-center group-hover:bg-[#32A5DC]/30 transition-colors">
+                <ChartIcon size={32} className="text-[#32A5DC]" />
               </div>
               <div>
                 <h2 className="text-xl font-black text-white">Statistics</h2>
@@ -207,8 +208,8 @@ export default async function AdminDashboard() {
         <Link href="/admin/users" className="order-7 md:order-none">
           <div className="bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-700 hover:border-[#32A5DC] transition-all cursor-pointer group h-full flex flex-col">
             <div className="flex items-center gap-4 mb-4">
-              <div className="w-16 h-16 bg-[#32A5DC]/20 text-[#32A5DC] rounded-xl flex items-center justify-center text-3xl group-hover:bg-[#32A5DC]/30 transition-colors">
-                👥
+              <div className="w-16 h-16 bg-[#32A5DC]/20 text-[#32A5DC] rounded-xl flex items-center justify-center group-hover:bg-[#32A5DC]/30 transition-colors">
+                <UsersIcon size={32} className="text-[#32A5DC]" />
               </div>
               <div>
                 <h2 className="text-xl font-black text-white">User Manager</h2>
@@ -222,8 +223,8 @@ export default async function AdminDashboard() {
         <Link href="/admin/communications" className="order-8 md:order-none">
           <div className="bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-700 hover:border-[#32A5DC] transition-all cursor-pointer group h-full flex flex-col">
             <div className="flex items-center gap-4 mb-4">
-              <div className="w-16 h-16 bg-[#32A5DC]/20 text-[#32A5DC] rounded-xl flex items-center justify-center text-3xl group-hover:bg-[#32A5DC]/30 transition-colors">
-                📢
+              <div className="w-16 h-16 bg-[#32A5DC]/20 text-[#32A5DC] rounded-xl flex items-center justify-center group-hover:bg-[#32A5DC]/30 transition-colors">
+                <MegaphoneIcon size={32} className="text-[#32A5DC]" />
               </div>
               <div>
                 <h2 className="text-xl font-black text-white">Communications</h2>
@@ -237,8 +238,8 @@ export default async function AdminDashboard() {
         <Link href="/admin/suggestions" className="order-9 md:order-none">
           <div className="bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-700 hover:border-[#32A5DC] transition-all cursor-pointer group h-full flex flex-col">
             <div className="flex items-center gap-4 mb-4">
-              <div className="w-16 h-16 bg-[#32A5DC]/20 text-[#32A5DC] rounded-xl flex items-center justify-center text-3xl group-hover:bg-[#32A5DC]/30 transition-colors">
-                💡
+              <div className="w-16 h-16 bg-[#32A5DC]/20 text-[#32A5DC] rounded-xl flex items-center justify-center group-hover:bg-[#32A5DC]/30 transition-colors">
+                <LightbulbIcon size={32} className="text-[#32A5DC]" />
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2">

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { deleteFeaturedDrink, toggleFeaturedDrinkActive } from "./actions";
 import { useToast } from "@/providers/ToastProvider";
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
+import { CoffeeIcon, TeaIcon, DrinkIcon, StarIcon, HourglassIcon } from "@/components/icons";
 
 interface FeaturedDrink {
   id: number;
@@ -85,7 +86,7 @@ export default function FeaturedDrinksList({ featuredDrinks }: FeaturedDrinksLis
       {/* List */}
       {featuredDrinks.length === 0 ? (
         <div className="bg-gray-800 border border-gray-700 rounded-xl p-12 text-center">
-          <div className="text-6xl mb-4">⭐</div>
+          <div className="mb-4"><StarIcon size={64} className="text-yellow-400" /></div>
           <h3 className="text-xl font-bold text-white mb-2">No featured drinks yet</h3>
           <p className="text-gray-400 text-sm mb-6">
             Create your first featured drink to get started!
@@ -107,7 +108,7 @@ export default function FeaturedDrinksList({ featuredDrinks }: FeaturedDrinksLis
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
                     <div className="w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center text-xl shrink-0">
-                      {featured.product.category === 'coffee' ? '☕' : featured.product.category === 'tea' ? '🍵' : '🥤'}
+                      {featured.product.category === 'coffee' ? <CoffeeIcon size={32} className="text-gray-400" /> : featured.product.category === 'tea' ? <TeaIcon size={32} className="text-gray-400" /> : <DrinkIcon size={32} className="text-gray-400" />}
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
@@ -137,7 +138,7 @@ export default function FeaturedDrinksList({ featuredDrinks }: FeaturedDrinksLis
                     title={featured.isActive ? "Deactivate" : "Activate"}
                   >
                     {togglingId === featured.id ? (
-                      <span className="animate-spin">⏳</span>
+                      <HourglassIcon size={16} className="animate-spin text-gray-400" />
                     ) : featured.isActive ? (
                       "Deactivate"
                     ) : (

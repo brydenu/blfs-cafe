@@ -11,6 +11,7 @@ import ErrorModal from "@/components/ErrorModal";
 import OrderWarningModal from "@/components/OrderWarningModal";
 import { getCafeStatusAction } from "@/app/menu/actions";
 import { CafeStatus } from "@/lib/schedule-status";
+import { CoffeeIcon, TeaIcon, DrinkIcon } from "@/components/icons";
 
 interface CustomizeFormProps {
   product: Product;
@@ -483,7 +484,9 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
             className="w-24 h-24 mb-4 object-cover rounded-lg drop-shadow-md"
           />
         ) : (
-          <span className="text-6xl mb-4 filter drop-shadow-md">{product.category === 'coffee' ? '☕' : product.category === 'tea' ? '🍵' : '🥤'}</span>
+          <div className="mb-4 text-gray-400">
+            {product.category === 'coffee' ? <CoffeeIcon size={64} /> : product.category === 'tea' ? <TeaIcon size={64} /> : <DrinkIcon size={64} />}
+          </div>
         )}
         <h1 className="text-3xl font-extrabold text-[#004876] text-center">
             {editId ? `Edit ${product.name}` : product.name}

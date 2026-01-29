@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { updateProduct } from './actions';
 import { useToast } from '@/providers/ToastProvider';
+import { CoffeeIcon, TeaIcon, DrinkIcon } from '@/components/icons';
 
 interface Product {
   id: number;
@@ -108,14 +109,14 @@ export default function EditProductModal({ product, onClose, onSuccess }: EditPr
     }
   };
 
-  const getCategoryEmoji = (category: string) => {
+  const getCategoryIcon = (category: string, size: number = 32) => {
     switch (category.toLowerCase()) {
       case 'coffee':
-        return '☕';
+        return <CoffeeIcon size={size} className="text-gray-400" />;
       case 'tea':
-        return '🍵';
+        return <TeaIcon size={size} className="text-gray-400" />;
       default:
-        return '🥤';
+        return <DrinkIcon size={size} className="text-gray-400" />;
     }
   };
 
@@ -174,9 +175,9 @@ export default function EditProductModal({ product, onClose, onSuccess }: EditPr
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                 className="w-full bg-gray-700 text-white rounded-lg px-4 py-2 border border-gray-600 focus:border-[#32A5DC] focus:outline-none"
               >
-                <option value="coffee">Coffee ☕</option>
-                <option value="tea">Tea 🍵</option>
-                <option value="other">Other 🥤</option>
+                <option value="coffee">Coffee</option>
+                <option value="tea">Tea</option>
+                <option value="other">Other</option>
               </select>
             </div>
 
@@ -247,7 +248,7 @@ export default function EditProductModal({ product, onClose, onSuccess }: EditPr
 
               {!formData.imageUrl && (
                 <p className="text-sm text-gray-400 mt-1">
-                  Default emoji: {getCategoryEmoji(formData.category)}
+                  Default icon: {getCategoryIcon(formData.category, 24)}
                 </p>
               )}
             </div>
