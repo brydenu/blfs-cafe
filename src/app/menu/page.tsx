@@ -10,6 +10,8 @@ export const dynamic = 'force-dynamic';
 export default async function MenuPage() {
   const session = await auth();
 
+  const isGuest = !session?.user;
+
   // 1. Fetch Products (all non-deleted ones, including inactive)
   const rawProducts = await prisma.product.findMany({
     where: { 
@@ -82,6 +84,9 @@ export default async function MenuPage() {
     }
   }));
 
+  const backHref = isGuest ? "/" : "/dashboard";
+  const backLabel = isGuest ? "← Back to landing page" : "← Back to Dashboard";
+
   return (
     <main className="relative min-h-screen p-6 overflow-hidden">
       
@@ -114,8 +119,11 @@ export default async function MenuPage() {
 
         {/* Back Button */}
         <div className="mb-8">
-          <Link href="/dashboard" className="text-blue-200 hover:text-white underline underline-offset-4 text-sm font-medium">
-            ← Back to Dashboard
+          <Link
+            href={backHref}
+            className="text-blue-200 hover:text-white underline underline-offset-4 text-sm font-medium"
+          >
+            {backLabel}
           </Link>
         </div>
 

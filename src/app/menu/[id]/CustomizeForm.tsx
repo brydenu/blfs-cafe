@@ -382,9 +382,9 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
 
   const Counter = ({ count, onMinus, onPlus, colorClass = "text-[#32A5DC]", disabled = false }: any) => (
     <div className={`flex items-center gap-3 bg-white rounded-full border border-gray-200 px-1 py-1 shadow-sm ${disabled ? 'opacity-50' : ''}`}>
-      <button onClick={onMinus} disabled={count === 0 || disabled} className="w-8 h-8 rounded-full bg-gray-100 text-gray-600 disabled:opacity-30 flex items-center justify-center hover:bg-gray-200 font-bold transition-colors cursor-pointer disabled:cursor-not-allowed">-</button>
+      <button onClick={onMinus} disabled={count === 0 || disabled} className="w-8 h-8 rounded-full bg-gray-100 text-gray-600 disabled:opacity-30 flex items-center justify-center hover:bg-gray-200 font-bold transition-all active:scale-90 cursor-pointer disabled:cursor-not-allowed disabled:active:scale-100">-</button>
       <span className={`w-6 text-center font-extrabold ${colorClass} ${disabled ? 'text-gray-400' : ''}`}>{count}</span>
-      <button onClick={onPlus} disabled={disabled} className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white transition-colors ${disabled ? 'bg-gray-400 cursor-not-allowed' : colorClass.includes('32A5DC') ? 'bg-[#32A5DC] hover:bg-[#288bba] cursor-pointer' : 'bg-[#004876] hover:bg-[#003355] cursor-pointer'}`}>+</button>
+      <button onClick={onPlus} disabled={disabled} className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white transition-all active:scale-90 ${disabled ? 'bg-gray-400 cursor-not-allowed disabled:active:scale-100' : colorClass.includes('32A5DC') ? 'bg-[#32A5DC] hover:bg-[#288bba] cursor-pointer' : 'bg-[#004876] hover:bg-[#003355] cursor-pointer'}`}>+</button>
     </div>
   );
 
@@ -406,11 +406,11 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
               key={opt.value}
               onClick={() => !isDisabled && onChange(opt.value)}
               disabled={isDisabled}
-              className={`flex-1 py-1.5 px-2 rounded text-xs font-bold transition-all ${
+              className={`flex-1 py-1.5 px-2 rounded text-xs font-bold transition-all active:scale-95 ${
                 isDisabled
-                  ? 'text-gray-400 cursor-not-allowed'
+                  ? 'text-gray-400 cursor-not-allowed disabled:active:scale-100'
                   : currentValue === opt.value
-                    ? 'bg-white text-[#004876] shadow-sm'
+                    ? 'bg-white text-[#004876] shadow-sm cursor-pointer'
                     : 'text-gray-600 hover:text-gray-800 cursor-pointer'
               }`}
             >
@@ -446,7 +446,7 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
   }
 
   return (
-    <div className="w-full max-w-3xl mx-auto bg-white rounded-3xl shadow-2xl overflow-hidden mb-20 relative z-10">
+    <div className={`w-full max-w-3xl mx-auto bg-white rounded-3xl shadow-2xl overflow-hidden ${hideOrderButtons ? '' : 'mb-20'} relative z-10`}>
       
       {/* Header */}
       <div className="bg-gray-50 p-8 flex flex-col items-center justify-center border-b border-gray-100">
@@ -590,7 +590,7 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
             {product.requiresMilk && <span className="text-xs font-bold text-[#32A5DC] bg-[#32A5DC]/10 px-2 py-1 rounded">Required</span>}
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            <button onClick={() => setSelectedMilk(-1)} disabled={product.requiresMilk} className={`px-3 py-3 rounded-xl border-2 text-center text-sm font-bold transition-all ${product.requiresMilk ? 'opacity-40 cursor-not-allowed bg-gray-50 border-gray-100 text-gray-400' : selectedMilk === -1 ? 'border-gray-500 bg-gray-100 text-gray-800' : 'border-gray-100 text-gray-600 hover:border-gray-200 cursor-pointer'}`}>No Milk</button>
+            <button onClick={() => setSelectedMilk(-1)} disabled={product.requiresMilk} className={`px-3 py-3 rounded-xl border-2 text-center text-sm font-bold transition-all active:scale-95 ${product.requiresMilk ? 'opacity-40 cursor-not-allowed bg-gray-50 border-gray-100 text-gray-400 disabled:active:scale-100' : selectedMilk === -1 ? 'border-gray-500 bg-gray-100 text-gray-800 cursor-pointer' : 'border-gray-100 text-gray-600 hover:border-gray-200 cursor-pointer'}`}>No Milk</button>
             {milks.map((milk) => {
               const isUnavailable = !milk.isAvailable;
               return (
@@ -598,9 +598,9 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
                   key={milk.id} 
                   onClick={() => !isUnavailable && setSelectedMilk(milk.id)} 
                   disabled={isUnavailable}
-                  className={`px-3 py-3 rounded-xl border-2 text-center text-sm font-bold transition-all ${
+                  className={`px-3 py-3 rounded-xl border-2 text-center text-sm font-bold transition-all active:scale-95 ${
                     isUnavailable 
-                      ? 'opacity-50 cursor-not-allowed bg-gray-50 border-gray-200 text-gray-400' 
+                      ? 'opacity-50 cursor-not-allowed bg-gray-50 border-gray-200 text-gray-400 disabled:active:scale-100' 
                       : selectedMilk === milk.id 
                         ? 'border-[#32A5DC] bg-[#32A5DC]/5 text-[#004876] cursor-pointer' 
                         : 'border-gray-100 text-gray-600 hover:border-gray-200 cursor-pointer'
@@ -894,7 +894,7 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
               <p className="text-red-500 text-sm font-medium text-center mb-2">{nameError}</p>
             )}
             <div className={`flex flex-col sm:flex-row gap-4 ${nameError ? 'pt-2' : 'pt-6'}`}>
-              <Link href="/menu" className="py-4 px-6 rounded-xl border-2 border-gray-200 text-gray-500 font-bold text-center hover:bg-gray-50 hover:text-gray-700 transition-all cursor-pointer">
+              <Link href="/menu" className="py-4 px-6 rounded-xl border-2 border-gray-200 text-gray-500 font-bold text-center hover:bg-gray-50 hover:text-gray-700 transition-all active:scale-[0.97] active:translate-y-[2px] cursor-pointer">
                 Cancel
               </Link>
               
@@ -902,20 +902,20 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
                 <>
                   <button 
                     onClick={handleSwitchToGroupOrder}
-                    className="flex-1 bg-[#32A5DC] text-white font-bold py-4 rounded-xl shadow-lg hover:bg-[#288bba] transition-all transform hover:scale-[1.02] cursor-pointer"
+                    className="flex-1 bg-[#32A5DC] text-white font-bold py-4 rounded-xl shadow-lg hover:bg-[#288bba] transition-all transform hover:scale-[1.02] active:scale-[0.97] active:translate-y-[2px] cursor-pointer"
                   >
                     Add to Group Order
                   </button>
                   <button 
                     onClick={handleSoloOrder} 
                     disabled={isSubmitting}
-                    className="flex-1 bg-[#004876] text-white font-bold py-4 rounded-xl shadow-lg hover:bg-[#32A5DC] transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                    className="flex-1 bg-[#004876] text-white font-bold py-4 rounded-xl shadow-lg hover:bg-[#32A5DC] transition-all transform hover:scale-[1.02] active:scale-[0.97] active:translate-y-[2px] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 disabled:active:translate-y-0 cursor-pointer"
                   >
                     {isSubmitting ? "Processing..." : "Place Order"}
                   </button>
                 </>
               ) : (
-                <button onClick={() => processOrder('/cart')} className="flex-1 bg-[#004876] text-white font-bold py-4 rounded-xl shadow-lg hover:bg-[#32A5DC] transition-all transform hover:scale-[1.02] cursor-pointer">
+                <button onClick={() => processOrder('/cart')} className="flex-1 bg-[#004876] text-white font-bold py-4 rounded-xl shadow-lg hover:bg-[#32A5DC] transition-all transform hover:scale-[1.02] active:scale-[0.97] active:translate-y-[2px] cursor-pointer">
                   {editId ? "Update Order" : "Add to Order"}
                 </button>
               )}

@@ -69,7 +69,7 @@ export default async function LoginPage() {
                 />
             </div>
 
-            <button className="w-full bg-[#32A5DC] hover:bg-[#288bba] text-white font-bold text-lg py-3 px-6 rounded-xl shadow-lg transition-all hover:scale-[1.02] mt-4">
+            <button className="w-full bg-[#32A5DC] hover:bg-[#288bba] text-white font-bold text-lg py-3 px-6 rounded-xl shadow-lg transition-all hover:scale-[1.02] active:scale-[0.97] active:translate-y-[2px] mt-4">
                 Sign In
             </button>
         </form>

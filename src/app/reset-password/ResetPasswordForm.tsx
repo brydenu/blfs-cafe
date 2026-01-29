@@ -51,7 +51,7 @@ export default function ResetPasswordForm() {
                 <h1 className="text-2xl font-black text-red-500 mb-2">Invalid Link</h1>
                 <p className="text-gray-500 mb-6">This password reset link is missing or invalid.</p>
                 <Link href="/forgot-password">
-                    <button className="bg-[#003355] text-white font-bold py-3 px-6 rounded-xl">
+                    <button className="bg-[#003355] text-white font-bold py-3 px-6 rounded-xl transition-all active:scale-[0.97] active:translate-y-[2px]">
                         Request New Link
                     </button>
                 </Link>
@@ -92,7 +92,7 @@ export default function ResetPasswordForm() {
                     <p className="text-gray-500 text-sm">You can now sign in with your new password.</p>
                 </div>
                 <Link href="/login">
-                    <button className="w-full bg-[#32A5DC] hover:bg-[#288bba] text-white font-bold py-3 px-4 rounded-xl transition-colors shadow-lg">
+                    <button className="w-full bg-[#32A5DC] hover:bg-[#288bba] text-white font-bold py-3 px-4 rounded-xl transition-all active:scale-[0.97] active:translate-y-[2px] shadow-lg">
                         Login Now
                     </button>
                 </Link>
@@ -142,7 +142,7 @@ export default function ResetPasswordForm() {
                 <button
                     type="submit"
                     disabled={status === 'loading'}
-                    className="w-full bg-[#32A5DC] hover:bg-[#288bba] text-white font-bold py-3 px-4 rounded-xl transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] disabled:opacity-70 disabled:hover:scale-100 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    className="w-full bg-[#32A5DC] hover:bg-[#288bba] text-white font-bold py-3 px-4 rounded-xl transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.97] active:translate-y-[2px] disabled:opacity-70 disabled:hover:scale-100 disabled:active:scale-100 disabled:active:translate-y-0 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                     {status === 'loading' ? (
                         <>

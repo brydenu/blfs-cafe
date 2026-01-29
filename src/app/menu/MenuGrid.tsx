@@ -150,11 +150,11 @@ export default function MenuGrid({ products = [], favorites = [], featuredDrinks
           <button
             onClick={() => setOrderMode('single')}
             disabled={isMultiForced} 
-            className={`px-6 py-3 rounded-full text-sm font-bold transition-all duration-300 flex items-center gap-2 cursor-pointer ${
+            className={`px-6 py-3 rounded-full text-sm font-bold transition-all duration-300 flex items-center gap-2 cursor-pointer active:scale-95 ${
               orderMode === 'single' 
                 ? 'bg-white text-[#004876] shadow-lg scale-105' 
                 : isMultiForced 
-                    ? 'text-gray-400 cursor-not-allowed opacity-50' 
+                    ? 'text-gray-400 cursor-not-allowed opacity-50 disabled:active:scale-100' 
                     : 'text-blue-100 hover:text-white'
             }`}
           >
@@ -162,7 +162,7 @@ export default function MenuGrid({ products = [], favorites = [], featuredDrinks
           </button>
           <button
             onClick={() => setOrderMode('multi')}
-            className={`px-6 py-3 rounded-full text-sm font-bold transition-all duration-300 flex items-center gap-2 cursor-pointer ${
+            className={`px-6 py-3 rounded-full text-sm font-bold transition-all duration-300 flex items-center gap-2 cursor-pointer active:scale-95 ${
               orderMode === 'multi' 
                 ? 'bg-white text-[#004876] shadow-lg scale-105' 
                 : 'text-blue-100 hover:text-white'
@@ -268,7 +268,7 @@ export default function MenuGrid({ products = [], favorites = [], featuredDrinks
         <div className="mb-12 animate-fade-in">
             <button
               onClick={() => setFavoritesExpanded(!favoritesExpanded)}
-              className="text-blue-200 text-sm font-bold uppercase tracking-wider mb-4 flex items-center gap-2 hover:text-blue-100 transition-colors cursor-pointer w-full text-left"
+              className="text-blue-200 text-sm font-bold uppercase tracking-wider mb-4 flex items-center gap-2 hover:text-blue-100 transition-all active:scale-95 cursor-pointer w-full text-left"
             >
                 <svg 
                   xmlns="http://www.w3.org/2000/svg" 

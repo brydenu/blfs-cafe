@@ -62,7 +62,7 @@ export default async function FavoritesPage() {
             </p>
           </div>
           <Link href="/dashboard">
-            <button className="bg-gray-800 hover:bg-gray-700 border border-white/10 text-white px-5 py-2 rounded-xl text-xs font-bold tracking-wider transition-all shadow-lg hover:scale-105 cursor-pointer">
+            <button className="bg-gray-800 hover:bg-gray-700 border border-white/10 text-white px-5 py-2 rounded-xl text-xs font-bold tracking-wider transition-all shadow-lg hover:scale-105 active:scale-[0.97] active:translate-y-[2px] cursor-pointer">
               ← Back
             </button>
           </Link>
@@ -71,7 +71,7 @@ export default async function FavoritesPage() {
         {/* ADD NEW BUTTON */}
         <div className="mb-6">
           <Link href="/dashboard/favorites/new">
-            <button className="w-full bg-[#32A5DC] hover:bg-[#288bba] text-white p-4 rounded-2xl font-bold shadow-lg transition-all hover:scale-[1.02] flex items-center justify-center gap-2 cursor-pointer">
+            <button className="w-full bg-[#32A5DC] hover:bg-[#288bba] text-white p-4 rounded-2xl font-bold shadow-lg transition-all hover:scale-[1.02] active:scale-[0.97] active:translate-y-[2px] flex items-center justify-center gap-2 cursor-pointer">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
               </svg>

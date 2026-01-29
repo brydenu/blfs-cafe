@@ -60,20 +60,20 @@ export default async function LandingPage() {
           {isLoggedIn ? (
             /* --- LOGGED IN BUTTONS --- */
             <>
-                <Link href="/dashboard" className="flex-1 bg-white text-[#004876] font-bold py-4 px-8 rounded-full shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.5)] hover:scale-105 transition-all duration-300 text-lg border-2 border-transparent text-center">
+                <Link href="/dashboard" className="flex-1 bg-white text-[#004876] font-bold py-4 px-8 rounded-full shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.5)] hover:scale-105 transition-all duration-300 text-lg border-2 border-transparent text-center active:scale-95">
                     Go to Dashboard
                 </Link>
-                <Link href="/menu" className="flex-1 bg-[#32A5DC] text-white font-bold py-4 px-8 rounded-full hover:bg-[#32A5DC] hover:text-white hover:shadow-[0_0_20px_rgba(50,165,220,0.5)] hover:scale-105 transition-all duration-300 text-lg text-center">
+                <Link href="/menu" className="flex-1 bg-[#32A5DC] text-white font-bold py-4 px-8 rounded-full hover:bg-[#32A5DC] hover:text-white hover:shadow-[0_0_20px_rgba(50,165,220,0.5)] hover:scale-105 transition-all duration-300 text-lg text-center active:scale-95">
                     Order Now
                 </Link>
             </>
           ) : (
             /* --- LOGGED OUT BUTTONS --- */
             <>
-                <Link href="/login" className="flex-1 bg-white text-[#004876] font-bold py-4 px-8 rounded-full shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.5)] hover:scale-105 transition-all duration-300 text-lg border-2 border-transparent text-center">
+                <Link href="/login" className="flex-1 bg-white text-[#004876] font-bold py-4 px-8 rounded-full shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.5)] hover:scale-105 transition-all duration-300 text-lg border-2 border-transparent text-center active:scale-95">
                     Login / Sign Up
                 </Link>
-                <Link href="/menu" className="flex-1 bg-transparent border-2 border-[#32A5DC] text-[#32A5DC] font-bold py-4 px-8 rounded-full hover:bg-[#32A5DC] hover:text-white hover:shadow-[0_0_20px_rgba(50,165,220,0.5)] hover:scale-105 transition-all duration-300 text-lg text-center">
+                <Link href="/menu" className="flex-1 bg-transparent border-2 border-[#32A5DC] text-[#32A5DC] font-bold py-4 px-8 rounded-full hover:bg-[#32A5DC] hover:text-white hover:shadow-[0_0_20px_rgba(50,165,220,0.5)] hover:scale-105 transition-all duration-300 text-lg text-center active:scale-95">
                     Order as Guest
                 </Link>
             </>

@@ -38,20 +38,21 @@ export default function SuggestionsPage() {
       </div>
 
       {/* --- CONTENT CONTAINER --- */}
-      <div className="relative z-10 w-full max-w-2xl space-y-6 pt-8 pb-12">
+      <div className="relative z-10 w-full max-w-2xl space-y-6 pt-8 pb-12 px-2 sm:px-0">
         
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
             <h1 className="text-3xl font-black text-white drop-shadow-md">Suggestions</h1>
-            <div className="flex gap-3">
+            <div className="flex gap-2 sm:gap-3 flex-shrink-0">
               <Link href="/dashboard/suggestions/history">
-                <button className="bg-[#003355] hover:bg-[#002a4d] border border-white/10 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-md transition-all hover:scale-[1.02]">
-                  View History
+                <button className="bg-[#003355] hover:bg-[#002a4d] border border-white/10 text-white px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap">
+                  <span className="hidden sm:inline">View History</span>
+                  <span className="sm:hidden">History</span>
                 </button>
               </Link>
               <Link href="/dashboard">
-                <button className="bg-[#003355] hover:bg-[#002a4d] border border-white/10 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-md transition-all hover:scale-[1.02] flex items-center gap-2">
-                    <span>←</span> Back
+                <button className="bg-[#003355] hover:bg-[#002a4d] border border-white/10 text-white px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center gap-1 sm:gap-2 whitespace-nowrap">
+                    <span>←</span> <span>Back</span>
                 </button>
               </Link>
             </div>
@@ -87,7 +88,7 @@ export default function SuggestionsPage() {
                     <button 
                         type="submit"
                         disabled={status === 'loading' || content.trim().length === 0}
-                        className="w-full sm:w-auto bg-[#32A5DC] hover:bg-[#288bba] text-white font-bold py-3 px-8 rounded-xl transition-all shadow-md hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full sm:w-auto bg-[#32A5DC] hover:bg-[#288bba] text-white font-bold py-3 px-8 rounded-xl transition-all shadow-md hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {status === 'loading' ? 'Submitting...' : 'Submit Suggestion'}
                     </button>
