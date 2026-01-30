@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { StarIcon } from "@/components/icons";
 
 interface UserStatisticsProps {
   userId: string;
@@ -28,8 +29,6 @@ interface UserStatisticsProps {
     favoriteDay: { name: string; count: number };
   };
   currentTimeframe: 'today' | 'week' | 'month' | 'all';
-  timeDistribution: Record<string, number>;
-  currentTimeFilter: 'all' | 'week' | 'month' | 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday';
 }
 
 export default function UserStatistics({ userId, stats, currentTimeframe }: UserStatisticsProps) {

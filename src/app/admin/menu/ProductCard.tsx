@@ -37,7 +37,7 @@ export default function ProductCard({ product, onEdit, onDelete }: ProductCardPr
   const handleToggleAvailability = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const result = await updateProductAvailability(product.id, e.target.checked);
     if (!result.success) {
-      showToast('Failed to update availability', 'error');
+      showToast('Failed to update availability');
     }
     // No success toast - silent update
   };

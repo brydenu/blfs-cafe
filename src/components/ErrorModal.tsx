@@ -1,5 +1,7 @@
 'use client';
 
+import { ReactNode } from 'react';
+
 interface ErrorModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -20,7 +22,7 @@ export default function ErrorModal({
   const isProductError = message.includes("the following item(s) are currently unavailable:");
   
   // Parse the message for out-of-stock errors
-  let formattedMessage = message;
+  let formattedMessage: string | ReactNode = message;
   let displayTitle = title || "Order Error";
   
   if (isIngredientError) {

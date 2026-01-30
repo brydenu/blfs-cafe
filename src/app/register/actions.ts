@@ -48,9 +48,11 @@ export async function registerUser(data: RegisterInput) {
     });
 
     // --- TRIGGER WELCOME EMAIL ---
-    sendNotification('WELCOME', user.email, {
-      name: user.firstName
-    }).catch(err => console.error("Failed to send welcome email:", err));
+    if (user.email) {
+      sendNotification('WELCOME', user.email, {
+        name: user.firstName
+      }).catch(err => console.error("Failed to send welcome email:", err));
+    }
     // -----------------------------
 
     return { success: true };

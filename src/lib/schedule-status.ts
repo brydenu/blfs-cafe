@@ -77,6 +77,12 @@ export async function getCafeStatus(): Promise<CafeStatus> {
   // Case 2: Closed between periods (after period 1, before period 2)
   if (schedule.isSecondPeriodActive && open2Minutes && close2Minutes) {
     if (currentMinutes >= close1Minutes && currentMinutes < open2Minutes) {
+      if (!schedule.openTime2) {
+        return {
+          type: 'closed-for-day',
+          message: 'The cafe is currently closed.'
+        };
+      }
       return {
         type: 'closed-between-periods',
         nextOpenTime: formatTime(schedule.openTime2),

@@ -61,6 +61,10 @@ export async function updatePassword(formData: FormData) {
 
   if (!user) return { success: false, message: "User not found." };
 
+  if (!user.passwordHash) {
+    return { success: false, message: "User account has no password set." };
+  }
+
   // 2. Verify Current Password
   const isValid = await bcrypt.compare(currentPassword, user.passwordHash);
   if (!isValid) {

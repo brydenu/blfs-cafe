@@ -224,7 +224,7 @@ export default function ScheduleWidget({ initialSchedules }: ScheduleWidgetProps
                   <span className={`text-xs font-semibold ${isToday ? 'text-[#004876]' : 'text-gray-600'}`}>
                     {formatTime(schedule.openTime1)} - {formatTime(schedule.closeTime1)}
                   </span>
-                  {hasSecondPeriod && (
+                  {hasSecondPeriod && schedule.openTime2 && schedule.closeTime2 && (
                     <span className={`text-xs font-semibold ${isToday ? 'text-[#004876]' : 'text-gray-600'}`}>
                       {formatTime(schedule.openTime2)} - {formatTime(schedule.closeTime2)}
                     </span>

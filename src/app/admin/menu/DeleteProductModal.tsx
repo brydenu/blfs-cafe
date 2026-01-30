@@ -22,7 +22,7 @@ export default function DeleteProductModal({ product, onClose, onSuccess }: Dele
 
   const handleDelete = async () => {
     if (confirmText !== product.name) {
-      showToast('Please type the product name to confirm', 'error');
+      showToast('Please type the product name to confirm');
       return;
     }
 
@@ -34,7 +34,7 @@ export default function DeleteProductModal({ product, onClose, onSuccess }: Dele
       showToast('Product deleted successfully');
       onSuccess();
     } else {
-      showToast(result.message || 'Failed to delete product', 'error');
+      showToast(result.message || 'Failed to delete product');
       if (result.message?.includes('Cannot delete')) {
         onClose();
       }
