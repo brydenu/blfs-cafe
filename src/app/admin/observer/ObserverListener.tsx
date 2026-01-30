@@ -70,13 +70,6 @@ export default function ObserverListener() {
     };
   }, [router]);
 
-  // Visual Status Indicator (Bottom Right of Screen) - Styled for user UI
-  return (
-    <div className="fixed bottom-4 right-4 z-50 flex items-center gap-2 bg-white/90 backdrop-blur-sm text-[#004876] px-4 py-2 rounded-full shadow-lg border-2 border-[#32A5DC]/30">
-       <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]' : 'bg-red-500 animate-pulse'}`}></div>
-       <span className="text-xs font-bold uppercase tracking-wider">
-         {isConnected ? 'Live' : 'Offline'}
-       </span>
-    </div>
-  );
+  // No visual indicator - just handles socket connection
+  return null;
 }

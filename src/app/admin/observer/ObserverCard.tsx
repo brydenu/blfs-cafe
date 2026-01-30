@@ -124,9 +124,9 @@ export default function ObserverCard({ item, queuePosition }: ObserverCardProps)
               </p>
             </div>
             {/* Cup Type Badge */}
-            {item.cupType && item.cupType !== 'to-go' && (
+            {item.cupType && item.cupType !== 'to-go' && item.cupType !== 'for-here' && (
               <span className="bg-green-500 text-white text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wide shrink-0 shadow-md">
-                {item.cupType === 'for-here' ? 'For-Here' : item.cupType === 'personal' ? 'Personal Cup' : item.cupType}
+                {item.cupType === 'personal' ? 'Personal Cup' : item.cupType}
               </span>
             )}
           </div>

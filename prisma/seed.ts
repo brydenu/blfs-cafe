@@ -151,8 +151,7 @@ async function main() {
         description: 'Straight shots of espresso', 
         category: 'coffee',
         defaultShots: 2,
-        requiresMilk: false,
-        forceTemperature: 'Hot'
+        requiresMilk: false
       },
       { 
         name: 'Cortado', 
@@ -176,8 +175,7 @@ async function main() {
         description: 'Earl grey tea with vanilla syrup and milk', 
         category: 'tea',
         defaultShots: 0,
-        requiresMilk: true,
-        forceTemperature: 'Hot' 
+        requiresMilk: true
       },
       { 
         name: 'Matcha Latte', 

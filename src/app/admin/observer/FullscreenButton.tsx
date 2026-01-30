@@ -2,7 +2,11 @@
 
 import { useState, useEffect } from 'react';
 
-export default function FullscreenButton() {
+interface FullscreenButtonProps {
+  className?: string;
+}
+
+export default function FullscreenButton({ className }: FullscreenButtonProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
@@ -66,7 +70,7 @@ export default function FullscreenButton() {
   return (
     <button
       onClick={toggleFullscreen}
-      className="fixed top-4 right-4 z-50 w-12 h-12 bg-white/90 backdrop-blur-sm text-[#004876] rounded-full shadow-lg border-2 border-[#32A5DC]/30 hover:bg-white hover:border-[#32A5DC] transition-all flex items-center justify-center"
+      className={className || "w-12 h-12 bg-white/90 backdrop-blur-sm text-[#004876] rounded-full shadow-lg border-2 border-[#32A5DC]/30 hover:bg-white hover:border-[#32A5DC] transition-all flex items-center justify-center"}
       aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
     >
       {isFullscreen ? (

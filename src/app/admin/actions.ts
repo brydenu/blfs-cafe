@@ -190,14 +190,19 @@ export async function getTodayStatistics() {
           totalHot += item.quantity;
         }
 
-        // Shots
+        // Shots (count shots for any drink, regardless of category)
         const shots = item.shots || 0;
-        if (item.product.category === 'coffee' && shots > 0) {
-          const isDecaf = item.product.name.toLowerCase().includes('decaf') ||
-                         item.modifiers.some(m => m.ingredient.name.toLowerCase().includes('decaf'));
-          if (isDecaf) {
+        if (shots > 0) {
+          // Check caffeineType for accurate shot counting
+          if (item.caffeineType === 'Decaf') {
             totalDecafShots += shots * item.quantity;
+          } else if (item.caffeineType === 'Half-Caff') {
+            // Half-caff: divide shots by 2, add half to each total
+            const halfShots = (shots * item.quantity) / 2;
+            totalDecafShots += halfShots;
+            totalCafShots += halfShots;
           } else {
+            // Normal or null caffeineType counts as regular caff shots
             totalCafShots += shots * item.quantity;
           }
         }
@@ -339,14 +344,19 @@ export async function getStatistics(timeframe: 'today' | 'week' | 'month' | 'all
         const category = item.product.category;
         stats.categoryCounts[category] = (stats.categoryCounts[category] || 0) + item.quantity;
 
-        // Shots
+        // Shots (count shots for any drink, regardless of category)
         const shots = item.shots || 0;
-        if (item.product.category === 'coffee' && shots > 0) {
-          const isDecaf = item.product.name.toLowerCase().includes('decaf') ||
-                         item.modifiers.some(m => m.ingredient.name.toLowerCase().includes('decaf'));
-          if (isDecaf) {
+        if (shots > 0) {
+          // Check caffeineType for accurate shot counting
+          if (item.caffeineType === 'Decaf') {
             stats.totalDecafShots += shots * item.quantity;
+          } else if (item.caffeineType === 'Half-Caff') {
+            // Half-caff: divide shots by 2, add half to each total
+            const halfShots = (shots * item.quantity) / 2;
+            stats.totalDecafShots += halfShots;
+            stats.totalCafShots += halfShots;
           } else {
+            // Normal or null caffeineType counts as regular caff shots
             stats.totalCafShots += shots * item.quantity;
           }
         }
