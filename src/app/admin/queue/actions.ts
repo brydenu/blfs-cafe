@@ -340,14 +340,8 @@ export async function getProductsAndIngredients() {
     return {
       success: true,
       data: {
-        products: products.map(p => {
-          const { basePrice, ...productWithoutPrice } = p;
-          return productWithoutPrice;
-        }),
-        ingredients: ingredients.map(i => {
-          const { priceMod, ...ingredientWithoutPrice } = i;
-          return ingredientWithoutPrice;
-        }),
+        products: products,
+        ingredients: ingredients,
       },
     };
   } catch (error) {
