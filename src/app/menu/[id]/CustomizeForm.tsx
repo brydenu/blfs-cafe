@@ -18,9 +18,14 @@ type ProductWithFlexiblePrice = Omit<Product, 'basePrice'> & {
   basePrice: Product['basePrice'] | number;
 };
 
+// Ingredient type that allows priceMod to be either Decimal or number (for serialized ingredients)
+type IngredientWithFlexiblePrice = Omit<Ingredient, 'priceMod'> & {
+  priceMod: Ingredient['priceMod'] | number;
+};
+
 interface CustomizeFormProps {
   product: ProductWithFlexiblePrice;
-  ingredients: Ingredient[];
+  ingredients: IngredientWithFlexiblePrice[];
   defaultName: string;
   defaultDisplayName?: string;
   userLastName?: string | null;
@@ -300,9 +305,6 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
       }
     });
 
-    // Get basePrice from product (serialized as number in page.tsx)
-    const productWithPrice = product as Product & { basePrice?: number };
-
     const config = buildConfiguration();
 
     return {
@@ -323,8 +325,7 @@ export default function CustomizeForm({ product, ingredients, defaultName, defau
       milkSteamed: config.milkSteamed,
       foamLevel: config.foamLevel,
       milkAmount: config.milkAmount,
-      notes: config.notes,
-      basePrice: productWithPrice.basePrice || 0
+      notes: config.notes
     };
   };
 

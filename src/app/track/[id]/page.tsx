@@ -33,17 +33,16 @@ export default async function GuestTrackerPage({ params }: Props) {
 
   if (!rawOrder) notFound();
 
-  // 2. Serialize Decimals (total & basePrice) -> Numbers
+  // 2. Serialize (remove price fields)
   const order = {
     ...rawOrder,
-    total: Number(rawOrder.total),
-    items: rawOrder.items.map((item) => ({
+    items: rawOrder.items.map((item) => {
+      const { basePrice, ...productWithoutPrice } = item.product;
+      return {
         ...item,
-        product: {
-            ...item.product,
-            basePrice: Number(item.product.basePrice)
-        }
-    }))
+        product: productWithoutPrice
+      };
+    })
   };
 
   // 3. Calculate Queue Info (based on drinks/items ahead, not orders)

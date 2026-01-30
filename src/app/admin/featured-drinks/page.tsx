@@ -33,10 +33,10 @@ export default async function AdminFeaturedDrinksPage() {
 
   const featuredDrinks = validFeaturedDrinks.map(fd => ({
     ...fd,
-    product: {
-      ...fd.product!,
-      basePrice: fd.product!.basePrice.toNumber()
-    }
+    product: (() => {
+      const { basePrice, ...productWithoutPrice } = fd.product!;
+      return productWithoutPrice;
+    })()
   }));
 
   return (

@@ -9,7 +9,6 @@ interface Product {
   name: string;
   description?: string | null;
   category: string;
-  basePrice: number;
   requiresMilk: boolean;
   allowsShots: boolean;
   defaultShots: number;

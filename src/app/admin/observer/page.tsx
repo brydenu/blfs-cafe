@@ -133,19 +133,20 @@ export default async function ObserverPage() {
         const isCancelled = item.cancelled === true;
         const legacy = parseLegacyDetails(item.specialInstructions);
 
-        // --- SERIALIZE MODIFIERS (Decimal -> Number) ---
-        const serializedModifiers = item.modifiers.map((mod) => ({
+        // --- SERIALIZE MODIFIERS (remove price fields) ---
+        const serializedModifiers = item.modifiers.map((mod) => {
+          const { priceMod, ...ingredientWithoutPrice } = mod.ingredient;
+          return {
             ...mod,
-            ingredient: {
-                ...mod.ingredient,
-                priceMod: Number(mod.ingredient.priceMod) 
-            }
-        }));
+            ingredient: ingredientWithoutPrice
+          };
+        });
 
         // Calculate activeShots for display (even if cancelled)
         const activeShots = (item.shots || 0) > 0 ? item.shots : legacy.shots;
 
         // Flatten for Cards
+        const { basePrice, ...productWithoutPrice } = item.product;
         allTickets.push({
             ...item,
             modifiers: serializedModifiers,
@@ -153,10 +154,7 @@ export default async function ObserverPage() {
             parsedShots: activeShots,
             parsedMilk: legacy.milk,
             parsedName: legacy.name,
-            product: {
-                ...item.product,
-                basePrice: Number(item.product.basePrice)
-            },
+            product: productWithoutPrice,
             parentOrderId: order.id,
             parentPublicId: order.publicId,
             orderCreatedAt: order.createdAt,

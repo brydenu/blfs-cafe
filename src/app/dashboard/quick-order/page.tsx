@@ -32,13 +32,13 @@ export default async function QuickOrderPage() {
   // Filter out favorites where product was deleted
   const validFavorites = rawFavorites.filter(fav => fav.product && (fav.product as any).deletedAt === null);
 
-  const favorites = validFavorites.map(fav => ({
-    ...fav,
-    product: {
-      ...fav.product!,
-      basePrice: fav.product!.basePrice.toNumber()
-    }
-  }));
+  const favorites = validFavorites.map(fav => {
+    const { basePrice, ...productWithoutPrice } = fav.product!;
+    return {
+      ...fav,
+      product: productWithoutPrice
+    };
+  });
 
   // Get last ordered drink
   const lastDrink = await getLastOrderedDrink();
