@@ -84,8 +84,6 @@ export async function placeOrder(items: CartItem[]) {
     }
 
     // 2. Create the Order
-    // Free service - no price calculation needed
-    const total = 0;
 
     // Copy user notification preferences to order (if user exists and has preferences)
     // Note: Setting these on the order allows per-order override without changing user defaults
@@ -115,7 +113,6 @@ export async function placeOrder(items: CartItem[]) {
             guestEmail, // If you had a guest email input
             guestName,  // If you had a guest name input
             status: 'queued',
-            total: total,
             ...orderNotificationData,
             items: {
               create: items.map((item) => ({

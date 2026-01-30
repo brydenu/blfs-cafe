@@ -22,20 +22,14 @@ export default async function MenuPage() {
     orderBy: { category: 'asc' }
   });
 
-  const products = rawProducts.map((p) => {
-    const { basePrice, ...productWithoutPrice } = p;
-    return productWithoutPrice;
-  });
+  const products = rawProducts;
 
   // 2. Fetch Ingredients
   const rawIngredients = await prisma.ingredient.findMany({
     orderBy: { rank: 'desc' } 
   });
 
-  const ingredients = rawIngredients.map((i) => {
-    const { priceMod, ...ingredientWithoutPrice } = i;
-    return ingredientWithoutPrice;
-  });
+  const ingredients = rawIngredients;
 
   // 3. Fetch Favorites & User Name
   let favorites: any[] = [];
@@ -56,14 +50,10 @@ export default async function MenuPage() {
         // Filter out favorites where product was deleted (deletedAt will be null for non-deleted)
         const validFavorites = rawFavorites.filter(fav => fav.product && (fav.product as any).deletedAt === null);
 
-        favorites = validFavorites.map(fav => {
-            const { basePrice, ...productWithoutPrice } = fav.product!;
-            return {
-                ...fav,
-                customName: fav.name, 
-                product: productWithoutPrice
-            };
-        });
+        favorites = validFavorites.map(fav => ({
+            ...fav,
+            customName: fav.name
+        }));
     }
   }
 
@@ -77,14 +67,10 @@ export default async function MenuPage() {
   // Filter out featured drinks where product was deleted
   const validFeaturedDrinks = rawFeaturedDrinks.filter(fd => fd.product && (fd.product as any).deletedAt === null);
 
-  const featuredDrinks = validFeaturedDrinks.map(fd => {
-    const { basePrice, ...productWithoutPrice } = fd.product!;
-    return {
-      ...fd,
-      customName: fd.name,
-      product: productWithoutPrice
-    };
-  });
+  const featuredDrinks = validFeaturedDrinks.map(fd => ({
+    ...fd,
+    customName: fd.name
+  }));
 
   const backHref = isGuest ? "/" : "/dashboard";
   const backLabel = isGuest ? "← Back to landing page" : "← Back to Dashboard";

@@ -28,10 +28,7 @@ export default async function NewFeaturedDrinkPage() {
     orderBy: { name: 'asc' }
   });
 
-  const products = rawProducts.map(p => {
-    const { basePrice, ...productWithoutPrice } = p;
-    return productWithoutPrice;
-  });
+  const products = rawProducts;
 
   // Fetch ingredients
   const rawIngredients = await prisma.ingredient.findMany({
@@ -42,10 +39,7 @@ export default async function NewFeaturedDrinkPage() {
     orderBy: { rank: 'desc' }
   });
 
-  const ingredients = rawIngredients.map(i => {
-    const { priceMod, ...ingredientWithoutPrice } = i;
-    return ingredientWithoutPrice;
-  });
+  const ingredients = rawIngredients;
 
   return (
     <FeaturedDrinkBuilder

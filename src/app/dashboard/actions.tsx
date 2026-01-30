@@ -243,24 +243,5 @@ export async function updateOrderNotificationPreferences(
 
 // --- Helper ---
 function serializeOrders(orders: any[]) {
-  return orders.map(order => {
-    const { total, ...orderWithoutTotal } = order;
-    return {
-      ...orderWithoutTotal,
-      items: order.items.map((item: any) => ({
-          ...item,
-          product: (() => {
-            const { basePrice, ...productWithoutPrice } = item.product;
-            return productWithoutPrice;
-          })(),
-          modifiers: item.modifiers.map((mod: any) => {
-            const { priceMod, ...ingredientWithoutPrice } = mod.ingredient;
-            return {
-              ...mod,
-              ingredient: ingredientWithoutPrice
-            };
-          })
-      }))
-    };
-  });
+  return orders;
 }

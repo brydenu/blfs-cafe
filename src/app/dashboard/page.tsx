@@ -63,27 +63,8 @@ export default async function DashboardPage() {
     }
   });
 
-  // Serialization (remove price fields and Decimal fields)
-  const serializeOrder = (order: any) => {
-    const { total, ...orderWithoutTotal } = order;
-    return {
-      ...orderWithoutTotal,
-      items: order.items.map((item: any) => {
-        const { basePrice, ...productWithoutPrice } = item.product;
-        return {
-          ...item,
-          product: productWithoutPrice,
-          modifiers: item.modifiers.map((mod: any) => {
-            const { priceMod, ...ingredientWithoutPrice } = mod.ingredient;
-            return {
-              ...mod,
-              ingredient: ingredientWithoutPrice
-            };
-          })
-        };
-      })
-    };
-  };
+  // Serialization (no price fields to remove)
+  const serializeOrder = (order: any) => order;
 
   const orders = rawOrders.map(serializeOrder);
   const latestOrder = latestRawOrder ? serializeOrder(latestRawOrder) : null;

@@ -93,8 +93,7 @@ export async function createIngredient(
         category,
         isAvailable,
         isShowing,
-        rank: 0, // Default rank is 0 (not featured)
-        priceMod: 0.00
+        rank: 0 // Default rank is 0 (not featured)
       }
     });
     revalidatePath('/admin/inventory');

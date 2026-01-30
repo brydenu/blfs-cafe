@@ -14,10 +14,7 @@ export default async function AdminMenuPage() {
     ]
   });
 
-  const serializedProducts = products.map(p => {
-    const { basePrice, ...productWithoutPrice } = p;
-    return productWithoutPrice;
-  });
+  const serializedProducts = products;
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto">

@@ -13,19 +13,9 @@ import { getCafeStatusAction } from "@/app/menu/actions";
 import { CafeStatus } from "@/lib/schedule-status";
 import { CoffeeIcon, TeaIcon, DrinkIcon } from "@/components/icons";
 
-// Product type that allows basePrice to be either Decimal or number (for serialized products)
-type ProductWithFlexiblePrice = Omit<Product, 'basePrice'> & {
-  basePrice: Product['basePrice'] | number;
-};
-
-// Ingredient type that allows priceMod to be either Decimal or number (for serialized ingredients)
-type IngredientWithFlexiblePrice = Omit<Ingredient, 'priceMod'> & {
-  priceMod: Ingredient['priceMod'] | number;
-};
-
 interface CustomizeFormProps {
-  product: ProductWithFlexiblePrice;
-  ingredients: IngredientWithFlexiblePrice[];
+  product: Product;
+  ingredients: Ingredient[];
   defaultName: string;
   defaultDisplayName?: string;
   userLastName?: string | null;
