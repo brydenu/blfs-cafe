@@ -1,4 +1,5 @@
-import { auth, signIn } from "@/auth";
+import { auth } from "@/auth";
+import { authenticate } from "./actions";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import Image from "next/image";
@@ -34,10 +35,7 @@ export default async function LoginPage() {
 
         {/* Form */}
         <form
-            action={async (formData) => {
-              "use server";
-              await signIn("credentials", formData);
-            }}
+            action={authenticate}
             className="space-y-5"
         >
             <div className="space-y-2">
