@@ -173,12 +173,8 @@ export default async function OrderHistoryPage({ searchParams }: OrderHistoryPag
     ...(userIdParam && !dateParam ? { skip, take: pageSize } : {})
   });
 
-  // Serialize orders
-  const serializedOrders = orders.map(order => ({
-    ...order,
-    total: Number(order.total),
-    items: order.items
-  }));
+  // Serialize orders (no price fields to remove)
+  const serializedOrders = orders;
 
   // Calculate total number of drinks (sum of all item quantities)
   const totalDrinks = serializedOrders.reduce((sum, order) => {

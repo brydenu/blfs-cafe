@@ -29,7 +29,6 @@ export async function lookupOrderByCode(publicId: string) {
     // Serialize Decimals
     const serializedOrder = {
       ...order,
-      total: Number(order.total),
       items: order.items.map((item: any) => ({
         ...item,
         product: item.product,
