@@ -34,18 +34,8 @@ export default async function OrderConfirmationPage({ params }: Props) {
 
   if (!rawOrder) notFound();
 
-  // 2. Serialize (remove price fields and Decimal fields)
-  const { total, ...orderWithoutTotal } = rawOrder;
-  const order = {
-    ...orderWithoutTotal,
-    items: rawOrder.items.map((item) => {
-      const { basePrice, ...productWithoutPrice } = item.product;
-      return {
-        ...item,
-        product: productWithoutPrice
-      };
-    })
-  };
+  // 2. Serialize (no price fields to remove)
+  const order = rawOrder;
 
   // 3. Calculate Queue Info (based on drinks/items ahead, not orders)
   const itemsAhead = await prisma.orderItem.count({

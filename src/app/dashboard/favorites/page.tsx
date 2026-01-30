@@ -32,11 +32,7 @@ export default async function FavoritesPage() {
   const validFavorites = rawFavorites.filter(fav => fav.product && (fav.product as any).deletedAt === null);
 
   const favorites = validFavorites.map(fav => ({
-    ...fav,
-    product: (() => {
-      const { basePrice, ...productWithoutPrice } = fav.product!;
-      return productWithoutPrice;
-    })()
+    ...fav
   }));
 
   return (

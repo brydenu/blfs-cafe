@@ -116,28 +116,16 @@ export default async function AdminQueuePage() {
             }
         }
 
-        // --- SERIALIZE MODIFIERS (remove price fields) ---
-        const serializedModifiers = item.modifiers.map((mod) => {
-          const { priceMod, ...ingredientWithoutPrice } = mod.ingredient;
-          return {
-            ...mod,
-            ingredient: ingredientWithoutPrice
-          };
-        });
-
         // Calculate activeShots for display (even if cancelled)
         const activeShots = (item.shots || 0) > 0 ? item.shots : legacy.shots;
 
         // 4. Flatten for Cards
-        const { basePrice, ...productWithoutPrice } = item.product;
         allTickets.push({
             ...item,
-            modifiers: serializedModifiers,
             cancelled: isCancelled,
             parsedShots: activeShots,
             parsedMilk: legacy.milk,
             parsedName: legacy.name,
-            product: productWithoutPrice,
             parentOrderId: order.id,
             parentPublicId: order.publicId,
             orderCreatedAt: order.createdAt,

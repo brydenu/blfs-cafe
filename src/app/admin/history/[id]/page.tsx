@@ -42,20 +42,7 @@ export default async function AdminHistoryDetailPage({ params }: Props) {
   const order = {
     ...rawOrder,
     total: Number(rawOrder.total),
-    items: rawOrder.items.map(item => {
-      const { basePrice, ...productWithoutPrice } = item.product;
-      return {
-        ...item,
-        product: productWithoutPrice,
-        modifiers: item.modifiers.map(mod => {
-          const { priceMod, ...ingredientWithoutPrice } = mod.ingredient;
-          return {
-            ...mod,
-            ingredient: ingredientWithoutPrice
-          };
-        })
-      };
-    })
+    items: rawOrder.items
   };
 
   // Helper functions

@@ -32,11 +32,7 @@ export default async function AdminFeaturedDrinksPage() {
   const validFeaturedDrinks = rawFeaturedDrinks.filter(fd => fd.product && (fd.product as any).deletedAt === null);
 
   const featuredDrinks = validFeaturedDrinks.map(fd => ({
-    ...fd,
-    product: (() => {
-      const { basePrice, ...productWithoutPrice } = fd.product!;
-      return productWithoutPrice;
-    })()
+    ...fd
   }));
 
   return (

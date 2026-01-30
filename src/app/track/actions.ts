@@ -32,17 +32,8 @@ export async function lookupOrderByCode(publicId: string) {
       total: Number(order.total),
       items: order.items.map((item: any) => ({
         ...item,
-        product: (() => {
-          const { basePrice, ...productWithoutPrice } = item.product;
-          return productWithoutPrice;
-        })(),
-        modifiers: item.modifiers.map((mod: any) => {
-          const { priceMod, ...ingredientWithoutPrice } = mod.ingredient;
-          return {
-            ...mod,
-            ingredient: ingredientWithoutPrice
-          };
-        })
+        product: item.product,
+        modifiers: item.modifiers
       }))
     };
 

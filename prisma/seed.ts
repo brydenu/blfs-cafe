@@ -33,9 +33,9 @@ async function main() {
       { name: 'Nonfat', category: 'milk', rank: 2 },
       { name: '2%', category: 'milk', rank: 3 },
       { name: 'Half and Half (Breve)', category: 'milk', rank: 4 },
-      { name: 'Oat', category: 'milk', priceMod: 0.75, rank: 5 },
-      { name: 'Almond', category: 'milk', priceMod: 0.75, rank: 6 },
-      { name: 'Soy', category: 'milk', priceMod: 0.75, rank: 7 },
+      { name: 'Oat', category: 'milk', rank: 5 },
+      { name: 'Almond', category: 'milk', rank: 6 },
+      { name: 'Soy', category: 'milk', rank: 7 },
     ]
   })
 
@@ -80,8 +80,8 @@ async function main() {
   // Toppings
   await prisma.ingredient.createMany({
     data: [
-      { name: 'Caramel Drizzle', category: 'topping', priceMod: 0.50, rank: 1 },
-      { name: 'Chocolate Drizzle', category: 'topping', priceMod: 0.50, rank: 2 },
+      { name: 'Caramel Drizzle', category: 'topping', rank: 1 },
+      { name: 'Chocolate Drizzle', category: 'topping', rank: 2 },
       { name: 'Whipped Cream', category: 'topping', rank: 3 },
       { name: 'Cinnamon', category: 'topping', rank: 0 },
       { name: 'Nutmeg', category: 'topping', rank: 0 },

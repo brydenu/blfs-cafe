@@ -67,7 +67,6 @@ export async function createProduct(data: {
     await prisma.product.create({
       data: {
         ...data,
-        basePrice: 0.00, // Free service
         isActive: true
       }
     });
