@@ -13,8 +13,13 @@ import { getCafeStatusAction } from "@/app/menu/actions";
 import { CafeStatus } from "@/lib/schedule-status";
 import { CoffeeIcon, TeaIcon, DrinkIcon } from "@/components/icons";
 
+// Product type that allows basePrice to be either Decimal or number (for serialized products)
+type ProductWithFlexiblePrice = Omit<Product, 'basePrice'> & {
+  basePrice: Product['basePrice'] | number;
+};
+
 interface CustomizeFormProps {
-  product: Product;
+  product: ProductWithFlexiblePrice;
   ingredients: Ingredient[];
   defaultName: string;
   defaultDisplayName?: string;
