@@ -1,5 +1,8 @@
 import { getStatistics } from "../actions";
 import Link from "next/link";
+import HourlyDistributionChart from "./HourlyDistributionChart";
+import DailyDistributionChart from "./DailyDistributionChart";
+import DayOfWeekChart from "./DayOfWeekChart";
 
 export const dynamic = 'force-dynamic';
 
@@ -48,17 +51,36 @@ export default async function StatisticsPage({ searchParams }: StatisticsPagePro
     .sort((a, b) => b.count - a.count)
     .slice(0, 10);
 
-  // Prepare hourly distribution for display
-  const hourlyData = Array.from({ length: 24 }, (_, i) => ({
-    hour: i,
-    count: stats.hourlyDistribution[i] || 0
-  }));
+  // Prepare half-hour distribution for display (6am - 9pm only)
+  const halfHourData: Array<{ hour: number; minute: number; count: number }> = [];
+  for (let hour = 6; hour <= 21; hour++) {
+    const hourCount = stats.hourlyDistribution[hour] || 0;
+    // Split hour count between two half-hour slots
+    halfHourData.push({ hour, minute: 0, count: hourCount });
+    halfHourData.push({ hour, minute: 30, count: hourCount });
+  }
 
   // Prepare daily distribution (last 7 days for week view, last 30 for month view)
   const dailyEntries = Object.entries(stats.dailyDistribution)
     .map(([date, count]) => ({ date, count }))
     .sort((a, b) => a.date.localeCompare(b.date))
     .slice(-(timeframe === 'week' ? 7 : timeframe === 'month' ? 30 : 365));
+
+  // Calculate day of week distribution (weekdays only)
+  const dayOfWeekData: Record<string, number> = {};
+  Object.entries(stats.dailyDistribution).forEach(([date, count]) => {
+    const dayOfWeek = new Date(date).toLocaleDateString('en-US', { weekday: 'long' });
+    // Only include weekdays
+    if (['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].includes(dayOfWeek)) {
+      dayOfWeekData[dayOfWeek] = (dayOfWeekData[dayOfWeek] || 0) + count;
+    }
+  });
+  const dayOfWeekEntries = Object.entries(dayOfWeekData)
+    .map(([day, count]) => ({ day, count }))
+    .sort((a, b) => {
+      const order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+      return order.indexOf(a.day) - order.indexOf(b.day);
+    });
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto w-full">
@@ -172,7 +194,7 @@ export default async function StatisticsPage({ searchParams }: StatisticsPagePro
         <div className="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
           <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Busiest Hour</p>
           <p className="text-4xl font-black text-white">
-            {stats.busiestHour.hour}:00 {stats.busiestHour.hour < 12 ? 'AM' : 'PM'}
+            {stats.busiestHour.hour === 0 ? 12 : stats.busiestHour.hour > 12 ? stats.busiestHour.hour - 12 : stats.busiestHour.hour}:00 {stats.busiestHour.hour < 12 ? 'AM' : 'PM'}
           </p>
           <p className="text-sm text-gray-400 mt-1">{stats.busiestHour.count} orders</p>
         </div>
@@ -281,24 +303,7 @@ export default async function StatisticsPage({ searchParams }: StatisticsPagePro
       {/* Hourly Distribution */}
       <div className="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
         <h2 className="text-xl font-black text-white mb-4">Hourly Distribution</h2>
-        <div className="grid grid-cols-12 sm:grid-cols-24 gap-2">
-          {hourlyData.map((data) => {
-            const maxCount = Math.max(...hourlyData.map(d => d.count), 1);
-            const heightPercentage = maxCount > 0 ? (data.count / maxCount) * 100 : 0;
-            return (
-              <div key={data.hour} className="flex flex-col items-center gap-1">
-                <div
-                  className="w-full bg-[#32A5DC] rounded-t transition-all min-h-[4px]"
-                  style={{ height: `${Math.max(heightPercentage, 5)}%` }}
-                  title={`${data.hour}:00 - ${data.count} orders`}
-                />
-                <span className="text-xs text-gray-500 font-bold">
-                  {data.hour % 4 === 0 ? data.hour : ''}
-                </span>
-              </div>
-            );
-          })}
-        </div>
+        <HourlyDistributionChart data={halfHourData} />
       </div>
 
       {/* Daily Distribution */}
@@ -307,33 +312,15 @@ export default async function StatisticsPage({ searchParams }: StatisticsPagePro
           <h2 className="text-xl font-black text-white mb-4">
             Daily Distribution {timeframe === 'week' ? '(Last 7 Days)' : timeframe === 'month' ? '(Last 30 Days)' : ''}
           </h2>
-          <div className="space-y-2">
-            {dailyEntries.map((day) => {
-              const maxCount = Math.max(...dailyEntries.map(d => d.count), 1);
-              const widthPercentage = maxCount > 0 ? (day.count / maxCount) * 100 : 0;
-              const date = new Date(day.date);
-              const isToday = day.date === new Date().toLocaleDateString('en-CA');
-              return (
-                <div key={day.date} className="flex items-center gap-4">
-                  <span className="text-sm text-gray-400 font-bold w-24">
-                    {isToday ? 'Today' : date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-                  </span>
-                  <div className="flex-1 bg-gray-900 rounded-full h-6 relative">
-                    <div
-                      className={`h-6 rounded-full transition-all flex items-center justify-end pr-2 ${
-                        isToday ? 'bg-[#32A5DC]' : 'bg-gray-700'
-                      }`}
-                      style={{ width: `${Math.max(widthPercentage, 2)}%` }}
-                    >
-                      {day.count > 0 && (
-                        <span className="text-xs text-white font-black">{day.count}</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <DailyDistributionChart data={dailyEntries} timeframe={timeframe} />
+        </div>
+      )}
+
+      {/* Day of Week Distribution */}
+      {dayOfWeekEntries.length > 0 && (
+        <div className="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
+          <h2 className="text-xl font-black text-white mb-4">Busyness by Day of Week</h2>
+          <DayOfWeekChart data={dayOfWeekEntries} />
         </div>
       )}
 

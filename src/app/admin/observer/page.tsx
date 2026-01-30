@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import ObserverCard from "./ObserverCard";
+import ObserverBanner from "./ObserverBanner";
 import ObserverListener from "./ObserverListener";
 import FullscreenButton from "./FullscreenButton";
 import BackButton from "./BackButton";
@@ -33,59 +34,6 @@ function formatTime(time: string): string {
 // Helper function to get current day of week (0=Sunday, 6=Saturday)
 function getCurrentDayOfWeek(): number {
   return new Date().getDay();
-}
-
-// Get status message (same logic as ScheduleWidget)
-function getStatusMessage(schedule: any): string {
-  if (!schedule || !schedule.isOpen) {
-    return "Not in today";
-  }
-
-  const now = new Date();
-  const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-
-  const parseTime = (timeStr: string): number => {
-    const [hours, minutes] = timeStr.split(':').map(Number);
-    return hours * 60 + minutes;
-  };
-
-  const currentMinutes = parseTime(currentTime);
-  const open1Minutes = parseTime(schedule.openTime1);
-  const close1Minutes = parseTime(schedule.closeTime1);
-  const open2Minutes = schedule.openTime2 ? parseTime(schedule.openTime2) : null;
-  const close2Minutes = schedule.closeTime2 ? parseTime(schedule.closeTime2) : null;
-
-  // During period 1
-  if (currentMinutes >= open1Minutes && currentMinutes < close1Minutes) {
-    return "Accepting orders";
-  }
-
-  // Before period 1 opens
-  if (currentMinutes < open1Minutes) {
-    return "Not open yet";
-  }
-
-  // Between period 1 and period 2 (if period 2 is active)
-  if (schedule.isSecondPeriodActive && open2Minutes && close2Minutes) {
-    if (currentMinutes >= close1Minutes && currentMinutes < open2Minutes) {
-      return "Will be back later";
-    }
-    // During period 2
-    if (currentMinutes >= open2Minutes && currentMinutes < close2Minutes) {
-      return "Accepting orders";
-    }
-    // After period 2
-    if (currentMinutes >= close2Minutes) {
-      return "Cleaned up for the day";
-    }
-  }
-
-  // After period 1 and period 2 is not active OR after period 2
-  if (currentMinutes >= close1Minutes) {
-    return "Cleaned up for the day";
-  }
-
-  return "Accepting orders";
 }
 
 // Check if currently accepting orders
@@ -150,113 +98,9 @@ export default async function ObserverPage() {
     where: { dayOfWeek: currentDayOfWeek }
   });
 
-  // Get status message and display schedule
-  const statusMessage = todaySchedule ? getStatusMessage(todaySchedule) : "Not in today";
+  // Get display schedule and accepting orders status
   const displaySchedule = todaySchedule ? getDisplaySchedule(todaySchedule) : ["Closed"];
   const acceptingOrders = todaySchedule ? isAcceptingOrders(todaySchedule) : false;
-
-  // Fetch all schedules for the week (Monday-Friday: dayOfWeek 1-5)
-  const weekSchedules = await prisma.schedule.findMany({
-    where: {
-      dayOfWeek: { in: [1, 2, 3, 4, 5] } // Monday through Friday
-    },
-    orderBy: { dayOfWeek: 'asc' }
-  });
-
-  // Create a map for quick lookup
-  const scheduleMap = new Map(weekSchedules.map(s => [s.dayOfWeek, s]));
-
-  // Helper to get accepting orders status for any schedule
-  const getAcceptingOrdersForSchedule = (schedule: any): boolean => {
-    if (!schedule || !schedule.isOpen) {
-      return false;
-    }
-
-    const now = new Date();
-    const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-
-    const parseTime = (timeStr: string): number => {
-      const [hours, minutes] = timeStr.split(':').map(Number);
-      return hours * 60 + minutes;
-    };
-
-    const currentMinutes = parseTime(currentTime);
-    const open1Minutes = parseTime(schedule.openTime1);
-    const close1Minutes = parseTime(schedule.closeTime1);
-    const open2Minutes = schedule.openTime2 ? parseTime(schedule.openTime2) : null;
-    const close2Minutes = schedule.closeTime2 ? parseTime(schedule.closeTime2) : null;
-
-    // During period 1
-    if (currentMinutes >= open1Minutes && currentMinutes < close1Minutes) {
-      return true;
-    }
-
-    // Between period 1 and period 2 (if period 2 is active) - not accepting
-    if (schedule.isSecondPeriodActive && open2Minutes && close2Minutes) {
-      if (currentMinutes >= close1Minutes && currentMinutes < open2Minutes) {
-        return false;
-      }
-      // During period 2
-      if (currentMinutes >= open2Minutes && currentMinutes < close2Minutes) {
-        return true;
-      }
-    }
-
-    // After closing or before opening
-    return false;
-  };
-
-  // Helper to get display schedule for any day
-  const getDisplayScheduleForDay = (schedule: any): string[] => {
-    if (!schedule || !schedule.isOpen) {
-      return ['Closed'];
-    }
-    
-    const periods: string[] = [`${formatTime(schedule.openTime1)} - ${formatTime(schedule.closeTime1)}`];
-    
-    if (schedule.isSecondPeriodActive && schedule.openTime2 && schedule.closeTime2) {
-      periods.push(`${formatTime(schedule.openTime2)} - ${formatTime(schedule.closeTime2)}`);
-    }
-    
-    return periods;
-  };
-
-  // Helper to get combined schedule range for weekly display (start of first to end of last)
-  const getCombinedScheduleRange = (schedule: any): string => {
-    if (!schedule || !schedule.isOpen) {
-      return 'Closed';
-    }
-    
-    const startTime = formatTime(schedule.openTime1);
-    
-    // If there's a second period, use its end time, otherwise use first period's end time
-    if (schedule.isSecondPeriodActive && schedule.openTime2 && schedule.closeTime2) {
-      const endTime = formatTime(schedule.closeTime2);
-      return `${startTime} - ${endTime}`;
-    }
-    
-    const endTime = formatTime(schedule.closeTime1);
-    return `${startTime} - ${endTime}`;
-  };
-
-  // Day names for display
-  const DAYS_OF_WEEK = [
-    { dayOfWeek: 1, name: 'Monday' },
-    { dayOfWeek: 2, name: 'Tuesday' },
-    { dayOfWeek: 3, name: 'Wednesday' },
-    { dayOfWeek: 4, name: 'Thursday' },
-    { dayOfWeek: 5, name: 'Friday' },
-  ];
-
-  // Helper to format today's date
-  const formatTodayDate = () => {
-    const today = new Date();
-    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const dayName = dayNames[currentDayOfWeek] || 'Today';
-    const month = today.toLocaleString('en-US', { month: 'long' });
-    const day = today.getDate();
-    return `${dayName}, ${month} ${day}`;
-  };
 
   // 2. Fetch Active Orders
   // Fetch orders that are 'queued', 'preparing', or 'cancelled' (cancelled orders may still have uncompleted items)
@@ -322,110 +166,98 @@ export default async function ObserverPage() {
   });
 
   return (
-    <div className="relative min-h-screen p-6 overflow-hidden">
+    <div className="relative min-h-screen overflow-hidden">
       
       {/* Background - User UI style */}
-      <div className="absolute inset-0 z-0 bg-[#004876] fixed">
+      <div className="fixed inset-0 z-0 bg-[#004876]">
         <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-[#32A5DC] rounded-full mix-blend-multiply filter blur-[128px] opacity-20 animate-pulse"></div>
         <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-[#32A5DC] rounded-full mix-blend-multiply filter blur-[128px] opacity-20"></div>
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(#ffffff 1px, transparent 1px)', backgroundSize: '30px 30px' }}></div>
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto space-y-6">
-        
-        {/* NAVIGATION BUTTONS */}
+      {/* EVENT LISTENER */}
+      <ObserverListener />
+
+      {/* Navigation Buttons - Fixed at bottom of page */}
+      <div className="fixed bottom-4 left-4 z-20">
         <BackButton />
+      </div>
+      <div className="fixed bottom-4 right-4 z-20">
         <FullscreenButton />
+      </div>
 
-        {/* EVENT LISTENER */}
-        <ObserverListener />
+      {/* FULL-WIDTH HEADER BAR - Status, Hours, Ordering Info */}
+      <div className="relative z-10 w-full bg-black/20 backdrop-blur-xl border-b border-white/10 shadow-2xl">
 
-        {/* REDESIGNED SCHEDULE COMPONENT */}
-        <div className="mb-4 pt-2">
-          <div className="bg-[#32A5DC]/20 backdrop-blur-sm rounded-xl shadow-xl px-6 py-3 max-w-6xl mx-auto border border-[#32A5DC]/30">
-            {/* Main Content - Today's Hours as Hero */}
-            <div className="grid grid-cols-3 items-center gap-6">
-              {/* Today's Hours - Hero Section */}
-              <div>
-                <p className="text-white/60 text-xs font-medium uppercase tracking-wider mb-2">
-                  {formatTodayDate()}
-                </p>
-                <div className="space-y-0.5">
-                  {displaySchedule.map((period, index) => (
-                    <p 
-                      key={index} 
-                      className="text-white text-2xl font-black leading-tight"
-                    >
-                      {period}
-                    </p>
-                  ))}
-                </div>
-              </div>
-
-              {/* Status Indicator - Center */}
-              <div className="flex justify-center items-center">
-                {acceptingOrders ? (
-                  <div className="px-8 py-4 bg-green-500 rounded-lg animate-pulse-green-bg flex items-center justify-center">
-                    <span className="text-white text-5xl font-black uppercase tracking-wide">
+        {/* Main Content Row */}
+        <div className="w-full px-4 md:px-8 py-5">
+          <div className="grid grid-cols-1 md:grid-cols-3 items-end gap-6 md:gap-8 max-w-7xl mx-auto">
+            
+            {/* Current Status */}
+            <div className="flex flex-col items-center">
+              <p className="text-white/50 text-[10px] md:text-xs font-semibold uppercase tracking-wider mb-2">
+                Current Status
+              </p>
+              {acceptingOrders ? (
+                <div className="relative">
+                  <div className="absolute inset-0 bg-green-500 rounded-xl blur-lg opacity-40 animate-pulse"></div>
+                  <div className="relative px-6 py-3 bg-green-500 rounded-xl flex items-center justify-center shadow-xl border border-green-400/30">
+                    <span className="text-white text-2xl md:text-3xl font-black uppercase tracking-wider">
                       OPEN
                     </span>
                   </div>
-                ) : (
-                  <div className="px-8 py-4 bg-red-500 rounded-lg flex items-center justify-center">
-                    <span className="text-white text-5xl font-black uppercase tracking-wide">
-                      CLOSED
-                    </span>
-                  </div>
-                )}
-              </div>
+                </div>
+              ) : (
+                <div className="px-6 py-3 bg-red-500/90 rounded-xl flex items-center justify-center shadow-xl border border-red-400/30">
+                  <span className="text-white text-2xl md:text-3xl font-black uppercase tracking-wider">
+                    CLOSED
+                  </span>
+                </div>
+              )}
+            </div>
 
-              {/* Weekly Schedule - Secondary Information */}
-              <div className="justify-self-end min-w-[200px]">
-                <p className="text-white/50 text-[10px] font-semibold uppercase tracking-wider mb-1.5">
-                  This Week
-                </p>
-                <div className="space-y-1">
-                  {DAYS_OF_WEEK.map((day) => {
-                    const schedule = scheduleMap.get(day.dayOfWeek);
-                    const isToday = day.dayOfWeek === currentDayOfWeek;
-                    const isClosed = !schedule || !schedule.isOpen;
-                    const dayScheduleRange = schedule ? getCombinedScheduleRange(schedule) : 'Closed';
-
-                    return (
-                      <div
-                        key={day.dayOfWeek}
-                        className={`flex items-center justify-between px-3 py-1 rounded-lg transition-all ${
-                          isToday
-                            ? 'bg-[#32A5DC]/40 border border-[#32A5DC]/60'
-                            : isClosed
-                            ? 'bg-white/5 border border-white/10 opacity-40'
-                            : 'bg-white/5 border border-white/10 hover:bg-white/10'
-                        }`}
+            {/* Today's Hours - Centered */}
+            <div className="flex flex-col items-center">
+              <p className="text-white/50 text-[10px] md:text-xs font-semibold uppercase tracking-wider mb-2">
+                Today's Hours
+              </p>
+              <div className="bg-[#32A5DC]/15 border border-[#32A5DC]/50 rounded-xl px-6 py-3 backdrop-blur-sm shadow-lg w-full max-w-md mx-auto">
+                <div className="space-y-1 text-center">
+                  {displaySchedule.length > 0 ? (
+                    displaySchedule.map((period, index) => (
+                      <p 
+                        key={index} 
+                        className="text-white text-lg md:text-xl font-bold leading-tight whitespace-nowrap"
                       >
-                        <span className={`text-xs font-medium whitespace-nowrap ${
-                          isToday 
-                            ? 'text-[#32A5DC] font-bold' 
-                            : isClosed
-                            ? 'text-gray-400'
-                            : 'text-white/80'
-                        }`}>
-                          {day.name}
-                        </span>
-                        <span className={`text-[10px] font-medium whitespace-nowrap ml-2 ${
-                          isClosed 
-                            ? 'text-gray-500' 
-                            : 'text-white/70'
-                        }`}>
-                          {dayScheduleRange}
-                        </span>
-                      </div>
-                    );
-                  })}
+                        {period}
+                      </p>
+                    ))
+                  ) : (
+                    <p className="text-white/70 text-lg md:text-xl font-bold">
+                      Closed
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
+
+            {/* Order Online Information */}
+            <div className="flex flex-col items-center">
+              <p className="text-white/50 text-xs font-medium mb-2 text-center md:text-right">
+                Join the queue at
+              </p>
+              <div className="bg-white/5 border border-white/20 rounded-xl px-6 py-3 backdrop-blur-md shadow-lg">
+                <p className="text-white text-xl md:text-2xl font-normal tracking-tight text-center md:text-right">
+                  biolifecafe.com
+                </p>
+              </div>
+            </div>
+
           </div>
         </div>
+      </div>
+
+      <div className="relative z-10 max-w-7xl mx-auto p-6 space-y-6">
 
         {/* HEADER */}
         <div className="text-center mb-8">
@@ -441,9 +273,24 @@ export default async function ObserverPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-             {allTickets.map((item, index) => (
+             {/* First 8 orders - Full ObserverCard */}
+             {allTickets.slice(0, 8).map((item, index) => (
                <ObserverCard key={item.id} item={item} queuePosition={index + 1} />
              ))}
+             
+             {/* Next 7 orders (9-15) - Compact ObserverBanner */}
+             {allTickets.slice(8, 15).map((item, index) => (
+               <ObserverBanner key={item.id} item={item} queuePosition={index + 9} />
+             ))}
+             
+             {/* Ellipses indicator if more than 15 orders */}
+             {allTickets.length > 15 && (
+               <div className="bg-white rounded-xl shadow-lg border-2 border-gray-200 flex items-center justify-center h-16">
+                 <p className="text-gray-400 text-3xl font-bold">
+                   ...
+                 </p>
+               </div>
+             )}
           </div>
         )}
       </div>

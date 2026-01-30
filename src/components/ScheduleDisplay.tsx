@@ -137,8 +137,10 @@ export default function ScheduleDisplay({ schedules }: ScheduleDisplayProps) {
               <div className="text-white font-bold text-base mb-0.5 drop-shadow-sm">
                 {todayDayInfo?.name}, {formatDate(todayDayOfWeek)}
               </div>
-              <div className="text-white/90 font-medium text-sm drop-shadow-sm">
-                {getDisplaySchedule(todaySchedule)}
+              <div className="text-white/90 font-medium text-sm drop-shadow-sm space-y-0.5">
+                {getDisplayPeriods(todaySchedule).map((period, index) => (
+                  <div key={index}>{period}</div>
+                ))}
               </div>
             </div>
           )}
