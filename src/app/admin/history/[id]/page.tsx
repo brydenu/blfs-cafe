@@ -38,12 +38,8 @@ export default async function AdminHistoryDetailPage({ params }: Props) {
 
   if (!rawOrder) notFound();
 
-  // Serialize order
-  const order = {
-    ...rawOrder,
-    total: Number(rawOrder.total),
-    items: rawOrder.items
-  };
+  // Serialize order (no price fields to remove)
+  const order = rawOrder;
 
   // Helper functions
   const formatDateTime = (date: Date) => {
