@@ -14,10 +14,10 @@ export default async function AdminMenuPage() {
     ]
   });
 
-  const serializedProducts = products.map(p => ({
-    ...p,
-    basePrice: p.basePrice.toNumber()
-  }));
+  const serializedProducts = products.map(p => {
+    const { basePrice, ...productWithoutPrice } = p;
+    return productWithoutPrice;
+  });
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto">

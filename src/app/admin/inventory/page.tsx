@@ -20,10 +20,8 @@ export default async function InventoryPage() {
     if (!acc[ingredient.category]) {
       acc[ingredient.category] = [];
     }
-    acc[ingredient.category].push({
-      ...ingredient,
-      priceMod: Number(ingredient.priceMod)
-    });
+    const { priceMod, ...ingredientWithoutPrice } = ingredient;
+    acc[ingredient.category].push(ingredientWithoutPrice);
     return acc;
   }, {} as Record<string, typeof ingredients>);
 

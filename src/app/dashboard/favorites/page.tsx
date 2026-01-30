@@ -33,10 +33,10 @@ export default async function FavoritesPage() {
 
   const favorites = validFavorites.map(fav => ({
     ...fav,
-    product: {
-      ...fav.product!,
-      basePrice: fav.product!.basePrice.toNumber()
-    }
+    product: (() => {
+      const { basePrice, ...productWithoutPrice } = fav.product!;
+      return productWithoutPrice;
+    })()
   }));
 
   return (

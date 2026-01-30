@@ -34,17 +34,17 @@ export default async function OrderConfirmationPage({ params }: Props) {
 
   if (!rawOrder) notFound();
 
-  // 2. FIX: Serialize Decimals (total & basePrice) -> Numbers
+  // 2. Serialize (remove price fields and Decimal fields)
+  const { total, ...orderWithoutTotal } = rawOrder;
   const order = {
-    ...rawOrder,
-    total: Number(rawOrder.total),
-    items: rawOrder.items.map((item) => ({
+    ...orderWithoutTotal,
+    items: rawOrder.items.map((item) => {
+      const { basePrice, ...productWithoutPrice } = item.product;
+      return {
         ...item,
-        product: {
-            ...item.product,
-            basePrice: Number(item.product.basePrice)
-        }
-    }))
+        product: productWithoutPrice
+      };
+    })
   };
 
   // 3. Calculate Queue Info (based on drinks/items ahead, not orders)

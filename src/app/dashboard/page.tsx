@@ -63,25 +63,27 @@ export default async function DashboardPage() {
     }
   });
 
-  // Serialization
-  const serializeOrder = (order: any) => ({
-    ...order,
-    total: Number(order.total),
-    items: order.items.map((item: any) => ({
-        ...item,
-        product: {
-            ...item.product,
-            basePrice: Number(item.product.basePrice)
-        },
-        modifiers: item.modifiers.map((mod: any) => ({
-            ...mod,
-            ingredient: {
-                ...mod.ingredient,
-                priceMod: Number(mod.ingredient.priceMod)
-            }
-        }))
-    }))
-  });
+  // Serialization (remove price fields and Decimal fields)
+  const serializeOrder = (order: any) => {
+    const { total, ...orderWithoutTotal } = order;
+    return {
+      ...orderWithoutTotal,
+      items: order.items.map((item: any) => {
+        const { basePrice, ...productWithoutPrice } = item.product;
+        return {
+          ...item,
+          product: productWithoutPrice,
+          modifiers: item.modifiers.map((mod: any) => {
+            const { priceMod, ...ingredientWithoutPrice } = mod.ingredient;
+            return {
+              ...mod,
+              ingredient: ingredientWithoutPrice
+            };
+          })
+        };
+      })
+    };
+  };
 
   const orders = rawOrders.map(serializeOrder);
   const latestOrder = latestRawOrder ? serializeOrder(latestRawOrder) : null;

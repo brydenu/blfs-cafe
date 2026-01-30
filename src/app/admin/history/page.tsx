@@ -177,20 +177,20 @@ export default async function OrderHistoryPage({ searchParams }: OrderHistoryPag
   const serializedOrders = orders.map(order => ({
     ...order,
     total: Number(order.total),
-    items: order.items.map(item => ({
-      ...item,
-      product: {
-        ...item.product,
-        basePrice: Number(item.product.basePrice)
-      },
-      modifiers: item.modifiers.map(mod => ({
-        ...mod,
-        ingredient: {
-          ...mod.ingredient,
-          priceMod: Number(mod.ingredient.priceMod)
-        }
-      }))
-    }))
+    items: order.items.map(item => {
+      const { basePrice, ...productWithoutPrice } = item.product;
+      return {
+        ...item,
+        product: productWithoutPrice,
+        modifiers: item.modifiers.map(mod => {
+          const { priceMod, ...ingredientWithoutPrice } = mod.ingredient;
+          return {
+            ...mod,
+            ingredient: ingredientWithoutPrice
+          };
+        })
+      };
+    })
   }));
 
   // Calculate total number of drinks (sum of all item quantities)

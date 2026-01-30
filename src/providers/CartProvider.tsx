@@ -20,7 +20,6 @@ export type CartItem = {
   foamLevel?: string; // 'No foam' | 'Light' | 'Normal' | 'Extra'
   milkAmount?: string; // 'Light' | 'Normal' | 'Extra' (for optional milk drinks)
   notes?: string;
-  basePrice?: number; // For total calculation
 };
 
 type CartContextType = {
