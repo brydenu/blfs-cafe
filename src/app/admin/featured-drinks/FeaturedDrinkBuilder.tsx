@@ -18,6 +18,8 @@ interface Product {
   defaultShots: number;
   forceTemperature: string | null;
   isActive: boolean;
+  isSeasonal: boolean;
+  deletedAt: Date | null;
 }
 
 interface Ingredient {
