@@ -1,3 +1,6 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,99 +10,273 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// --- USERS & AUTH ---
+// --- AUTHENTICATION & USERS ---
 model User {
-  id            Int       @id @default(autoincrement())
-  email         String    @unique
-  passwordHash  String
-  firstName     String
-  lastName      String?
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
   phone         String?
-  role          String    @default("customer") // 'admin', 'customer'
-  createdAt     DateTime  @default(now())
-  orders        Order[]
+  image         String?
+  passwordHash  String?
+  role          String    @default("customer") // 'admin' or 'customer'
+
+  // Profile fields
+  firstName String?
+  lastName  String?
+
+  // Notification preferences
+  notificationsEnabled    Boolean @default(false)
+  notificationDefaultType String  @default("order-complete") // 'per-drink' or 'order-complete'
+  notificationMethods     Json    @default("{\"email\": true}") // Store enabled methods
+
+  accounts                Account[]
+  sessions                Session[]
+  orders                  Order[]
+  savedOrders             SavedOrder[] // For "Favorites"
+  communicationDismissals CommunicationDismissal[]
+  suggestions             Suggestion[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime? // Soft delete timestamp
 }
 
-// --- MENU & INVENTORY ---
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// --- MENU & PRODUCTS ---
+
 model Product {
-  id          Int      @id @default(autoincrement())
+  id          Int     @id @default(autoincrement())
   name        String
   description String?
-  category    String   // 'coffee', 'tea', 'other'
-  isActive    Boolean  @default(true)
-  basePrice   Decimal  @default(0.00) // Price is 0 for now, but good to have the column
-  
-  // Relations
-  orderItems  OrderItem[]
+  basePrice   Decimal @default(0.00)
+  imageUrl    String?
+  category    String // 'coffee', 'tea', 'refresher', 'bakery'
+
+  // Recipe Logic
+  isActive   Boolean @default(true)
+  isSeasonal Boolean @default(false)
+
+  // Customization Constraints
+  requiresMilk     Boolean @default(false)
+  allowsShots      Boolean @default(false)
+  defaultShots     Int     @default(0)
+  forceTemperature String? // If strictly 'Hot' or 'Iced', else null
+
+  // Soft Delete
+  deletedAt DateTime? // Soft delete timestamp
+
+  orderItems     OrderItem[]
+  savedOrders    SavedOrder[]
+  featuredDrinks FeaturedDrink[]
 }
 
 model Ingredient {
-  id          Int      @id @default(autoincrement())
+  id          Int     @id @default(autoincrement())
   name        String
-  category    String   // 'milk', 'syrup', 'topping', 'sweetener'
-  inStock     Boolean  @default(true)
-  isActive    Boolean  @default(true)
+  category    String // 'milk', 'syrup', 'topping', 'decaf'
+  priceMod    Decimal @default(0.00)
+  isAvailable Boolean @default(true)
+  isShowing   Boolean @default(true) // Visibility in UI (for seasonal flavors)
+  rank        Int     @default(0) // Higher numbers = Higher priority in UI
 
-  // Relations
-  modifiers   OrderItemModifier[]
+  modifiers Modifier[]
 }
 
 // --- ORDERS ---
-model Order {
-  id          Int       @id @default(autoincrement())
-  status      String    @default("queued") // 'queued', 'in_progress', 'completed', 'picked_up', 'cancelled'
-  createdAt   DateTime  @default(now())
-  completedAt DateTime?
-  pickedUpAt  DateTime?
-  
-  // Guest Info (if user is null)
-  guestName   String?
-  guestPhone  String?
 
-  // Relations
-  userId      Int?
-  user        User?     @relation(fields: [userId], references: [id])
-  items       OrderItem[]
+model Order {
+  id       Int    @id @default(autoincrement())
+  publicId String @unique // Friendly ID for tracking (generated in app code)
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  guestName  String? // If not logged in
+  guestEmail String?
+
+  status String  @default("queued") // 'queued', 'preparing', 'ready', 'completed', 'cancelled'
+  total  Decimal @default(0.00)
+
+  // Notification preferences (nullable = use user default)
+  notificationsEnabled Boolean? // Override user default for this order
+  notificationType     String? // Override notification type for this order ('per-drink' or 'order-complete')
+  notificationMethods  Json? // Override methods for this order
+
+  items OrderItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model OrderItem {
-  id                 Int       @id @default(autoincrement())
-  isDecaf            Boolean   @default(false)
-  specialInstructions String?  // Specific notes like "Draw a cat on the cup"
-  
-  // Relations
-  orderId            Int
-  order              Order     @relation(fields: [orderId], references: [id])
-  productId          Int
-  product            Product   @relation(fields: [productId], references: [id])
-  modifiers          OrderItemModifier[]
+  id      Int   @id @default(autoincrement())
+  orderId Int
+  order   Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
+
+  quantity Int @default(1)
+
+  // Drink Specifics
+  shots       Int     @default(0)
+  temperature String? // 'Hot', 'Iced'
+
+  // NEW COLUMNS
+  milkName      String? // e.g. "Oat", "Whole"
+  recipientName String? // e.g. "My Morning Fuel"
+
+  specialInstructions String? // Fallback text string
+
+  // Completion status
+  completed_at DateTime?
+  cancelled    Boolean   @default(false)
+
+  // Customization fields
+  cupType      String   @default("to-go") // 'to-go', 'for-here', 'personal'
+  caffeineType String? // 'Normal', 'Decaf', 'Half-Caff'
+  milkSteamed  Boolean? // Whether milk is steamed (for hot drinks with optional milk)
+  foamLevel    String? // 'No foam', 'Light', 'Normal', 'Extra'
+  milkAmount   String? // 'Light', 'Normal', 'Extra' (for optional milk drinks)
+
+  // Relationship to Ingredients (Syrups, etc.)
+  modifiers Modifier[]
 }
 
-model OrderItemModifier {
-  id            Int         @id @default(autoincrement())
-  quantity      Int         @default(1)
-  optionValue   String?     // e.g. "Extra Hot", "Light Ice"
+model Modifier {
+  id Int @id @default(autoincrement())
 
-  // Relations
-  orderItemId   Int
-  orderItem     OrderItem   @relation(fields: [orderItemId], references: [id])
-  ingredientId  Int
-  ingredient    Ingredient  @relation(fields: [ingredientId], references: [id])
+  orderItemId Int
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+
+  ingredientId Int
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id])
+
+  quantity Int @default(1) // e.g., "2 pumps"
 }
 
-// --- SCHEDULE & LOGIC ---
-model StoreHour {
+// --- FAVORITES / SAVED ORDERS ---
+
+model SavedOrder {
+  id     Int    @id @default(autoincrement())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
+
+  name          String // "My Morning Latte"
+  description   String? // Optional description
+  configuration Json // Store the JSON of shots, milk, syrups
+
+  createdAt DateTime @default(now())
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  expires   DateTime
+  createdAt DateTime @default(now())
+
+  @@unique([email, token])
+}
+
+// --- SCHEDULE ---
+
+model Schedule {
+  id                   Int     @id @default(autoincrement())
+  dayOfWeek            Int     @unique // 0=Sunday, 6=Saturday
+  openTime1            String // HH:mm format - first period start
+  closeTime1           String // HH:mm format - first period end
+  openTime2            String? // HH:mm format - second period start, nullable
+  closeTime2           String? // HH:mm format - second period end, nullable
+  isSecondPeriodActive Boolean @default(false) // enable/disable second period
+  isOpen               Boolean @default(true) // enable/disable entire day
+}
+
+// --- COMMUNICATIONS ---
+
+model Communication {
+  id                  Int                      @id @default(autoincrement())
+  title               String
+  content             String                   @db.Text // HTML/rich text content
+  startDate           DateTime
+  endDate             DateTime
+  visibilityLocations Json // Array: ["landing", "dashboard", "menu"]
+  dismissals          CommunicationDismissal[]
+  createdAt           DateTime                 @default(now())
+  updatedAt           DateTime                 @updatedAt
+}
+
+model CommunicationDismissal {
+  id              Int           @id @default(autoincrement())
+  userId          String? // Nullable for logged-in users
+  user            User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionId       String? // Nullable for guest sessions
+  communicationId Int
+  communication   Communication @relation(fields: [communicationId], references: [id], onDelete: Cascade)
+  dismissedAt     DateTime      @default(now())
+
+  @@unique([userId, communicationId])
+  @@unique([sessionId, communicationId])
+}
+
+// --- FEATURED DRINKS ---
+
+model FeaturedDrink {
   id          Int     @id @default(autoincrement())
-  dayOfWeek   Int     // 0=Sun, 1=Mon...
-  openTime    String  // Format "08:00"
-  closeTime   String  // Format "17:00"
-  isClosed    Boolean @default(false)
+  productId   Int
+  product     Product @relation(fields: [productId], references: [id])
+
+  name        String  // "Summer Special Latte"
+  description String? // Optional description
+  configuration Json  // Store the JSON of shots, milk, syrups, etc.
+
+  isActive    Boolean @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
-model CalendarEvent {
-  id          Int      @id @default(autoincrement())
-  date        DateTime @unique // Specific date like 2025-12-25
-  isClosed    Boolean  @default(true)
-  reason      String?  // 'PTO', 'Sick', 'Holiday'
-  note        String?
+// --- SUGGESTIONS ---
+
+model Suggestion {
+  id         Int      @id @default(autoincrement())
+  userId     String?  // Nullable - allows anonymous submissions
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  content    String   @db.Text
+  isRead     Boolean  @default(false)
+  readAt     DateTime?
+  readBy     String?  // Admin userId who marked as read
+  isArchived Boolean  @default(false)
+  isPinned   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
