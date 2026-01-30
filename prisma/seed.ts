@@ -13,6 +13,14 @@ async function main() {
   await prisma.order.deleteMany()
   await prisma.product.deleteMany()
   await prisma.ingredient.deleteMany()
+  await prisma.communicationDismissal.deleteMany()
+  await prisma.communication.deleteMany()
+  await prisma.featuredDrink.deleteMany()
+  await prisma.suggestion.deleteMany()
+  await prisma.schedule.deleteMany()
+  await prisma.passwordResetToken.deleteMany()
+  await prisma.session.deleteMany()
+  await prisma.account.deleteMany()
   await prisma.user.deleteMany()
   
   // 2. SEED INGREDIENTS
@@ -277,6 +285,24 @@ async function main() {
     });
     console.log('   -> Added "My Morning Fuel" for user@example.com');
   }
+
+  // 6. SEED SCHEDULE
+  console.log('📅 Seeding Schedule...');
+  
+  // Default schedule: Monday-Friday (1-5), 8:00 AM - 5:00 PM
+  await prisma.schedule.createMany({
+    data: [
+      { dayOfWeek: 1, openTime1: '08:00', closeTime1: '17:00', isOpen: true }, // Monday
+      { dayOfWeek: 2, openTime1: '08:00', closeTime1: '17:00', isOpen: true }, // Tuesday
+      { dayOfWeek: 3, openTime1: '08:00', closeTime1: '17:00', isOpen: true }, // Wednesday
+      { dayOfWeek: 4, openTime1: '08:00', closeTime1: '17:00', isOpen: true }, // Thursday
+      { dayOfWeek: 5, openTime1: '08:00', closeTime1: '17:00', isOpen: true }, // Friday
+      // Weekend days are closed by default (isOpen: false)
+      { dayOfWeek: 0, openTime1: '08:00', closeTime1: '17:00', isOpen: false }, // Sunday
+      { dayOfWeek: 6, openTime1: '08:00', closeTime1: '17:00', isOpen: false }, // Saturday
+    ]
+  });
+  console.log('   -> Added default schedule (Mon-Fri: 8:00-17:00)');
 
   console.log('✅ Seed finished.')
 }

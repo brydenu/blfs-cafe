@@ -3,8 +3,6 @@ import TicketCard from "./TicketCard";
 import QueueListener from "./QueueListener";
 import QueueUtilitiesButton from "./QueueUtilitiesButton";
 
-import { SparklesIcon } from '@/components/icons';
-
 export const dynamic = 'force-dynamic';
 
 // --- MILK COLOR MAP ---
@@ -208,7 +206,6 @@ export default async function AdminQueuePage() {
       {/* --- TICKETS GRID --- */}
       {allTickets.length === 0 ? (
         <div className="text-center py-20 opacity-30">
-           <div className="mb-4"><SparklesIcon size={96} className="text-gray-400" /></div>
            <h3 className="text-3xl font-bold text-white">Queue Empty</h3>
         </div>
       ) : (
