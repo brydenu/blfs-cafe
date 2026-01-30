@@ -35,13 +35,13 @@ export default function CreateProductForm({ onClose, onSuccess }: CreateProductF
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      showToast('Please select an image file', 'error');
+      showToast('Please select an image file');
       return;
     }
 
     // Validate file size (5MB)
     if (file.size > 5 * 1024 * 1024) {
-      showToast('File size must be less than 5MB', 'error');
+      showToast('File size must be less than 5MB');
       return;
     }
 
@@ -65,7 +65,7 @@ export default function CreateProductForm({ onClose, onSuccess }: CreateProductF
       setImagePreview(data.url);
       showToast('Image uploaded successfully');
     } catch (error: any) {
-      showToast(error.message || 'Failed to upload image', 'error');
+      showToast(error.message || 'Failed to upload image');
     } finally {
       setIsUploading(false);
     }
@@ -76,7 +76,7 @@ export default function CreateProductForm({ onClose, onSuccess }: CreateProductF
     
     // Validation for step 2
     if (step === 2 && !formData.canBeHotAndIced && (!formData.forceTemperature || formData.forceTemperature === '')) {
-      showToast('Please select a temperature option', 'error');
+      showToast('Please select a temperature option');
       return;
     }
     
@@ -105,7 +105,7 @@ export default function CreateProductForm({ onClose, onSuccess }: CreateProductF
       showToast('Product created successfully');
       onSuccess();
     } else {
-      showToast(result.message || 'Failed to create product', 'error');
+      showToast(result.message || 'Failed to create product');
     }
   };
 
