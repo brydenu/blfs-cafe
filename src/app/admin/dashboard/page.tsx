@@ -17,7 +17,7 @@ export default async function AdminDashboard() {
   });
 
   const statsResult = await getTodayStatistics();
-  const stats = statsResult.success ? statsResult.data : {
+  const stats = statsResult.success && statsResult.data ? statsResult.data : {
     totalDrinks: 0,
     totalHot: 0,
     totalIced: 0,
@@ -54,17 +54,17 @@ export default async function AdminDashboard() {
 
         <div className="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700 text-center">
           <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Total Drinks</p>
-          <p className="text-3xl font-black text-white">{stats.totalDrinks}</p>
+          <p className="text-3xl font-black text-white">{stats?.totalDrinks ?? 0}</p>
         </div>
 
         <div className="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700 text-center">
           <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Hot</p>
-          <p className="text-3xl font-black text-red-400">{stats.totalHot}</p>
+          <p className="text-3xl font-black text-red-400">{stats?.totalHot ?? 0}</p>
         </div>
 
         <div className="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700 text-center">
           <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Iced</p>
-          <p className="text-3xl font-black text-blue-400">{stats.totalIced}</p>
+          <p className="text-3xl font-black text-blue-400">{stats?.totalIced ?? 0}</p>
         </div>
 
         <div className="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700 text-center">
