@@ -46,6 +46,16 @@ export default function MenuManager({ products }: MenuManagerProps) {
     ? products
     : products.filter(p => p.category === activeCategory);
 
+  const getCategoryIcon = (category: string, size: number = 32) => {
+    switch (category.toLowerCase()) {
+      case 'coffee':
+        return <CoffeeIcon size={size} className="text-gray-400" />;
+      case 'tea':
+        return <TeaIcon size={size} className="text-gray-400" />;
+      default:
+        return <DrinkIcon size={size} className="text-gray-400" />;
+    }
+  };
 
   return (
     <div className="space-y-8">

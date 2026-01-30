@@ -38,8 +38,8 @@ export async function getActiveCommunications(location: 'landing' | 'dashboard' 
         return false;
       }
       
-      // Check if location matches
-      return locations.some((loc: string) => loc === location);
+      // Check if location matches - ensure all items are strings
+      return locations.some((loc) => typeof loc === 'string' && loc === location);
     });
 
     // For each communication, check if it's been dismissed

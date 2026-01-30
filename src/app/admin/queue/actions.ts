@@ -257,7 +257,6 @@ export async function createWalkUpOrder(data: {
             userId: data.userId || null,
             guestName: data.userId ? null : data.recipientName,
             status: 'queued',
-            total: 0, // Free service, no cost
             ...orderNotificationData,
             items: {
               create: {
