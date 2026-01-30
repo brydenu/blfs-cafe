@@ -1,9 +1,15 @@
 const { Server } = require("socket.io");
+const http = require("http");
 
-const io = new Server(3001, {
+const server = http.createServer();
+const PORT = process.env.SOCKET_PORT || 3001;
+
+const io = new Server(server, {
+    path: '/socket.io/',
     cors: {
-        origin: "*",
+        origin: process.env.NEXT_PUBLIC_URL || "*",
         methods: ["GET", "POST"],
+        credentials: true
     },
 });
 
@@ -27,4 +33,6 @@ io.on("connection", (socket) => {
     });
 });
 
-console.log("✅ WebSocket Server running on port 3001");
+server.listen(PORT, () => {
+    console.log(`✅ WebSocket Server running on port ${PORT}`);
+});
