@@ -13,7 +13,6 @@ interface Favorite {
     name: string;
     category: string;
     imageUrl: string | null;
-    basePrice: number;
   };
   configuration: any;
 }
@@ -24,7 +23,6 @@ interface LastDrink {
     name: string;
     category: string;
     imageUrl: string | null;
-    basePrice: number;
   };
   configuration: any;
   recipientName: string;

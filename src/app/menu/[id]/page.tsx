@@ -34,17 +34,13 @@ export default async function ProductPage({ params, searchParams }: Props) {
     orderBy: { rank: 'desc' }
   });
 
-  // 3. Serialize Product Data (Decimal -> Number for client)
-  const serializedProduct = {
-    ...product,
-    basePrice: product.basePrice.toNumber(),
-    isActive: product.isActive
-  };
+  // 3. Serialize Product Data (remove price fields)
+  const { basePrice, ...serializedProduct } = product;
 
-  const serializedIngredients = ingredients.map(i => ({
-    ...i,
-    priceMod: i.priceMod.toNumber()
-  }));
+  const serializedIngredients = ingredients.map(i => {
+    const { priceMod, ...ingredientWithoutPrice } = i;
+    return ingredientWithoutPrice;
+  });
 
   // 4. Handle Default Name - Fetch full user data and format display name
   let defaultName = "Guest";

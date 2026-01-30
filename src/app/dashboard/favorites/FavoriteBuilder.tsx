@@ -12,7 +12,6 @@ interface Product {
   name: string;
   description: string | null;
   category: string;
-  basePrice: number;
   imageUrl: string | null;
   requiresMilk: boolean;
   allowsShots: boolean;
@@ -25,7 +24,6 @@ interface Ingredient {
   id: number;
   name: string;
   category: string;
-  priceMod: number;
   isAvailable: boolean;
   isShowing: boolean;
   rank: number;

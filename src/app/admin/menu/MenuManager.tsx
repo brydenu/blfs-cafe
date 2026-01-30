@@ -11,7 +11,6 @@ interface Product {
   id: number;
   name: string;
   description: string | null;
-  basePrice: number;
   imageUrl: string | null;
   category: string;
   isActive: boolean;

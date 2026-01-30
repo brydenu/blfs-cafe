@@ -12,7 +12,6 @@ interface IngredientManagerProps {
     id: number;
     name: string;
     category: string;
-    priceMod: number;
     isAvailable: boolean;
     isShowing: boolean;
     rank: number;

@@ -74,7 +74,6 @@ export async function getLastOrderedDrink() {
       id: item.product.id,
       name: item.product.name,
       category: item.product.category,
-      basePrice: item.product.basePrice.toNumber(),
       imageUrl: item.product.imageUrl
     },
     configuration: config,
@@ -150,8 +149,7 @@ export async function placeQuickOrder(
     milkSteamed: configuration.milkSteamed,
     foamLevel: configuration.foamLevel,
     milkAmount: configuration.milkAmount,
-    notes: notes || configuration.notes,
-    basePrice: product.basePrice.toNumber()
+    notes: notes || configuration.notes
   };
 
   // Place the order
