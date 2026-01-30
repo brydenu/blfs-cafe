@@ -325,7 +325,7 @@ export default function OrderTracker({ order, ordersAhead, estimatedMinutes, caf
   useEffect(() => {
     const protocol = window.location.protocol;
     const hostname = window.location.hostname;
-    const url = `${protocol}//${hostname}:3001`;
+    const url = process.env.NEXT_PUBLIC_SOCKET_URL || window.location.origin;
 
     console.log("🔌 Order Tracker connecting to:", url);
 
