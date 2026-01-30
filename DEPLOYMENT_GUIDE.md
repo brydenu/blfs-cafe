@@ -100,7 +100,7 @@ cd blfs-cafe
 
 ### Step 2.2: Upload Your Code
 
-**Option A: Using Git (Recommended)**
+**Option A: Using Git (Recommended for Automatic Deployment)**
 
 ```bash
 # If your code is in a Git repository
@@ -108,6 +108,9 @@ git clone https://github.com/your-username/your-repo.git .
 
 # Or if using SSH
 git clone git@github.com:your-username/your-repo.git .
+
+# Make deploy script executable
+chmod +x deploy.sh
 ```
 
 **Option B: Using SCP (from your local machine)**
@@ -588,8 +591,81 @@ sudo certbot renew
 
 ---
 
+---
+
+## PHASE 14: Set Up Automatic Deployment from GitHub
+
+### Step 14.1: Upload Deployment Script to EC2
+
+```bash
+# On EC2, make sure the deploy script exists and is executable
+cd /home/ubuntu/blfs-cafe
+chmod +x deploy.sh
+```
+
+### Step 14.2: Configure GitHub Secrets
+
+In your GitHub repository:
+
+1. Go to **Settings** → **Secrets and variables** → **Actions**
+2. Click **New repository secret**
+3. Add the following secrets:
+
+    **EC2_HOST:**
+
+    - Name: `EC2_HOST`
+    - Value: Your EC2 public IP address (e.g., `54.123.45.67`)
+
+    **EC2_SSH_KEY:**
+
+    - Name: `EC2_SSH_KEY`
+    - Value: The contents of your private key file (`.pem` file)
+        - Open your `.pem` file and copy the entire contents (including `-----BEGIN RSA PRIVATE KEY-----` and `-----END RSA PRIVATE KEY-----`)
+
+### Step 14.3: Verify GitHub Actions Workflow
+
+The workflow file `.github/workflows/deploy.yml` should already be in your repository. It will:
+
+-   Trigger on every push to `main` branch
+-   SSH into your EC2 instance
+-   Run the `deploy.sh` script
+-   Automatically pull latest code, install dependencies, build, and restart
+
+### Step 14.4: Test Automatic Deployment
+
+1. Make a small change to your code
+2. Commit and push to `main` branch:
+    ```bash
+    git add .
+    git commit -m "Test automatic deployment"
+    git push origin main
+    ```
+3. Go to GitHub → **Actions** tab to see the deployment progress
+4. Check your EC2 server to verify the deployment ran:
+    ```bash
+    # On EC2
+    pm2 logs
+    ```
+
+### Step 14.5: Manual Deployment (Alternative)
+
+If you prefer to deploy manually or if GitHub Actions isn't working:
+
+```bash
+# SSH into EC2
+ssh -i /path/to/your-key.pem ubuntu@your-ec2-ip
+
+# Run deployment script
+cd /home/ubuntu/blfs-cafe
+./deploy.sh
+```
+
+---
+
 ## Success!
 
 Your application should now be live at `https://yourdomain.com`!
+
+**With automatic deployment set up, every push to `main` will automatically update your production server!**
 
 If you encounter any issues, check the logs and refer to the troubleshooting section above.
