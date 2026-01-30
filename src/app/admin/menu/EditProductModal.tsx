@@ -37,7 +37,7 @@ export default function EditProductModal({ product, onClose, onSuccess }: EditPr
     requiresMilk: product.requiresMilk,
     allowsShots: product.allowsShots,
     defaultShots: product.defaultShots,
-    forceTemperature: product.forceTemperature || '',
+    forceTemperature: product.forceTemperature || null,
     isSeasonal: product.isSeasonal,
   });
 
@@ -47,13 +47,13 @@ export default function EditProductModal({ product, onClose, onSuccess }: EditPr
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      showToast('Please select an image file', 'error');
+      showToast('Please select an image file');
       return;
     }
 
     // Validate file size (5MB)
     if (file.size > 5 * 1024 * 1024) {
-      showToast('File size must be less than 5MB', 'error');
+      showToast('File size must be less than 5MB');
       return;
     }
 
@@ -77,7 +77,7 @@ export default function EditProductModal({ product, onClose, onSuccess }: EditPr
       setImagePreview(data.url);
       showToast('Image uploaded successfully');
     } catch (error: any) {
-      showToast(error.message || 'Failed to upload image', 'error');
+      showToast(error.message || 'Failed to upload image');
     } finally {
       setIsUploading(false);
     }
@@ -105,7 +105,7 @@ export default function EditProductModal({ product, onClose, onSuccess }: EditPr
       showToast('Product updated successfully');
       onSuccess();
     } else {
-      showToast(result.message || 'Failed to update product', 'error');
+      showToast(result.message || 'Failed to update product');
     }
   };
 
@@ -259,7 +259,7 @@ export default function EditProductModal({ product, onClose, onSuccess }: EditPr
                 Temperature Options
               </label>
               <select
-                value={formData.forceTemperature}
+                value={formData.forceTemperature || ''}
                 onChange={(e) => setFormData({ ...formData, forceTemperature: e.target.value || null })}
                 className="w-full bg-gray-700 text-white rounded-lg px-4 py-2 border border-gray-600 focus:border-[#32A5DC] focus:outline-none"
               >

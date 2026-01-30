@@ -6,9 +6,9 @@ import { updateProfile, updatePassword, updateNotificationPreferences } from "./
 import { BellIcon } from "@/components/icons";
 
 interface UserData {
-  firstName: string;
-  lastName: string;
-  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  email: string | null;
   phone: string | null;
   notificationsEnabled: boolean;
   notificationDefaultType: string;
@@ -115,7 +115,7 @@ export default function SettingsForm({ user }: { user: UserData }) {
                         <label className="text-sm font-bold text-gray-700 ml-1">First Name</label>
                         <input 
                             name="firstName" 
-                            defaultValue={user.firstName}
+                            defaultValue={user.firstName || ""}
                             required
                             className={inputClass}
                         />
@@ -124,7 +124,7 @@ export default function SettingsForm({ user }: { user: UserData }) {
                         <label className="text-sm font-bold text-gray-700 ml-1">Last Name</label>
                         <input 
                             name="lastName" 
-                            defaultValue={user.lastName}
+                            defaultValue={user.lastName || ""}
                             required
                             className={inputClass}
                         />
@@ -134,7 +134,7 @@ export default function SettingsForm({ user }: { user: UserData }) {
                 <div className="space-y-1">
                     <label className="text-sm font-bold text-gray-700 ml-1">Email (Cannot be changed)</label>
                     <input 
-                        value={user.email} 
+                        value={user.email || ""} 
                         disabled 
                         className="w-full bg-gray-100 border border-gray-200 rounded-xl px-4 py-3 text-gray-500 font-bold cursor-not-allowed"
                     />

@@ -42,7 +42,7 @@ export default function RegisterForm() {
         email: data.email,
         password: data.password,
         firstName: data.firstName,
-        lastName: data.lastName,
+        lastName: data.lastName || "",
         phone: data.phone || "",
       });
 

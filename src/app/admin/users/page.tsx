@@ -1,5 +1,6 @@
 import { getUsers } from "./actions";
 import { Suspense } from "react";
+import Link from "next/link";
 import UsersTable from "./UsersTable";
 
 export const dynamic = 'force-dynamic';

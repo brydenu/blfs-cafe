@@ -84,7 +84,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
           defaultName={defaultName}
           defaultDisplayName={defaultDisplayName}
           userLastName={userLastName}
-          initialConfig={initialConfig}
+          initialConfigProp={initialConfig}
         />
       </div>
     </main>

@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import OrderTracker from "@/app/order-confirmation/[id]/OrderTracker";
+import { getCafeStatus } from "@/lib/schedule-status";
 
 export const dynamic = 'force-dynamic';
 
@@ -50,6 +51,9 @@ export default async function GuestTrackerPage({ params }: Props) {
 
   const estimatedMinutes = (itemsAhead * 3) + 3;
 
+  // 4. Fetch cafe status for message
+  const cafeStatus = await getCafeStatus();
+
   return (
     <main className="min-h-screen relative p-6 flex items-center justify-center overflow-hidden">
       
@@ -67,7 +71,8 @@ export default async function GuestTrackerPage({ params }: Props) {
         <OrderTracker 
             order={order} 
             ordersAhead={itemsAhead} 
-            estimatedMinutes={estimatedMinutes} 
+            estimatedMinutes={estimatedMinutes}
+            cafeStatus={cafeStatus}
         />
 
         {/* Actions */}

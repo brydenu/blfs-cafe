@@ -80,7 +80,7 @@ export default function ForgotPasswordForm() {
                 </div>
 
                 {/* Error Message */}
-                {message && status !== 'success' && (
+                {message && (
                     <div className="p-3 bg-red-50 border border-red-100 rounded-xl text-red-600 text-sm font-bold text-center">
                         {message}
                     </div>

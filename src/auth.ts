@@ -5,7 +5,7 @@ import Credentials from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: PrismaAdapter(prisma),
+  adapter: PrismaAdapter(prisma) as any,
   session: { strategy: "jwt" }, // Use JWT to make passing custom data easier
   providers: [
     Credentials({
@@ -43,7 +43,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     // 1. Add role to the JWT token when logging in
     async jwt({ token, user }) {
-      if (user) {
+      if (user && user.id) {
         token.role = user.role;
         token.sub = user.id.toString(); // Ensure ID is passed as string
       }
