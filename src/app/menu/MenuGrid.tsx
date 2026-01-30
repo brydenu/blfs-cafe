@@ -347,6 +347,25 @@ export default function MenuGrid({ products = [], favorites = [], featuredDrinks
           productsByCategory[category].push(product);
         });
 
+        // Sort coffee products: Latte first, Americano second, then others
+        if (productsByCategory['coffee']) {
+          productsByCategory['coffee'].sort((a, b) => {
+            const aName = a.name.toLowerCase();
+            const bName = b.name.toLowerCase();
+            
+            // Latte always first
+            if (aName === 'latte') return -1;
+            if (bName === 'latte') return 1;
+            
+            // Americano always second
+            if (aName === 'americano') return -1;
+            if (bName === 'americano') return 1;
+            
+            // Everything else in original order (or alphabetical)
+            return 0;
+          });
+        }
+
         // Define category order and labels
         const categoryOrder = ['coffee', 'tea', 'other'];
         const categoryLabels: Record<string, string> = {
