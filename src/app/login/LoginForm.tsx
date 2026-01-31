@@ -1,31 +1,97 @@
 'use client';
 
-import { useActionState, useEffect } from 'react';
+import { useActionState, useEffect, useRef, startTransition } from 'react';
 import { authenticate } from './actions';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
+// Debug logging helper
+function logDebug(location: string, message: string, data?: any) {
+  console.log(`[CLIENT ${location}] ${message}`, data || '');
+}
+
 export default function LoginForm() {
   const router = useRouter();
   const [result, formAction, isPending] = useActionState(authenticate, undefined);
+  const hasRedirected = useRef(false);
+  const redirectAttempts = useRef(0);
+  
+  logDebug('LoginForm:render', 'Component rendered', { 
+    result, 
+    resultType: typeof result,
+    isPending,
+    hasRedirected: hasRedirected.current 
+  });
   
   // Handle successful login with client-side redirect
   // This is more reliable in production than server-side redirects with useActionState
   useEffect(() => {
+    logDebug('LoginForm:effect', 'useEffect triggered', { 
+      result, 
+      resultType: typeof result,
+      isPending,
+      hasRedirected: hasRedirected.current,
+      redirectAttempts: redirectAttempts.current
+    });
+    
     if (result && typeof result === 'object' && 'success' in result && (result as { success: boolean }).success) {
-      router.push('/dashboard');
-      router.refresh(); // Ensure the page updates with new session
+      if (hasRedirected.current) {
+        logDebug('LoginForm:redirect-skip', 'Already redirected, skipping');
+        return;
+      }
+      
+      if (redirectAttempts.current >= 3) {
+        logDebug('LoginForm:redirect-limit', 'Max redirect attempts reached');
+        return;
+      }
+      
+      hasRedirected.current = true;
+      redirectAttempts.current += 1;
+      
+      logDebug('LoginForm:redirect-start', 'Starting redirect to dashboard', { 
+        attempt: redirectAttempts.current 
+      });
+      
+      // Use window.location for a hard redirect to ensure session is picked up
+      // Add a small delay to ensure the session cookie is set on the client
+      // This is more reliable than router.push in some cases
+      setTimeout(() => {
+        logDebug('LoginForm:redirect-execute', 'Executing redirect to /dashboard');
+        // Use replace to avoid adding to history
+        window.location.replace('/dashboard');
+      }, 300);
     }
   }, [result, router]);
   
   // Extract error message from result
   const errorMessage = typeof result === 'string' ? result : undefined;
+  
+  // Handle form submission - prevent default to avoid page reload
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    logDebug('LoginForm:submit', 'Form submitted, preventing default');
+    
+    // Reset redirect flag on new submission
+    hasRedirected.current = false;
+    redirectAttempts.current = 0;
+    
+    // Get form data and call the action using startTransition
+    const formData = new FormData(e.currentTarget);
+    logDebug('LoginForm:submit', 'Calling formAction with startTransition', {
+      email: formData.get('email')
+    });
+    
+    // Use startTransition to call the form action without blocking
+    startTransition(() => {
+      formAction(formData);
+    });
+  };
 
   return (
     <>
       {/* Form */}
       <form
-        action={formAction}
+        onSubmit={handleSubmit}
         className="space-y-5"
       >
         {errorMessage && (
