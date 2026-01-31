@@ -187,7 +187,8 @@ export default async function OrderHistoryPage({ searchParams }: OrderHistoryPag
       day: 'numeric',
       year: 'numeric',
       hour: 'numeric',
-      minute: '2-digit'
+      minute: '2-digit',
+      timeZone: 'America/Los_Angeles'
     }).format(date);
   };
 
@@ -195,7 +196,8 @@ export default async function OrderHistoryPage({ searchParams }: OrderHistoryPag
     return new Intl.DateTimeFormat('en-US', {
       hour: 'numeric',
       minute: '2-digit',
-      hour12: true
+      hour12: true,
+      timeZone: 'America/Los_Angeles'
     }).format(date);
   };
 
