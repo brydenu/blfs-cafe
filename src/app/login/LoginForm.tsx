@@ -12,14 +12,7 @@ export default function LoginForm() {
   // Handle successful login with client-side redirect
   // This is more reliable in production than server-side redirects with useActionState
   useEffect(() => {
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/eb01caa9-f5ac-41a5-8b5a-2e44e7ce188c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'LoginForm.tsx:14',message:'LoginForm effect',data:{result:result?JSON.stringify(result):'undefined',isPending},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-    // #endregion
-    
     if (result && typeof result === 'object' && 'success' in result && (result as { success: boolean }).success) {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/eb01caa9-f5ac-41a5-8b5a-2e44e7ce188c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'LoginForm.tsx:17',message:'redirecting to dashboard',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-      // #endregion
       router.push('/dashboard');
       router.refresh(); // Ensure the page updates with new session
     }
