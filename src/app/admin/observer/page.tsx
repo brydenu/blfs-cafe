@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { getPacificTime } from "@/lib/schedule-status";
 import ObserverCard from "./ObserverCard";
 import ObserverBanner from "./ObserverBanner";
 import ObserverListener from "./ObserverListener";
@@ -31,19 +32,15 @@ function formatTime(time: string): string {
   return `${displayHour}:${minutes} ${ampm}`;
 }
 
-// Helper function to get current day of week (0=Sunday, 6=Saturday)
-function getCurrentDayOfWeek(): number {
-  return new Date().getDay();
-}
-
 // Check if currently accepting orders
 function isAcceptingOrders(schedule: any): boolean {
   if (!schedule || !schedule.isOpen) {
     return false;
   }
 
-  const now = new Date();
-  const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  // Get current time in Pacific Timezone (handles daylight savings automatically)
+  const pacific = getPacificTime();
+  const currentTime = `${String(pacific.hours).padStart(2, '0')}:${String(pacific.minutes).padStart(2, '0')}`;
 
   const parseTime = (timeStr: string): number => {
     const [hours, minutes] = timeStr.split(':').map(Number);
@@ -92,8 +89,9 @@ function getDisplaySchedule(schedule: any): string[] {
 }
 
 export default async function ObserverPage() {
-  // 1. Fetch Schedule for Today
-  const currentDayOfWeek = getCurrentDayOfWeek();
+  // 1. Fetch Schedule for Today (using Pacific Timezone)
+  const pacific = getPacificTime();
+  const currentDayOfWeek = pacific.dayOfWeek;
   const todaySchedule = await prisma.schedule.findUnique({
     where: { dayOfWeek: currentDayOfWeek }
   });

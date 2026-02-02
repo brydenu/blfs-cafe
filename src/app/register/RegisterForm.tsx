@@ -89,8 +89,8 @@ export default function RegisterForm() {
         <div className="relative z-10 w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden">
             {/* CHANGE 2: Adjust header padding for mobile */}
             <div className="bg-gray-50 px-6 py-5 sm:px-8 sm:py-6 border-b border-gray-100 flex flex-col items-center text-center">
-                <div className="w-16 h-16 relative mb-4">
-                    <Image src="/logo.png" alt="BioLife Cafe Logo" fill className="object-contain" />
+                <div className="w-16 h-16 relative mb-4 max-w-[64px] max-h-[64px]">
+                    <Image src="/logo.png" alt="BioLife Cafe Logo" fill className="object-contain" sizes="64px" />
                 </div>
                 <h1 className="text-2xl font-extrabold text-[#004876]">Create Account</h1>
                 <p className="text-gray-500 text-sm mt-1">Join BioLife Cafe today</p>

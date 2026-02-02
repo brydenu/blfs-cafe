@@ -48,8 +48,8 @@ export default function AdminSidebar({ queueCount }: AdminSidebarProps) {
 
         {/* --- BRAND HEADER --- */}
         <div className={`h-20 flex items-center ${isCollapsed ? "justify-center" : "px-6 gap-3"} border-b border-white/10 bg-[#003355]`}>
-             <div className="relative w-8 h-8 shrink-0">
-               <Image src="/logo.png" alt="Logo" fill className="object-contain" />
+             <div className="relative w-8 h-8 shrink-0 max-w-[32px] max-h-[32px]">
+               <Image src="/logo.png" alt="Logo" fill className="object-contain" sizes="32px" />
              </div>
              {!isCollapsed && (
                  <h1 className="font-bold text-xl tracking-wide whitespace-nowrap overflow-hidden">

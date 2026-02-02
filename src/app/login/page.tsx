@@ -25,8 +25,8 @@ export default async function LoginPage() {
         
         {/* Header */}
         <div className="bg-white px-8 py-6 border-gray-100 flex flex-col items-center text-center mb-2">
-          <div className="w-16 h-16 relative mb-4">
-            <Image src="/logo.png" alt="BioLife Cafe Logo" fill className="object-contain" />
+          <div className="w-16 h-16 relative mb-4 max-w-[64px] max-h-[64px]">
+            <Image src="/logo.png" alt="BioLife Cafe Logo" fill className="object-contain" sizes="64px" />
           </div>
           <h1 className="text-2xl font-extrabold text-[#004876]">Welcome Back</h1>
           <p className="text-gray-500 text-sm mt-1">Sign in to your BioLife account</p>

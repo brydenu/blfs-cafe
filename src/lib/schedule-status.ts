@@ -26,7 +26,7 @@ function parseTime(timeStr: string): number {
  * Get the current time in Pacific Timezone
  * Returns an object with the Pacific time and day of week
  */
-function getPacificTime(): { date: Date; hours: number; minutes: number; dayOfWeek: number } {
+export function getPacificTime(): { date: Date; hours: number; minutes: number; dayOfWeek: number } {
   const now = new Date();
   
   // Use Intl.DateTimeFormat to get Pacific time components
