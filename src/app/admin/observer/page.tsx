@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { getPacificTime } from "@/lib/schedule-status";
+import { getPacificTime } from "@/lib/pacific-time";
 import ObserverCard from "./ObserverCard";
 import ObserverBanner from "./ObserverBanner";
 import ObserverListener from "./ObserverListener";
