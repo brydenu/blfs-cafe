@@ -168,7 +168,7 @@ export default function CommunicationForm({ onClose, onSuccess, communication }:
             Visibility Locations *
           </label>
           <div className="space-y-2">
-            {['landing', 'dashboard', 'menu'].map((location) => (
+            {['landing', 'dashboard', 'menu', 'login'].map((location) => (
               <label
                 key={location}
                 className="flex items-center gap-3 cursor-pointer"
@@ -180,7 +180,7 @@ export default function CommunicationForm({ onClose, onSuccess, communication }:
                   className="w-5 h-5 rounded border-gray-600 bg-gray-900 text-[#32A5DC] focus:ring-[#32A5DC] focus:ring-offset-gray-800"
                 />
                 <span className="text-white capitalize">
-                  {location === 'landing' ? 'Landing Page' : location === 'dashboard' ? 'User Dashboard' : 'Menu Page'}
+                  {location === 'landing' ? 'Landing Page' : location === 'dashboard' ? 'User Dashboard' : location === 'menu' ? 'Menu Page' : 'Login Page'}
                 </span>
               </label>
             ))}

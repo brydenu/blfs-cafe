@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 
-export async function getActiveCommunications(location: 'landing' | 'dashboard' | 'menu') {
+export async function getActiveCommunications(location: 'landing' | 'dashboard' | 'menu' | 'login') {
   try {
     const session = await auth();
     const userId = session?.user?.id || null;
@@ -137,6 +137,7 @@ export async function dismissCommunication(communicationId: number, sessionId?: 
     revalidatePath('/');
     revalidatePath('/dashboard');
     revalidatePath('/menu');
+    revalidatePath('/login');
     return { success: true };
   } catch (error) {
     console.error("Failed to dismiss communication:", error);

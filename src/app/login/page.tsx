@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import Image from "next/image";
 import LoginForm from "./LoginForm";
+import CommunicationBanner from "@/components/CommunicationBanner";
 
 export default async function LoginPage() {
   // 1. Redirect if already logged in
@@ -11,13 +12,18 @@ export default async function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen relative overflow-hidden flex items-center justify-center p-4">
+    <main className="min-h-screen relative overflow-hidden flex flex-col items-center justify-center p-4">
       
       {/* --- BACKGROUND --- */}
       <div className="fixed inset-0 z-0 bg-[#004876]">
         <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-[#32A5DC] rounded-full mix-blend-multiply filter blur-[128px] opacity-20 animate-pulse"></div>
         <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-[#32A5DC] rounded-full mix-blend-multiply filter blur-[128px] opacity-20"></div>
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(#ffffff 1px, transparent 1px)', backgroundSize: '30px 30px' }}></div>
+      </div>
+
+      {/* Communication Banner */}
+      <div className="relative z-10 w-full max-w-md mb-6">
+        <CommunicationBanner location="login" />
       </div>
 
       {/* --- CARD --- */}
