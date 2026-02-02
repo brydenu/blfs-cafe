@@ -10,7 +10,7 @@ const MILK_COLORS: Record<string, string> = {
     'Half and Half': 'bg-purple-500 text-white',
     'Breve': 'bg-purple-500 text-white',
     'Oat': 'bg-teal-500 text-white',
-    'Almond': 'bg-[#a3e635] text-black',
+    'Almond': 'bg-green-600 text-white',
     'Soy': 'bg-yellow-600 text-white',
     'Hemp': 'bg-green-800 text-white',
 };
@@ -480,20 +480,41 @@ export default function TicketCard({ item }: { item: any }) {
          <div className={`border-b pb-3 ${isCancelled ? 'border-red-500 border-opacity-40' : isGuestOrder ? 'border-[#32A5DC] border-opacity-40' : 'border-gray-700'}`}>
              <div className="flex items-start justify-between gap-2">
                  <div className="flex-1">
-                     <h3 className={`text-xl font-extrabold leading-tight ${
-                         isCancelled ? 'text-red-300 line-through' : isGuestOrder ? 'text-[#32A5DC]' : 'text-[#32A5DC]'
-                     }`}>
-                         {item.product.name}
-                     </h3>
-                     <p className={`text-base font-semibold mt-1 ${
-                         isCancelled ? 'text-red-400' : item.temperature?.includes('Iced') ? 'text-blue-300' : 'text-orange-300'
-                     }`}>
-                         {item.temperature}
-                     </p>
+                     {(() => {
+                         // Add "Iced" prefix if drink is iced
+                         const isIced = item.temperature?.toLowerCase().includes('iced');
+                         const drinkName = isIced ? `Iced ${item.product.name}` : item.product.name;
+                         
+                         // Temperature display: show modified temps or just "Hot"/"Iced" for standard
+                         let tempDisplay = item.temperature || '';
+                         if (tempDisplay) {
+                             const tempLower = tempDisplay.toLowerCase();
+                             if (tempLower === 'hot' || tempLower === 'iced') {
+                                 // Standard temperature - capitalize first letter
+                                 tempDisplay = tempDisplay.charAt(0).toUpperCase() + tempDisplay.slice(1).toLowerCase();
+                             }
+                             // For modified temps (extra hot, light ice, etc.), show as-is
+                         }
+                         
+                         return (
+                             <>
+                                 <h3 className={`text-xl font-extrabold leading-tight ${
+                                     isCancelled ? 'text-red-300 line-through' : isGuestOrder ? 'text-[#32A5DC]' : 'text-[#32A5DC]'
+                                 }`}>
+                                     {drinkName}
+                                 </h3>
+                                 <p className={`text-base font-semibold mt-1 ${
+                                     isCancelled ? 'text-red-400' : 'text-gray-300'
+                                 }`}>
+                                     {tempDisplay}
+                                 </p>
+                             </>
+                         );
+                     })()}
                  </div>
                  {/* Cup Type Badge */}
                  {item.cupType && item.cupType !== 'to-go' && (
-                     <span className="bg-green-600 text-white text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wide shrink-0">
+                     <span className="bg-white text-black text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wide shrink-0">
                          {item.cupType === 'for-here' ? 'For-Here' : item.cupType === 'personal' ? 'Personal Cup' : item.cupType}
                      </span>
                  )}
@@ -517,10 +538,8 @@ export default function TicketCard({ item }: { item: any }) {
                      : finalMilkName;
 
                  return (
-                    <li className="flex">
-                         <span className={`${colorClass} px-3 py-1.5 rounded-lg text-sm font-bold uppercase shadow-sm`}>
-                             {milkDisplay}
-                         </span>
+                    <li className={`${colorClass} px-3 py-1.5 rounded-lg text-sm font-bold uppercase shadow-sm`}>
+                         {milkDisplay}
                     </li>
                  );
                })()
@@ -531,7 +550,9 @@ export default function TicketCard({ item }: { item: any }) {
                 <li className="text-lg font-semibold text-gray-300 flex items-start gap-2.5">
                     <span className="mt-2 w-1.5 h-1.5 bg-yellow-400 rounded-full shrink-0"></span>
                     <span>
-                        {item.foamLevel} foam
+                        {item.foamLevel.toLowerCase().includes('foam') 
+                            ? item.foamLevel 
+                            : `${item.foamLevel} foam`}
                     </span>
                 </li>
             )}
@@ -540,23 +561,35 @@ export default function TicketCard({ item }: { item: any }) {
             {item.modifiers.map((mod: any) => {
                 if (mod.ingredient.category === 'milk') return null; // Handled above
                 
-                // Handle toppings/drizzles specially (Light/Medium/Extra)
-                const isTopping = mod.ingredient.category === 'topping';
-                const toppingLabel = isTopping ? getToppingLabel(mod.quantity) : null;
-                const displayQuantity = isTopping && toppingLabel 
-                  ? toppingLabel 
-                  : mod.quantity > 1 ? `(${mod.quantity})` : null;
+                // Handle Chai Concentrate specially: 1→"Light", 2→"Normal", 3→"Extra"
+                const isChaiConcentrate = mod.ingredient.name === 'Chai Concentrate';
+                let displayText = '';
+                
+                if (isChaiConcentrate) {
+                    const chaiLabel = mod.quantity === 1 ? 'Light' : mod.quantity === 2 ? 'Normal' : mod.quantity === 3 ? 'Extra' : `${mod.quantity}`;
+                    displayText = `${chaiLabel} ${mod.ingredient.name}`;
+                } else {
+                    // Handle toppings/drizzles specially (Light/Medium/Extra)
+                    const isTopping = mod.ingredient.category === 'topping';
+                    if (isTopping) {
+                        const toppingLabel = getToppingLabel(mod.quantity);
+                        if (toppingLabel) {
+                            displayText = `${toppingLabel} ${mod.ingredient.name}`;
+                        } else {
+                            // Fallback: show quantity
+                            displayText = `${mod.quantity} ${mod.ingredient.name}`;
+                        }
+                    } else {
+                        // For other ingredients: always show quantity before name
+                        displayText = `${mod.quantity} ${mod.ingredient.name}`;
+                    }
+                }
                 
                 return (
                     <li key={mod.id} className="text-lg font-semibold text-gray-300 flex items-start gap-2.5">
                         <span className="mt-2 w-1.5 h-1.5 bg-yellow-400 rounded-full shrink-0"></span>
                         <span>
-                            {mod.ingredient.name}
-                            {displayQuantity && (
-                                <span className="ml-2 text-gray-400 font-normal">
-                                    {displayQuantity}
-                                </span>
-                            )}
+                            {displayText}
                         </span>
                     </li>
                 );
