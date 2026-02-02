@@ -12,7 +12,7 @@ interface Communication {
 }
 
 interface CommunicationBannerProps {
-  location: 'landing' | 'dashboard' | 'menu';
+  location: 'landing' | 'dashboard' | 'menu' | 'login';
 }
 
 // Generate or get session ID for guests

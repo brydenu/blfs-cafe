@@ -12,7 +12,7 @@ const MILK_COLORS: Record<string, string> = {
     'Half and Half': 'bg-purple-500 text-white',
     'Breve': 'bg-purple-500 text-white',
     'Oat': 'bg-teal-500 text-white',
-    'Almond': 'bg-[#a3e635] text-black',
+    'Almond': 'bg-green-600 text-white',
     'Soy': 'bg-yellow-600 text-white',
     'Hemp': 'bg-green-800 text-white',
 };
@@ -146,19 +146,19 @@ export default async function AdminQueuePage() {
          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <div className="bg-gray-900 rounded-2xl p-4 text-center border border-gray-700">
                 <span className="block text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">Caff Shots</span>
-                <span className="text-4xl md:text-5xl font-black text-orange-400">{totalCafShots}</span>
+                <span className="text-4xl md:text-5xl font-black text-white">{totalCafShots}</span>
             </div>
             <div className="bg-gray-900 rounded-2xl p-4 text-center border border-gray-700">
                 <span className="block text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">Decaf Shots</span>
-                <span className="text-4xl md:text-5xl font-black text-gray-400">{totalDecafShots}</span>
+                <span className="text-4xl md:text-5xl font-black text-white">{totalDecafShots}</span>
             </div>
             <div className="bg-gray-900 rounded-2xl p-4 text-center border border-gray-700">
                 <span className="block text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">Hot Drinks</span>
-                <span className="text-4xl md:text-5xl font-black text-red-400">{totalHot}</span>
+                <span className="text-4xl md:text-5xl font-black text-white">{totalHot}</span>
             </div>
             <div className="bg-gray-900 rounded-2xl p-4 text-center border border-gray-700">
                 <span className="block text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">Iced Drinks</span>
-                <span className="text-4xl md:text-5xl font-black text-blue-400">{totalIced}</span>
+                <span className="text-4xl md:text-5xl font-black text-white">{totalIced}</span>
             </div>
          </div>
 

@@ -20,8 +20,8 @@ export default function AdminLayoutWrapper({ children }: { children: React.React
       <header className="bg-gray-800 border-b border-gray-700 p-4 flex items-center justify-between sticky top-0 z-50 w-full">
         <div className="flex items-center gap-4">
            {/* Wrapped logo in Link to Dashboard for convenience */}
-           <Link href="/admin/dashboard" className="relative w-8 h-8 cursor-pointer">
-             <Image src="/logo.png" alt="Logo" fill className="object-contain" />
+           <Link href="/admin/dashboard" className="relative w-8 h-8 cursor-pointer max-w-[32px] max-h-[32px]">
+             <Image src="/logo.png" alt="Logo" fill className="object-contain" sizes="32px" />
            </Link>
            <h1 className="font-bold text-xl tracking-wide">Barista<span className="text-[#32A5DC]">OS</span></h1>
         </div>
