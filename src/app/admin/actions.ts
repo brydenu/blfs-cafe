@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { triggerSocketEvent } from "@/lib/socket";
+import { getPacificStartOfDay, getPacificEndOfDay, getPacificDateString } from "@/lib/pacific-time";
 
 export async function updateOrderStatus(orderId: number, newStatus: string) {
   try {
@@ -150,9 +151,8 @@ export async function updateSchedule(
 
 export async function getTodayStatistics() {
   try {
-    const todayStr = new Date().toLocaleDateString('en-CA');
-    const startOfDay = new Date(`${todayStr}T00:00:00`);
-    const endOfDay = new Date(`${todayStr}T23:59:59.999`);
+    const startOfDay = getPacificStartOfDay();
+    const endOfDay = getPacificEndOfDay();
 
     const ordersToday = await prisma.order.findMany({
       where: {
@@ -253,8 +253,7 @@ export async function getStatistics(timeframe: 'today' | 'week' | 'month' | 'all
     
     switch (timeframe) {
       case 'today':
-        const todayStr = now.toLocaleDateString('en-CA');
-        startDate = new Date(`${todayStr}T00:00:00`);
+        startDate = getPacificStartOfDay();
         break;
       case 'week':
         startDate = new Date(now);
@@ -315,13 +314,22 @@ export async function getStatistics(timeframe: 'today' | 'week' | 'month' | 'all
       // Track order status
       stats.ordersByStatus[order.status] = (stats.ordersByStatus[order.status] || 0) + 1;
 
-      // Hourly distribution
-      const orderHour = new Date(order.createdAt).getHours();
+      // Hourly distribution (in Pacific Time)
+      const orderDate = new Date(order.createdAt);
+      const pacificHourFormatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/Los_Angeles',
+        hour: '2-digit',
+        hour12: false
+      });
+      const orderHour = parseInt(pacificHourFormatter.formatToParts(orderDate).find(p => p.type === 'hour')?.value || '0', 10);
       stats.hourlyDistribution[orderHour] = (stats.hourlyDistribution[orderHour] || 0) + 1;
 
-      // Daily distribution
-      const orderDate = new Date(order.createdAt).toLocaleDateString('en-CA');
-      stats.dailyDistribution[orderDate] = (stats.dailyDistribution[orderDate] || 0) + 1;
+      // Daily distribution (in Pacific Time)
+      const pacificDateFormatter = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'America/Los_Angeles'
+      });
+      const orderDateStr = pacificDateFormatter.format(orderDate);
+      stats.dailyDistribution[orderDateStr] = (stats.dailyDistribution[orderDateStr] || 0) + 1;
 
       // Process items
       order.items.forEach(item => {
@@ -421,8 +429,7 @@ export async function getIngredientUsageStats() {
     const now = new Date();
     
     // Define timeframes
-    const todayStr = now.toLocaleDateString('en-CA');
-    const todayStart = new Date(`${todayStr}T00:00:00`);
+    const todayStart = getPacificStartOfDay();
     
     const weekStart = new Date(now);
     weekStart.setDate(now.getDate() - 7);

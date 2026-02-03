@@ -3,6 +3,7 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
+import { getPacificStartOfDay, getPacificEndOfDay } from "@/lib/pacific-time";
 
 // Verify admin permissions helper
 async function verifyAdmin() {
@@ -152,8 +153,7 @@ export async function getUserStats(userId: string, timeframe: 'today' | 'week' |
     
     switch (timeframe) {
       case 'today':
-        const todayStr = now.toLocaleDateString('en-CA');
-        startDate = new Date(`${todayStr}T00:00:00`);
+        startDate = getPacificStartOfDay();
         break;
       case 'week':
         startDate = new Date(now);
@@ -227,9 +227,19 @@ export async function getUserStats(userId: string, timeframe: 'today' | 'week' |
     // Process orders
     orders.forEach(order => {
       const orderDate = new Date(order.createdAt);
-      const orderHour = orderDate.getHours();
-      const orderMinute = orderDate.getMinutes();
-      const dayOfWeek = dayNames[orderDate.getDay()];
+      // Get time components in Pacific Time
+      const pacificTimeFormatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/Los_Angeles',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+        weekday: 'long'
+      });
+      const pacificParts = pacificTimeFormatter.formatToParts(orderDate);
+      const orderHour = parseInt(pacificParts.find(p => p.type === 'hour')?.value || '0', 10);
+      const orderMinute = parseInt(pacificParts.find(p => p.type === 'minute')?.value || '0', 10);
+      const pacificDayName = pacificParts.find(p => p.type === 'weekday')?.value || 'Sunday';
+      const dayOfWeek = dayNames.indexOf(pacificDayName);
       
       // Calculate time slot for this order (round up to end of 30-minute interval)
       let targetHour = orderHour;
@@ -246,14 +256,14 @@ export async function getUserStats(userId: string, timeframe: 'today' | 'week' |
       
       // Day of week distribution (excluding weekends)
       // Only count weekdays
-      if (dayOfWeek !== 'Saturday' && dayOfWeek !== 'Sunday') {
-        stats.dayOfWeekDistribution[dayOfWeek] = (stats.dayOfWeekDistribution[dayOfWeek] || 0) + 1;
+      if (pacificDayName !== 'Saturday' && pacificDayName !== 'Sunday') {
+        stats.dayOfWeekDistribution[pacificDayName] = (stats.dayOfWeekDistribution[pacificDayName] || 0) + 1;
       }
 
       // Count drinks per weekday
       const orderDrinks = order.items.reduce((sum, item) => sum + item.quantity, 0);
-      if (dayOfWeek !== 'Saturday' && dayOfWeek !== 'Sunday') {
-        drinksByWeekday[dayOfWeek] = (drinksByWeekday[dayOfWeek] || 0) + orderDrinks;
+      if (pacificDayName !== 'Saturday' && pacificDayName !== 'Sunday') {
+        drinksByWeekday[pacificDayName] = (drinksByWeekday[pacificDayName] || 0) + orderDrinks;
       }
 
       order.items.forEach(item => {
@@ -327,9 +337,8 @@ export async function getUserStats(userId: string, timeframe: 'today' | 'week' |
     
     switch (timeframe) {
       case 'today':
-        const todayStr = now.toLocaleDateString('en-CA');
-        timeframeStartDate = new Date(`${todayStr}T00:00:00`);
-        timeframeEndDate = new Date(`${todayStr}T23:59:59.999`);
+        timeframeStartDate = getPacificStartOfDay();
+        timeframeEndDate = getPacificEndOfDay();
         break;
       case 'week':
         timeframeStartDate = new Date(now);
@@ -468,13 +477,23 @@ export async function getUserTimeDistribution(
 
     orders.forEach(order => {
       const orderDate = new Date(order.createdAt);
-      const orderHour = orderDate.getHours();
-      const orderMinute = orderDate.getMinutes();
-      const dayOfWeek = dayNames[orderDate.getDay()];
+      // Get time components in Pacific Time
+      const pacificTimeFormatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/Los_Angeles',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+        weekday: 'long'
+      });
+      const pacificParts = pacificTimeFormatter.formatToParts(orderDate);
+      const orderHour = parseInt(pacificParts.find(p => p.type === 'hour')?.value || '0', 10);
+      const orderMinute = parseInt(pacificParts.find(p => p.type === 'minute')?.value || '0', 10);
+      const pacificDayName = pacificParts.find(p => p.type === 'weekday')?.value || 'Sunday';
+      const dayOfWeek = dayNames.indexOf(pacificDayName);
 
       // Filter by day of week if specified
       if (isDayFilter) {
-        if (dayOfWeek !== timeFilter) {
+        if (pacificDayName !== timeFilter) {
           return;
         }
       }
