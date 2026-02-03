@@ -3,13 +3,13 @@ import Link from "next/link";
 import { getTodayStatistics } from "../actions";
 import SuggestionsBadgeInline from "./SuggestionsBadgeInline";
 import { FireIcon, TVIcon, CalendarIcon, CoffeeIcon, StarIcon, BoxIcon, ScrollIcon, ChartIcon, UsersIcon, MegaphoneIcon, LightbulbIcon } from "@/components/icons";
+import { getPacificStartOfDay, getPacificEndOfDay } from "@/lib/pacific-time";
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminDashboard() {
-  const todayStr = new Date().toLocaleDateString('en-CA');
-  const startOfDay = new Date(`${todayStr}T00:00:00`);
-  const endOfDay = new Date(`${todayStr}T23:59:59.999`);
+  const startOfDay = getPacificStartOfDay();
+  const endOfDay = getPacificEndOfDay();
 
   // --- Quick Stats ---
   const totalOrders = await prisma.order.count({

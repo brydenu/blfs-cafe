@@ -12,10 +12,24 @@ interface DailyDistributionChartProps {
   timeframe: string;
 }
 
+// Helper to get current date in Pacific Time (client-side)
+function getPacificDateString(): string {
+  const now = new Date();
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Los_Angeles',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  });
+  return formatter.format(now);
+}
+
 export default function DailyDistributionChart({ data, timeframe }: DailyDistributionChartProps) {
+  const pacificToday = getPacificDateString();
+  
   const chartData = data.map((item) => {
     const date = new Date(item.date);
-    const isToday = item.date === new Date().toLocaleDateString('en-CA');
+    const isToday = item.date === pacificToday;
     return {
       date: isToday ? 'Today' : date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
       fullDate: date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }),
