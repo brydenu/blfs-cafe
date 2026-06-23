@@ -20,9 +20,13 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
+          command_timeout: 15m
           script: |
+            export NODE_OPTIONS="--max-old-space-size=3072"
             cd /home/ubuntu/blfs-cafe
+            chmod +x deploy.sh
             ./deploy.sh
+            pm2 restart cafe-dev
 
       - name: Deployment Status
         run: echo "✅ Deployment completed successfully!"

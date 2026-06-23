@@ -29,11 +29,12 @@ npx prisma db push
 
 # Build the application
 echo "🏗️  Building application..."
+export NODE_OPTIONS="--max-old-space-size=3072"
 npm run build
 
 # Restart PM2 processes
 echo "🔄 Restarting PM2 processes..."
-pm2 restart all
+pm2 restart cafe-dev
 
 echo "✅ Deployment complete!"
 echo "📊 Checking PM2 status..."
