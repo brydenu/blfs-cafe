@@ -300,4 +300,4 @@ For issues, questions, or suggestions, please contact the development team or su
 
 ---
 
-**Built with ❤️ for BioLife Solutions**
+**Built for BioLife Solutions**
