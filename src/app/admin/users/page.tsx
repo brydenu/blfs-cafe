@@ -2,7 +2,9 @@ import { getUsers } from "./actions";
 import { Suspense } from "react";
 import Link from "next/link";
 import UsersTable from "./UsersTable";
+import { pageTitle } from "@/lib/metadata";
 
+export const metadata = pageTitle("Users");
 export const dynamic = 'force-dynamic';
 
 interface UsersPageProps {

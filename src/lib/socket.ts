@@ -1,12 +1,11 @@
 import { io, Socket } from "socket.io-client";
+import { getClientSocketUrl } from "./socket-client";
 
-// This connects your Next.js backend to your local Socket server
-// Since they are on the same EC2, localhost works perfectly.
-const socketUrl = process.env.SOCKET_SERVER_URL || "http://localhost:3001";
+const socketUrl = getClientSocketUrl();
 
 export const socket: Socket = io(socketUrl, {
   autoConnect: false,
-  transports: ["websocket", "polling"],
+  transports: ["websocket"],
   reconnection: true,
   reconnectionAttempts: 5,
   reconnectionDelay: 1000,
@@ -64,3 +63,16 @@ export const triggerSocketEvent = async (event: string, data: any) => {
     socket.emit(event, data);
   }
 };
+
+export async function emitRefreshQueue(data: Record<string, unknown> = {}) {
+  let drinkCount: number | undefined;
+
+  try {
+    const { getActiveQueueDrinkCount } = await import("@/lib/queue-count");
+    drinkCount = await getActiveQueueDrinkCount();
+  } catch (error) {
+    console.error("Failed to get queue count for socket emit:", error);
+  }
+
+  await triggerSocketEvent("refresh-queue", { ...data, drinkCount });
+}

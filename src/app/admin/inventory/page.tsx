@@ -1,7 +1,9 @@
 import { prisma } from "@/lib/db";
 import { IngredientManager } from "./IngredientManager";
 import { CreateIngredientForm } from "./CreateIngredientForm";
+import { pageTitle } from "@/lib/metadata";
 
+export const metadata = pageTitle("Inventory");
 export const dynamic = 'force-dynamic';
 
 export default async function InventoryPage() {

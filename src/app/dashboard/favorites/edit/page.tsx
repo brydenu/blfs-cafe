@@ -2,7 +2,9 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { redirect } from "next/navigation";
 import FavoriteBuilder from "../FavoriteBuilder";
+import { pageTitle } from "@/lib/metadata";
 
+export const metadata = pageTitle("Edit Favorite");
 export const dynamic = 'force-dynamic';
 
 interface Props {

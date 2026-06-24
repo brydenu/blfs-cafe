@@ -8,7 +8,9 @@ import Link from "next/link";
 import SignOutButton from "./SignOutButton";
 import CommunicationBanner from "@/components/CommunicationBanner";
 import { CoffeeIcon, LightningIcon, LightbulbIcon } from "@/components/icons";
+import { pageTitle } from "@/lib/metadata";
 
+export const metadata = pageTitle("Dashboard");
 export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {

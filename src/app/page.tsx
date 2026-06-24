@@ -4,7 +4,9 @@ import { auth } from "@/auth"; // <--- Added Auth Import
 import CommunicationBanner from "@/components/CommunicationBanner";
 import ScheduleDisplay from "@/components/ScheduleDisplay";
 import { prisma } from "@/lib/db";
+import { pageTitle } from "@/lib/metadata";
 
+export const metadata = pageTitle("Welcome");
 export const dynamic = 'force-dynamic';
 
 export default async function LandingPage() {

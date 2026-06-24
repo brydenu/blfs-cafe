@@ -3,7 +3,9 @@ import Link from "next/link";
 import HourlyDistributionChart from "./HourlyDistributionChart";
 import DailyDistributionChart from "./DailyDistributionChart";
 import DayOfWeekChart from "./DayOfWeekChart";
+import { pageTitle } from "@/lib/metadata";
 
+export const metadata = pageTitle("Statistics");
 export const dynamic = 'force-dynamic';
 
 interface StatisticsPageProps {

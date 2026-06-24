@@ -2,6 +2,9 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { redirect } from "next/navigation";
 import SettingsForm from "./SettingsForm";
+import { pageTitle } from "@/lib/metadata";
+
+export const metadata = pageTitle("Settings");
 
 export default async function SettingsPage() {
   const session = await auth();

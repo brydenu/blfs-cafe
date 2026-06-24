@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/db";
 import MenuManager from "./MenuManager";
+import { pageTitle } from "@/lib/metadata";
 
+export const metadata = pageTitle("Update Menu");
 export const dynamic = 'force-dynamic';
 
 export default async function AdminMenuPage() {

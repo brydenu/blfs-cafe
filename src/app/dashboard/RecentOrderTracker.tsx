@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { io } from "socket.io-client";
+import { getClientSocketUrl } from "@/lib/socket-client";
 import { fetchSingleOrder, getQueuePosition, cancelOrderItem, updateOrderNotificationPreferences } from "./actions";
 import { CoffeeIcon, TeaIcon, DrinkIcon } from "@/components/icons";
 
@@ -216,9 +217,7 @@ export default function RecentOrderTracker({ order }: RecentOrderTrackerProps) {
   useEffect(() => {
     if (activeOrder.status === 'completed' || activeOrder.status === 'cancelled') return;
 
-    const protocol = window.location.protocol;
-    const hostname = window.location.hostname;
-    const url = process.env.NEXT_PUBLIC_SOCKET_URL || window.location.origin;
+    const url = getClientSocketUrl();
 
     const socket = io(url, { transports: ["websocket"] });
 

@@ -4,7 +4,9 @@ import { getTodayStatistics } from "../actions";
 import SuggestionsBadgeInline from "./SuggestionsBadgeInline";
 import { FireIcon, TVIcon, CalendarIcon, CoffeeIcon, StarIcon, BoxIcon, ScrollIcon, ChartIcon, UsersIcon, MegaphoneIcon, LightbulbIcon } from "@/components/icons";
 import { getPacificStartOfDay, getPacificEndOfDay } from "@/lib/pacific-time";
+import { pageTitle } from "@/lib/metadata";
 
+export const metadata = pageTitle("Dashboard");
 export const dynamic = 'force-dynamic';
 
 export default async function AdminDashboard() {

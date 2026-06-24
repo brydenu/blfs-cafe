@@ -1,11 +1,23 @@
 import { prisma } from "@/lib/db";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import type { Metadata } from "next";
+import { pageTitle } from "@/lib/metadata";
 
 export const dynamic = 'force-dynamic';
 
 interface Props {
   params: { id: string };
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await Promise.resolve(params);
+  const order = await prisma.order.findUnique({
+    where: { publicId: id },
+    select: { publicId: true },
+  });
+
+  return pageTitle(order ? `Order ${order.publicId}` : "Order Details");
 }
 
 export default async function AdminHistoryDetailPage({ params }: Props) {

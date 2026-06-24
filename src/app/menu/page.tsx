@@ -6,7 +6,9 @@ import { auth } from "@/auth";
 import CommunicationBanner from "@/components/CommunicationBanner";
 import CafeStatusBanner from "@/components/CafeStatusBanner";
 import { getCafeStatus } from "@/lib/schedule-status";
+import { pageTitle } from "@/lib/metadata";
 
+export const metadata = pageTitle("Menu");
 export const dynamic = 'force-dynamic';
 
 export default async function MenuPage() {
