@@ -75,18 +75,18 @@ export function SchedulePageClient({ scheduleData }: SchedulePageClientProps) {
   };
 
   return (
-    <div className="space-y-8 max-w-6xl mx-auto">
+    <div className="space-y-6 md:space-y-8 max-w-6xl mx-auto">
       
       {/* Header */}
-      <div className="flex items-end justify-between border-b border-gray-800 pb-4">
+      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between border-b border-gray-800 pb-4">
         <div>
-          <h1 className="text-3xl font-black text-white">Store Schedule</h1>
-          <p className="text-gray-400 font-medium">Manage operating hours for each day</p>
+          <h1 className="text-2xl md:text-3xl font-black text-white">Store Schedule</h1>
+          <p className="text-gray-400 font-medium text-sm md:text-base">Manage operating hours for each day</p>
         </div>
         <button
           onClick={handleSave}
           disabled={isSaving || !hasUnsavedChanges}
-          className={`px-6 py-2 rounded-lg font-semibold transition-colors ${
+          className={`w-full md:w-auto px-6 py-2.5 md:py-2 rounded-lg font-semibold transition-colors ${
             hasUnsavedChanges && !isSaving
               ? 'bg-[#32A5DC] text-white hover:bg-[#2a8fc4] cursor-pointer'
               : 'bg-gray-700 text-gray-400 cursor-not-allowed'
@@ -106,8 +106,8 @@ export function SchedulePageClient({ scheduleData }: SchedulePageClientProps) {
       )}
 
       {/* Schedule Form */}
-      <div className="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
-        <div className="space-y-4">
+      <div className="bg-gray-800 p-4 md:p-6 rounded-2xl shadow-lg border border-gray-700">
+        <div className="space-y-3 md:space-y-4">
           {scheduleData.map(({ dayOfWeek, dayName, dayAbbr, schedule }) => (
             <ScheduleManager
               key={dayOfWeek}
