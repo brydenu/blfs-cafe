@@ -37,90 +37,44 @@ export default async function OrderHistoryPage({ searchParams }: OrderHistoryPag
     }
   }
   
-  // Parse date from searchParams, default to today (only if not viewing user-specific history)
-  let selectedDate: Date;
-  if (dateParam) {
-    // Parse date string (YYYY-MM-DD) and create date in local timezone
-    const parts = dateParam.split('-');
-    if (parts.length === 3) {
-      const [year, month, day] = parts.map(Number);
-      selectedDate = new Date(year, month - 1, day);
-      // Validate date
-      if (isNaN(selectedDate.getTime())) {
-        selectedDate = new Date();
-      }
-    } else {
-      selectedDate = new Date();
-    }
+  // Get today's date in Pacific Time as a YYYY-MM-DD string.
+  // The server may run in UTC, so we must not use `new Date()` directly for the
+  // "today" default — that would return tomorrow's date for Pacific users in the
+  // evening (e.g. 6 PM PDT = 1 AM UTC next day).
+  const getTodayPacific = (): string =>
+    new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Los_Angeles' }).format(new Date());
+
+  // Resolve and validate the date string (YYYY-MM-DD)
+  let dateStr: string;
+  if (dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam)) {
+    const [y, m, d] = dateParam.split('-').map(Number);
+    const probe = new Date(y, m - 1, d);
+    dateStr = isNaN(probe.getTime()) ? getTodayPacific() : dateParam;
   } else {
-    selectedDate = new Date();
+    dateStr = getTodayPacific();
   }
 
-  // Create date range for the selected day in Pacific Time
-  // Get the date string in YYYY-MM-DD format
-  const dateStr = dateParam || (() => {
-    const year = selectedDate.getFullYear();
-    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
-    const day = String(selectedDate.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  })();
-  
-  // Parse the date string
-  const [year, month, day] = dateStr.split('-').map(Number);
-  
-  // Helper function to get Pacific Time offset in hours for a given date
-  // PST is UTC-8, PDT is UTC-7
-  // DST typically runs from second Sunday in March to first Sunday in November
-  const getPacificOffset = (date: Date): number => {
-    const month = date.getMonth(); // 0-11
-    
-    // DST starts: Second Sunday in March (typically around March 10-14)
-    // DST ends: First Sunday in November (typically around November 3-7)
-    
-    // Before March or after November: PST (UTC-8)
-    if (month < 2 || month > 10) {
-      return -8;
-    }
-    
-    // April through October: definitely PDT (UTC-7)
-    if (month > 2 && month < 10) {
-      return -7;
-    }
-    
-    // March: Check if after second Sunday
-    if (month === 2) {
-      const day = date.getDate();
-      // Find second Sunday
-      const firstDay = new Date(year, 2, 1).getDay();
-      const firstSunday = firstDay === 0 ? 1 : 8 - firstDay;
-      const secondSunday = firstSunday + 7;
-      return day >= secondSunday ? -7 : -8; // PDT if after second Sunday
-    }
-    
-    // November: Check if before first Sunday
-    if (month === 10) {
-      const day = date.getDate();
-      // Find first Sunday
-      const firstDay = new Date(year, 10, 1).getDay();
-      const firstSunday = firstDay === 0 ? 1 : 8 - firstDay;
-      return day < firstSunday ? -7 : -8; // PDT if before first Sunday
-    }
-    
-    return -8; // Default to PST
+  // Compute UTC boundaries for the selected Pacific calendar day.
+  // We use Intl to handle DST automatically — no manual offset math required.
+  // Strategy: start with a UTC approximation, ask Intl what Pacific wall-clock
+  // time that corresponds to, then shift by the difference.
+  const pacificWallToUTC = (wallTime: string): Date => {
+    const approx = new Date(`${dateStr}T${wallTime}Z`);
+    const fmt = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Los_Angeles',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+    });
+    const parts = fmt.formatToParts(approx).reduce<Record<string, string>>((a, p) => {
+      a[p.type] = p.value; return a;
+    }, {});
+    const actualWall = `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}Z`;
+    const skew = approx.getTime() - new Date(actualWall).getTime();
+    return new Date(approx.getTime() + skew);
   };
-  
-  // Create start and end of day in Pacific Time
-  const pacificStart = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
-  const pacificEnd = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999));
-  
-  // Get Pacific Time offset for this date
-  const pacificOffset = getPacificOffset(new Date(year, month - 1, day));
-  
-  // Convert Pacific Time to UTC for database query
-  // Pacific is behind UTC, so we subtract the offset (which is negative)
-  // Example: PST is UTC-8, so to convert PST to UTC: UTC = PST - (-8) = PST + 8
-  const startOfDay = new Date(pacificStart.getTime() - (pacificOffset * 60 * 60 * 1000));
-  const endOfDay = new Date(pacificEnd.getTime() - (pacificOffset * 60 * 60 * 1000));
+
+  const startOfDay = pacificWallToUTC('00:00:00');
+  const endOfDay   = pacificWallToUTC('23:59:59');
 
   // Build where clause
   let whereClause: any = { status: { not: 'cancelled' } };
@@ -323,7 +277,7 @@ export default async function OrderHistoryPage({ searchParams }: OrderHistoryPag
 
       {/* Navigation - only show if not user-specific total history */}
       {(!userIdParam || dateParam) && (
-        <HistoryNavigation selectedDate={selectedDate} />
+        <HistoryNavigation selectedDateStr={dateStr} />
       )}
       
       {/* Pagination - only show for user-specific total history */}
