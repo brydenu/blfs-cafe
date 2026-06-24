@@ -4,7 +4,9 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import QuickOrderList from "./QuickOrderList";
 import { getLastOrderedDrink } from "./actions";
+import { pageTitle } from "@/lib/metadata";
 
+export const metadata = pageTitle("Quick Order");
 export const dynamic = 'force-dynamic';
 
 export default async function QuickOrderPage() {

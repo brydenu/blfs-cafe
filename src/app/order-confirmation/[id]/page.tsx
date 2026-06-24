@@ -3,11 +3,18 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import OrderTracker from "./OrderTracker";
 import { getCafeStatus } from "@/lib/schedule-status";
+import type { Metadata } from "next";
+import { pageTitle } from "@/lib/metadata";
 
 export const dynamic = 'force-dynamic';
 
 interface Props {
   params: { id: string };
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await Promise.resolve(params);
+  return pageTitle("Order Confirmed");
 }
 
 export default async function OrderConfirmationPage({ params }: Props) {

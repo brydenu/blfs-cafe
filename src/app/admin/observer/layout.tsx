@@ -1,5 +1,9 @@
+import type { Metadata } from "next";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
+import { pageTitle } from "@/lib/metadata";
+
+export const metadata = pageTitle("Observer");
 
 export default async function ObserverLayout({
   children,

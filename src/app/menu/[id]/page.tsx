@@ -2,12 +2,27 @@ import { prisma } from "@/lib/db";
 import { notFound } from "next/navigation";
 import CustomizeForm from "./CustomizeForm"; // <--- Import the new form
 import { auth } from "@/auth";
+import type { Metadata } from "next";
+import { pageTitle } from "@/lib/metadata";
 
 export const dynamic = 'force-dynamic';
 
 interface Props {
   params: { id: string };
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await Promise.resolve(params);
+  const product = await prisma.product.findFirst({
+    where: {
+      id: parseInt(id),
+      ...({ deletedAt: null } as { deletedAt: null }),
+    },
+    select: { name: true },
+  });
+
+  return pageTitle(product?.name ?? "Customize");
 }
 
 export default async function ProductPage({ params, searchParams }: Props) {

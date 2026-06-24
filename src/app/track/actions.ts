@@ -201,8 +201,8 @@ export async function cancelGuestOrderItem(itemId: number, publicId: string) {
     }
 
     // Trigger socket event for admin queue refresh
-    const { triggerSocketEvent } = await import("@/lib/socket");
-    triggerSocketEvent("refresh-queue", { type: 'refresh' });
+    const { triggerSocketEvent, emitRefreshQueue } = await import("@/lib/socket");
+    await emitRefreshQueue({ type: 'refresh' });
     triggerSocketEvent("order-update", {
       type: 'item-cancelled',
       orderId: item.orderId,

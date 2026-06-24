@@ -5,6 +5,7 @@ import { HourglassIcon } from "@/components/icons";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { io } from "socket.io-client";
+import { getClientSocketUrl } from "@/lib/socket-client";
 import { useToast } from "@/providers/ToastProvider";
 import { cancelOrderItem, updateOrderNotificationPreferences, getQueuePosition } from "@/app/dashboard/actions";
 import { cancelGuestOrderItem, updateGuestOrderNotifications, getQueuePositionForOrder } from "@/app/track/actions";
@@ -323,9 +324,7 @@ export default function OrderTracker({ order, ordersAhead, estimatedMinutes, caf
 
   // Socket.io connection for live updates
   useEffect(() => {
-    const protocol = window.location.protocol;
-    const hostname = window.location.hostname;
-    const url = process.env.NEXT_PUBLIC_SOCKET_URL || window.location.origin;
+    const url = getClientSocketUrl();
 
     console.log("🔌 Order Tracker connecting to:", url);
 

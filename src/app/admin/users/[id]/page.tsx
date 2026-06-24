@@ -3,12 +3,30 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import UserActions from "./UserActions";
 import UserStatistics from "./UserStatistics";
+import type { Metadata } from "next";
+import { pageTitle } from "@/lib/metadata";
 
 export const dynamic = 'force-dynamic';
 
 interface UserDetailPageProps {
   params: Promise<{ id: string }>;
   searchParams: Promise<{ timeframe?: string }>;
+}
+
+export async function generateMetadata({ params }: UserDetailPageProps): Promise<Metadata> {
+  const resolvedParams = await params;
+  const result = await getUser(resolvedParams.id);
+
+  if (!result.success || !result.data) {
+    return pageTitle("User Details");
+  }
+
+  const user = result.data;
+  const displayName = user.firstName
+    ? `${user.firstName}${user.lastName ? ` ${user.lastName}` : ""}`
+    : user.email ?? "User Details";
+
+  return pageTitle(displayName);
 }
 
 export default async function UserDetailPage({ params, searchParams }: UserDetailPageProps) {

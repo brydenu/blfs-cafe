@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { triggerSocketEvent } from "@/lib/socket";
 import { getPacificStartOfDay, getPacificEndOfDay, getPacificDateString } from "@/lib/pacific-time";
+import { getActiveQueueDrinkCount } from "@/lib/queue-count";
 
 export async function updateOrderStatus(orderId: number, newStatus: string) {
   try {
@@ -228,15 +229,7 @@ export async function getTodayStatistics() {
 
 export async function getQueueDrinkCount() {
   try {
-    const drinkCount = await prisma.orderItem.count({
-      where: {
-        completed_at: null,
-        order: {
-          status: { in: ['queued', 'preparing'] }
-        }
-      }
-    });
-
+    const drinkCount = await getActiveQueueDrinkCount();
     return { success: true, count: drinkCount };
   } catch (error) {
     console.error("Failed to get queue drink count:", error);

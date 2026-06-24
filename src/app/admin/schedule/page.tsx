@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/db";
 import { SchedulePageClient } from "./SchedulePageClient";
+import { pageTitle } from "@/lib/metadata";
 
+export const metadata = pageTitle("Update Schedule");
 export const dynamic = 'force-dynamic';
 
 const DAYS_OF_WEEK = [

@@ -1,6 +1,8 @@
 import { getIngredientUsageStats } from "../../actions";
 import Link from "next/link";
+import { pageTitle } from "@/lib/metadata";
 
+export const metadata = pageTitle("Ingredient Statistics");
 export const dynamic = 'force-dynamic';
 
 export default async function IngredientUsagePage() {

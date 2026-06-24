@@ -3,6 +3,9 @@ import { redirect } from "next/navigation";
 import Image from "next/image";
 import LoginForm from "./LoginForm";
 import CommunicationBanner from "@/components/CommunicationBanner";
+import { pageTitle } from "@/lib/metadata";
+
+export const metadata = pageTitle("Login");
 
 export default async function LoginPage() {
   // 1. Redirect if already logged in

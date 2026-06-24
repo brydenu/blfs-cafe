@@ -1,67 +1,14 @@
 'use client';
 
-import { useEffect, useState, useCallback } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { io } from "socket.io-client";
-import { getQueueDrinkCount } from "./actions";
+import { useAdminQueueCount } from "@/providers/AdminQueueCountProvider";
 
 export default function QueueButton() {
   const pathname = usePathname();
-  const [drinkCount, setDrinkCount] = useState<number>(0);
-  const [isLoading, setIsLoading] = useState(true);
+  const { drinkCount } = useAdminQueueCount();
 
-  // Fetch drink count - memoized with useCallback
-  const fetchDrinkCount = useCallback(async () => {
-    try {
-      const result = await getQueueDrinkCount();
-      if (result.success) {
-        setDrinkCount(result.count);
-      }
-      setIsLoading(false);
-    } catch (error) {
-      console.error("Failed to fetch drink count:", error);
-      setIsLoading(false);
-    }
-  }, []);
-
-  // Initial load
-  useEffect(() => {
-    fetchDrinkCount();
-  }, [fetchDrinkCount]);
-
-  // Socket connection for real-time updates
-  useEffect(() => {
-    const protocol = window.location.protocol;
-    const hostname = window.location.hostname;
-    const socketPort = process.env.NEXT_PUBLIC_SOCKET_PORT || '3001';
-    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || `${protocol}//${hostname}:${socketPort}`;
-
-    const socket = io(socketUrl, {
-      transports: ["websocket", "polling"],
-      reconnectionAttempts: 10,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      timeout: 20000,
-    });
-
-    socket.on("connect", () => {
-      console.log("✅ QueueButton Connected to WebSocket");
-    });
-
-    // Listen for refresh-queue events to update drink count
-    socket.on("refresh-queue", () => {
-      console.log("🔔 QueueButton: Refresh signal received");
-      fetchDrinkCount();
-    });
-
-    return () => {
-      socket.disconnect();
-    };
-  }, [fetchDrinkCount]);
-
-  // Don't show button if on queue page, loading, or count is 0
-  if (pathname === '/admin/queue' || isLoading || drinkCount === 0) {
+  if (pathname === '/admin/queue' || drinkCount === 0) {
     return null;
   }
 

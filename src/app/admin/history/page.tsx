@@ -1,7 +1,9 @@
 import { prisma } from "@/lib/db";
 import Link from "next/link";
 import { HistoryNavigation } from "./HistoryNavigation";
+import { pageTitle } from "@/lib/metadata";
 
+export const metadata = pageTitle("Order History");
 export const dynamic = 'force-dynamic';
 
 interface OrderHistoryPageProps {

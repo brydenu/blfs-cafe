@@ -1,6 +1,8 @@
 import { getCommunications } from './actions';
 import CommunicationList from './CommunicationList';
+import { pageTitle } from "@/lib/metadata";
 
+export const metadata = pageTitle("Communications");
 export const dynamic = 'force-dynamic';
 
 export default async function CommunicationsPage() {
