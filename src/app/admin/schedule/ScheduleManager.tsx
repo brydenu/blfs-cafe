@@ -121,87 +121,77 @@ export const ScheduleManager = forwardRef<ScheduleManagerRef, ScheduleManagerPro
       setSchedule(prev => ({ ...prev, [field]: value }));
     };
 
-  const formatTime = (time: string) => {
-    const [hours, minutes] = time.split(':');
-    const hour = parseInt(hours);
-    const ampm = hour >= 12 ? 'PM' : 'AM';
-    const displayHour = hour % 12 || 12;
-    return `${displayHour}:${minutes} ${ampm}`;
-  };
-
-  const getDisplaySchedule = () => {
-    if (!schedule.isOpen) {
-      return 'Closed';
-    }
-    
-    let display = `${formatTime(schedule.openTime1)} - ${formatTime(schedule.closeTime1)}`;
-    
-    if (schedule.isSecondPeriodActive && schedule.openTime2 && schedule.closeTime2) {
-      display += `, ${formatTime(schedule.openTime2)} - ${formatTime(schedule.closeTime2)}`;
-    }
-    
-    return display;
-  };
+  const timeInputClass =
+    'bg-gray-800 text-white text-sm px-2 py-1.5 md:py-1 rounded border border-gray-700 focus:border-[#32A5DC] focus:outline-none disabled:opacity-50 flex-1 min-w-0 w-full md:w-auto md:flex-none';
 
   return (
     <div className={`bg-gray-900 p-4 rounded-xl border ${
       schedule.isOpen ? 'border-gray-700' : 'border-gray-800'
     } ${isPending ? 'opacity-50' : ''}`}>
       
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         
         {/* Day Name & Toggle */}
-        <div className="flex items-center gap-4 min-w-[120px]">
-          <h3 className="font-bold text-white text-sm min-w-[80px]">{dayName}</h3>
-          <button
-            onClick={handleToggleOpen}
-            disabled={isPending}
-            className={`relative w-11 h-6 rounded-full transition-colors ${
-              schedule.isOpen 
-                ? 'bg-green-500' 
-                : 'bg-gray-600'
-            } ${isPending ? 'cursor-not-allowed' : 'cursor-pointer'}`}
-          >
-            <span
-              className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform ${
-                schedule.isOpen ? 'translate-x-5' : 'translate-x-0'
-              }`}
-            />
-          </button>
+        <div className="flex items-center justify-between gap-4 md:justify-start md:min-w-[120px]">
+          <h3 className="font-bold text-white text-sm md:min-w-[80px]">{dayName}</h3>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-400 md:hidden">
+              {schedule.isOpen ? 'Open' : 'Closed'}
+            </span>
+            <button
+              onClick={handleToggleOpen}
+              disabled={isPending}
+              aria-label={schedule.isOpen ? `Mark ${dayName} as closed` : `Mark ${dayName} as open`}
+              className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${
+                schedule.isOpen 
+                  ? 'bg-green-500' 
+                  : 'bg-gray-600'
+              } ${isPending ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+            >
+              <span
+                className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform ${
+                  schedule.isOpen ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
         </div>
 
         {/* Schedule Display / Edit */}
         {schedule.isOpen ? (
-          <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="flex-1 flex flex-col gap-4 md:grid md:grid-cols-2 md:gap-4 w-full min-w-0">
             
             {/* First Period */}
-            <div className="flex items-center gap-2">
-              <label className="text-xs text-gray-400 min-w-[60px]">Period 1:</label>
-              <input
-                type="time"
-                value={schedule.openTime1}
-                onChange={(e) => handleTimeChange('openTime1', e.target.value)}
-                disabled={isPending}
-                className="bg-gray-800 text-white text-sm px-2 py-1 rounded border border-gray-700 focus:border-[#32A5DC] focus:outline-none disabled:opacity-50"
-              />
-              <span className="text-gray-500">-</span>
-              <input
-                type="time"
-                value={schedule.closeTime1}
-                onChange={(e) => handleTimeChange('closeTime1', e.target.value)}
-                disabled={isPending}
-                className="bg-gray-800 text-white text-sm px-2 py-1 rounded border border-gray-700 focus:border-[#32A5DC] focus:outline-none disabled:opacity-50"
-              />
+            <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-2">
+              <label className="text-xs text-gray-400 md:min-w-[60px]">Period 1:</label>
+              <div className="grid grid-cols-[1fr_auto_1fr] gap-2 items-center w-full md:flex md:w-auto">
+                <input
+                  type="time"
+                  value={schedule.openTime1}
+                  onChange={(e) => handleTimeChange('openTime1', e.target.value)}
+                  disabled={isPending}
+                  className={timeInputClass}
+                />
+                <span className="text-gray-500 text-center">-</span>
+                <input
+                  type="time"
+                  value={schedule.closeTime1}
+                  onChange={(e) => handleTimeChange('closeTime1', e.target.value)}
+                  disabled={isPending}
+                  className={timeInputClass}
+                />
+              </div>
             </div>
 
             {/* Second Period */}
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2 min-w-[60px]">
+            <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-2">
+              <div className="flex items-center justify-between gap-2 md:justify-start md:min-w-[60px]">
                 <label className="text-xs text-gray-400">Period 2:</label>
                 <button
                   onClick={handleToggleSecondPeriod}
                   disabled={isPending}
-                  className={`relative w-8 h-4 rounded-full transition-colors ${
+                  aria-label={schedule.isSecondPeriodActive ? 'Disable second period' : 'Enable second period'}
+                  className={`relative w-8 h-4 rounded-full transition-colors shrink-0 ${
                     schedule.isSecondPeriodActive 
                       ? 'bg-[#32A5DC]' 
                       : 'bg-gray-600'
@@ -215,37 +205,32 @@ export const ScheduleManager = forwardRef<ScheduleManagerRef, ScheduleManagerPro
                 </button>
               </div>
               {schedule.isSecondPeriodActive && (
-                <>
+                <div className="grid grid-cols-[1fr_auto_1fr] gap-2 items-center w-full md:flex md:w-auto">
                   <input
                     type="time"
                     value={schedule.openTime2 || ''}
                     onChange={(e) => handleTimeChange('openTime2', e.target.value)}
                     disabled={isPending}
-                    className="bg-gray-800 text-white text-sm px-2 py-1 rounded border border-gray-700 focus:border-[#32A5DC] focus:outline-none disabled:opacity-50"
+                    className={timeInputClass}
                   />
-                  <span className="text-gray-500">-</span>
+                  <span className="text-gray-500 text-center">-</span>
                   <input
                     type="time"
                     value={schedule.closeTime2 || ''}
                     onChange={(e) => handleTimeChange('closeTime2', e.target.value)}
                     disabled={isPending}
-                    className="bg-gray-800 text-white text-sm px-2 py-1 rounded border border-gray-700 focus:border-[#32A5DC] focus:outline-none disabled:opacity-50"
+                    className={timeInputClass}
                   />
-                </>
+                </div>
               )}
             </div>
 
           </div>
         ) : (
-          <div className="flex-1">
+          <div className="flex-1 md:block">
             <span className="text-gray-500 text-sm">Closed</span>
           </div>
         )}
-
-        {/* Display Summary (mobile view) */}
-        <div className="md:hidden w-full mt-2 pt-2 border-t border-gray-700">
-          <span className="text-xs text-gray-400">{getDisplaySchedule()}</span>
-        </div>
 
       </div>
 

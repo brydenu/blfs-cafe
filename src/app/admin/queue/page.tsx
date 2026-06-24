@@ -2,7 +2,9 @@ import { prisma } from "@/lib/db";
 import TicketCard from "./TicketCard";
 import QueueListener from "./QueueListener";
 import QueueUtilitiesButton from "./QueueUtilitiesButton";
+import { pageTitle } from "@/lib/metadata";
 
+export const metadata = pageTitle("Queue");
 export const dynamic = 'force-dynamic';
 
 // --- MILK COLOR MAP ---

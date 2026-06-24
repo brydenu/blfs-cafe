@@ -1,7 +1,7 @@
 'use server';
 
 import { prisma } from "@/lib/db";
-import { triggerSocketEvent } from "@/lib/socket";
+import { triggerSocketEvent, emitRefreshQueue } from "@/lib/socket";
 import { sendNotification } from "@/lib/notifications"; // Import your new notification system
 import { auth } from "@/auth";
 import { generateOrderId } from "@/lib/order-id";
@@ -105,7 +105,7 @@ export async function completeOrderItem(itemId: number) {
     }
 
     // 4. Always trigger Admin Queue Refresh (Barista Screen)
-    triggerSocketEvent("refresh-queue", { type: 'refresh' });
+    await emitRefreshQueue({ type: 'refresh' });
 
     return { success: true };
   } catch (error) {
@@ -305,7 +305,7 @@ export async function createWalkUpOrder(data: {
     }
 
     // Trigger socket event to refresh queue
-    triggerSocketEvent("refresh-queue", {
+    await emitRefreshQueue({
       type: 'new-order',
       orderId: order.id,
     });

@@ -3,7 +3,7 @@
 import { auth, signOut } from "@/auth";
 import { prisma } from "@/lib/db";
 import { redirect } from "next/navigation";
-import { triggerSocketEvent } from "@/lib/socket";
+import { triggerSocketEvent, emitRefreshQueue } from "@/lib/socket";
 
 // --- EXISTING: Fetch Daily History ---
 export async function fetchDailyHistory(dateStr: string) {
@@ -142,7 +142,7 @@ export async function cancelOrderItem(itemId: number) {
     }
 
     // 7. Trigger admin queue refresh
-    triggerSocketEvent("refresh-queue", { type: 'refresh' });
+    await emitRefreshQueue({ type: 'refresh' });
 
     return { success: true };
   } catch (error) {

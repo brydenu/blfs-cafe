@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/db";
 import { auth } from "@/auth"; // Assuming you use NextAuth/Auth.js
 import { CartItem } from "@/providers/CartProvider";
-import { triggerSocketEvent } from "@/lib/socket"; // <--- 1. Import this
+import { emitRefreshQueue } from "@/lib/socket"; // <--- 1. Import this
 import { generateOrderId } from "@/lib/order-id";
 
 export async function placeOrder(items: CartItem[]) {
@@ -164,7 +164,7 @@ export async function placeOrder(items: CartItem[]) {
 
     // 3. TRIGGER SOCKET EVENT
     // This tells the Admin Screen to refresh immediately
-    triggerSocketEvent("refresh-queue", { 
+    await emitRefreshQueue({
         type: 'new-order', 
         orderId: order.id 
     });

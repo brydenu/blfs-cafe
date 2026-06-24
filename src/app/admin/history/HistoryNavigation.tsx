@@ -3,64 +3,53 @@
 import { useSearchParams } from 'next/navigation';
 
 interface HistoryNavigationProps {
-  selectedDate: Date;
+  /** Selected date as a YYYY-MM-DD string in Pacific Time. */
+  selectedDateStr: string;
 }
 
-export function HistoryNavigation({ selectedDate }: HistoryNavigationProps) {
+export function HistoryNavigation({ selectedDateStr }: HistoryNavigationProps) {
   const searchParams = useSearchParams();
   const userIdParam = searchParams.get('userId');
-  
-  const formatDateForUrl = (date: Date): string => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
 
-  const navigateToDate = (date: Date) => {
-    const dateStr = formatDateForUrl(date);
-    // Preserve userId parameter if present
+  // Get today's date in Pacific Time as a YYYY-MM-DD string.
+  // Runs client-side so the user's browser timezone doesn't matter here —
+  // we always anchor to Pacific explicitly.
+  const getTodayPacific = (): string =>
+    new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Los_Angeles' }).format(new Date());
+
+  const navigateToDate = (dateStr: string) => {
     const url = userIdParam
       ? `/admin/history?date=${dateStr}&userId=${userIdParam}`
       : `/admin/history?date=${dateStr}`;
-    // Use window.location for full page reload
     window.location.href = url;
   };
 
-  const goToPreviousDay = () => {
-    const prevDate = new Date(selectedDate);
-    prevDate.setDate(prevDate.getDate() - 1);
-    navigateToDate(prevDate);
+  // Shift a YYYY-MM-DD string by `delta` days without timezone distortion.
+  // We create a local-midnight Date from the components, which is safe for
+  // arithmetic even if the environment timezone differs from Pacific.
+  const shiftDate = (dateStr: string, delta: number): string => {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const shifted = new Date(y, m - 1, d + delta);
+    const sy = shifted.getFullYear();
+    const sm = String(shifted.getMonth() + 1).padStart(2, '0');
+    const sd = String(shifted.getDate()).padStart(2, '0');
+    return `${sy}-${sm}-${sd}`;
   };
 
-  const goToNextDay = () => {
-    const nextDate = new Date(selectedDate);
-    nextDate.setDate(nextDate.getDate() + 1);
-    navigateToDate(nextDate);
-  };
+  const goToPreviousDay = () => navigateToDate(shiftDate(selectedDateStr, -1));
+  const goToNextDay     = () => navigateToDate(shiftDate(selectedDateStr, +1));
 
-  const goToToday = () => {
-    navigateToDate(new Date());
-  };
+  const todayStr = getTodayPacific();
+  const isToday  = selectedDateStr === todayStr;
+
+  const goToToday = () => navigateToDate(todayStr);
 
   const handleDatePickerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const dateValue = e.target.value;
-    if (dateValue) {
-      const [year, month, day] = dateValue.split('-').map(Number);
-      const newDate = new Date(year, month - 1, day);
-      if (!isNaN(newDate.getTime())) {
-        navigateToDate(newDate);
-      }
+    const value = e.target.value;
+    if (value && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      navigateToDate(value);
     }
   };
-
-  const today = new Date();
-  const todayStr = formatDateForUrl(today);
-  const selectedDateStr = formatDateForUrl(selectedDate);
-  const isToday = selectedDateStr === todayStr;
-
-  // Format date for date picker input (YYYY-MM-DD)
-  const datePickerValue = formatDateForUrl(selectedDate);
 
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-gray-800 p-4 rounded-xl border border-gray-700">
@@ -101,7 +90,7 @@ export function HistoryNavigation({ selectedDate }: HistoryNavigationProps) {
         <input
           id="date-picker"
           type="date"
-          value={datePickerValue}
+          value={selectedDateStr}
           onChange={handleDatePickerChange}
           max={todayStr}
           className="px-4 py-2 bg-gray-700 border border-gray-600 text-white font-medium rounded-lg focus:ring-2 focus:ring-[#32A5DC] focus:border-[#32A5DC] outline-none cursor-pointer"
