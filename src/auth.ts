@@ -4,9 +4,15 @@ import { prisma } from "@/lib/db"
 import Credentials from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
 
+// Effectively permanent sessions — far beyond typical inactivity (e.g. 3+ months).
+const SESSION_MAX_AGE_SECONDS = 100 * 365 * 24 * 60 * 60
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma) as any,
-  session: { strategy: "jwt" }, // Use JWT to make passing custom data easier
+  session: {
+    strategy: "jwt",
+    maxAge: SESSION_MAX_AGE_SECONDS,
+  },
   providers: [
     Credentials({
       name: "Credentials",
