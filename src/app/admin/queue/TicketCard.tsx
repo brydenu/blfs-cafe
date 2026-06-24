@@ -21,34 +21,67 @@ function formatOrderTime(timestamp: Date | string): string {
   return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
 }
 
-// Helper function to format relative time
-function formatTimeAgo(timestamp: Date | string): string {
-  const now = new Date();
-  const orderTime = new Date(timestamp);
-  const diffMs = now.getTime() - orderTime.getTime();
-  const diffMinutes = Math.floor(diffMs / 60000);
+function formatTimeAgo(timestamp: Date | string, nowMs: number = Date.now()): string {
+  const orderTime = new Date(timestamp).getTime();
+  const diffMs = Math.max(0, nowMs - orderTime);
+  const diffSeconds = Math.floor(diffMs / 1000);
+  const diffMinutes = Math.floor(diffMs / 60_000);
+  const diffHours = Math.floor(diffMs / 3_600_000);
+  const diffDays = Math.floor(diffMs / 86_400_000);
 
-  // Less than 1 minute
-  if (diffMinutes < 1) {
-    return "< 1 minute ago";
+  if (diffSeconds < 60) {
+    const seconds = Math.max(1, diffSeconds);
+    return seconds === 1 ? "1 second ago" : `${seconds} seconds ago`;
   }
 
-  // 1-59 minutes: show exact minutes
   if (diffMinutes < 60) {
-    return `${diffMinutes} minute${diffMinutes !== 1 ? 's' : ''} ago`;
+    return diffMinutes === 1 ? "1 minute ago" : `${diffMinutes} minutes ago`;
   }
 
-  // 60+ minutes: show in 0.5 hour increments
-  const diffHours = diffMs / (1000 * 60 * 60);
-  const halfHours = Math.round(diffHours * 2) / 2;
-  
-  if (halfHours === 1) {
-    return "1 hour ago";
-  } else if (halfHours % 1 === 0) {
-    return `${halfHours} hours ago`;
-  } else {
-    return `${halfHours} hours ago`;
+  if (diffHours < 24) {
+    return diffHours === 1 ? "1 hour ago" : `${diffHours} hours ago`;
   }
+
+  return diffDays === 1 ? "1 day ago" : `${diffDays} days ago`;
+}
+
+function getNextRelativeTimeUpdateDelay(orderTime: number, nowMs: number): number {
+  const diffMs = Math.max(0, nowMs - orderTime);
+
+  if (diffMs < 60_000) {
+    const nextBoundary = orderTime + (Math.floor(diffMs / 1000) + 1) * 1000;
+    return Math.max(1, nextBoundary - nowMs);
+  }
+  if (diffMs < 3_600_000) {
+    const nextBoundary = orderTime + (Math.floor(diffMs / 60_000) + 1) * 60_000;
+    return nextBoundary - nowMs;
+  }
+  if (diffMs < 86_400_000) {
+    const nextBoundary = orderTime + (Math.floor(diffMs / 3_600_000) + 1) * 3_600_000;
+    return nextBoundary - nowMs;
+  }
+  const nextBoundary = orderTime + (Math.floor(diffMs / 86_400_000) + 1) * 86_400_000;
+  return nextBoundary - nowMs;
+}
+
+function useRelativeTime(timestamp: Date | string): string {
+  const orderTime = useMemo(() => new Date(timestamp).getTime(), [timestamp]);
+  const [nowMs, setNowMs] = useState(() => Date.now());
+
+  useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+
+    const scheduleNext = () => {
+      const now = Date.now();
+      setNowMs(now);
+      timeoutId = setTimeout(scheduleNext, getNextRelativeTimeUpdateDelay(orderTime, now));
+    };
+
+    scheduleNext();
+    return () => clearTimeout(timeoutId);
+  }, [orderTime]);
+
+  return formatTimeAgo(timestamp, nowMs);
 }
 
 // Helper function to convert topping quantity to label
@@ -206,7 +239,7 @@ export default function TicketCard({ item }: { item: any }) {
 
   // Calculate time displays
   const orderTime = useMemo(() => formatOrderTime(item.orderCreatedAt), [item.orderCreatedAt]);
-  const timeAgo = useMemo(() => formatTimeAgo(item.orderCreatedAt), [item.orderCreatedAt]);
+  const timeAgo = useRelativeTime(item.orderCreatedAt);
 
   const handleComplete = async () => {
     // Start exit animation immediately (optimistic UI)
