@@ -374,6 +374,7 @@ export default function UserStatistics({ userId, stats, currentTimeframe }: User
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">First Order</p>
                 <p className="text-white font-bold">
                   {new Intl.DateTimeFormat('en-US', {
+                    timeZone: 'America/Los_Angeles',
                     month: 'long',
                     day: 'numeric',
                     year: 'numeric'
@@ -386,6 +387,7 @@ export default function UserStatistics({ userId, stats, currentTimeframe }: User
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Last Order</p>
                 <p className="text-white font-bold">
                   {new Intl.DateTimeFormat('en-US', {
+                    timeZone: 'America/Los_Angeles',
                     month: 'long',
                     day: 'numeric',
                     year: 'numeric'
