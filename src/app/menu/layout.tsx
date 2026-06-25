@@ -1,10 +1,7 @@
 import { getActiveQueueDrinkCount } from "@/lib/queue-count";
 import QueueStatusIndicator from "@/components/QueueStatusIndicator";
-import { pageTitle } from "@/lib/metadata";
 
-export const metadata = pageTitle("Cart");
-
-export default async function CartLayout({
+export default async function MenuLayout({
   children,
 }: {
   children: React.ReactNode;
