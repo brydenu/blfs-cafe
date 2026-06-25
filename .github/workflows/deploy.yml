@@ -26,7 +26,6 @@ jobs:
             cd /home/ubuntu/blfs-cafe
             chmod +x deploy.sh
             ./deploy.sh
-            pm2 restart cafe-dev
 
       - name: Deployment Status
         run: echo "✅ Deployment completed successfully!"
