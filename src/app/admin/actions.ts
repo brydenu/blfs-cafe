@@ -3,7 +3,13 @@
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { triggerSocketEvent } from "@/lib/socket";
-import { getPacificStartOfDay, getPacificEndOfDay, getPacificDateString } from "@/lib/pacific-time";
+import {
+  getPacificStartOfDay,
+  getPacificEndOfDay,
+  getPacificStartOfDaysAgo,
+  getPacificDateStringForTimestamp,
+  getPacificHourMinute
+} from "@/lib/pacific-time";
 import { getActiveQueueDrinkCount } from "@/lib/queue-count";
 
 export async function updateOrderStatus(orderId: number, newStatus: string) {
@@ -242,29 +248,35 @@ export async function getQueueDrinkCount() {
 export async function getStatistics(timeframe: 'today' | 'week' | 'month' | 'all') {
   try {
     let startDate: Date;
-    const now = new Date();
-    
+    let endDate: Date | undefined;
+
     switch (timeframe) {
       case 'today':
         startDate = getPacificStartOfDay();
+        endDate = getPacificEndOfDay();
         break;
       case 'week':
-        startDate = new Date(now);
-        startDate.setDate(now.getDate() - 7);
+        // Last 7 Pacific calendar days, including today
+        startDate = getPacificStartOfDaysAgo(6);
         break;
       case 'month':
-        startDate = new Date(now);
-        startDate.setMonth(now.getMonth() - 1);
+        // Last 30 Pacific calendar days, including today
+        startDate = getPacificStartOfDaysAgo(29);
         break;
       case 'all':
-        startDate = new Date(0); // Beginning of time
+        startDate = new Date(0);
         break;
+    }
+
+    const createdAtFilter: { gte: Date; lte?: Date } = { gte: startDate };
+    if (endDate) {
+      createdAtFilter.lte = endDate;
     }
 
     // Fetch orders
     const orders = await prisma.order.findMany({
       where: {
-        createdAt: { gte: startDate },
+        createdAt: createdAtFilter,
         status: { not: 'cancelled' }
       },
       include: {
@@ -294,6 +306,7 @@ export async function getStatistics(timeframe: 'today' | 'week' | 'month' | 'all
       milkCounts: {} as Record<string, number>,
       syrupCounts: {} as Record<string, number>,
       hourlyDistribution: {} as Record<number, number>,
+      halfHourlyDistribution: {} as Record<string, number>,
       dailyDistribution: {} as Record<string, number>,
       averageItemsPerOrder: 0,
       mostPopularProduct: { name: '', count: 0 },
@@ -307,21 +320,15 @@ export async function getStatistics(timeframe: 'today' | 'week' | 'month' | 'all
       // Track order status
       stats.ordersByStatus[order.status] = (stats.ordersByStatus[order.status] || 0) + 1;
 
-      // Hourly distribution (in Pacific Time)
       const orderDate = new Date(order.createdAt);
-      const pacificHourFormatter = new Intl.DateTimeFormat('en-US', {
-        timeZone: 'America/Los_Angeles',
-        hour: '2-digit',
-        hour12: false
-      });
-      const orderHour = parseInt(pacificHourFormatter.formatToParts(orderDate).find(p => p.type === 'hour')?.value || '0', 10);
+      const { hour: orderHour, minute: orderMinute } = getPacificHourMinute(orderDate);
+
       stats.hourlyDistribution[orderHour] = (stats.hourlyDistribution[orderHour] || 0) + 1;
 
-      // Daily distribution (in Pacific Time)
-      const pacificDateFormatter = new Intl.DateTimeFormat('en-CA', {
-        timeZone: 'America/Los_Angeles'
-      });
-      const orderDateStr = pacificDateFormatter.format(orderDate);
+      const halfHourKey = `${orderHour}:${orderMinute < 30 ? '00' : '30'}`;
+      stats.halfHourlyDistribution[halfHourKey] = (stats.halfHourlyDistribution[halfHourKey] || 0) + 1;
+
+      const orderDateStr = getPacificDateStringForTimestamp(orderDate);
       stats.dailyDistribution[orderDateStr] = (stats.dailyDistribution[orderDateStr] || 0) + 1;
 
       // Process items
@@ -419,17 +426,10 @@ export async function getStatistics(timeframe: 'today' | 'week' | 'month' | 'all
 
 export async function getIngredientUsageStats() {
   try {
-    const now = new Date();
-    
-    // Define timeframes
     const todayStart = getPacificStartOfDay();
-    
-    const weekStart = new Date(now);
-    weekStart.setDate(now.getDate() - 7);
-    
-    const monthStart = new Date(now);
-    monthStart.setMonth(now.getMonth() - 1);
-    
+    const todayEnd = getPacificEndOfDay();
+    const weekStart = getPacificStartOfDaysAgo(6);
+    const monthStart = getPacificStartOfDaysAgo(29);
     const allTimeStart = new Date(0);
 
     // Fetch all ingredients
@@ -462,9 +462,13 @@ export async function getIngredientUsageStats() {
       }, 0);
     };
 
-    const todayOrders = allOrders.filter(o => new Date(o.createdAt) >= todayStart);
-    const weekOrders = allOrders.filter(o => new Date(o.createdAt) >= weekStart);
-    const monthOrders = allOrders.filter(o => new Date(o.createdAt) >= monthStart);
+    const orderTimestamp = (order: typeof allOrders[0]) => new Date(order.createdAt).getTime();
+    const todayOrders = allOrders.filter(o => {
+      const ts = orderTimestamp(o);
+      return ts >= todayStart.getTime() && ts <= todayEnd.getTime();
+    });
+    const weekOrders = allOrders.filter(o => orderTimestamp(o) >= weekStart.getTime());
+    const monthOrders = allOrders.filter(o => orderTimestamp(o) >= monthStart.getTime());
 
     const totalDrinksToday = getTotalDrinks(todayOrders);
     const totalDrinksWeek = getTotalDrinks(weekOrders);

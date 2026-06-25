@@ -4,6 +4,7 @@ import HourlyDistributionChart from "./HourlyDistributionChart";
 import DailyDistributionChart from "./DailyDistributionChart";
 import DayOfWeekChart from "./DayOfWeekChart";
 import { pageTitle } from "@/lib/metadata";
+import { getPacificDateRange, getPacificWeekday } from "@/lib/pacific-time";
 
 export const metadata = pageTitle("Statistics");
 export const dynamic = 'force-dynamic';
@@ -56,23 +57,28 @@ export default async function StatisticsPage({ searchParams }: StatisticsPagePro
   // Prepare half-hour distribution for display (6am - 9pm only)
   const halfHourData: Array<{ hour: number; minute: number; count: number }> = [];
   for (let hour = 6; hour <= 21; hour++) {
-    const hourCount = stats.hourlyDistribution[hour] || 0;
-    // Split hour count between two half-hour slots
-    halfHourData.push({ hour, minute: 0, count: hourCount });
-    halfHourData.push({ hour, minute: 30, count: hourCount });
+    const firstHalfCount = stats.halfHourlyDistribution[`${hour}:00`] || 0;
+    const secondHalfCount = stats.halfHourlyDistribution[`${hour}:30`] || 0;
+    halfHourData.push({ hour, minute: 0, count: firstHalfCount });
+    halfHourData.push({ hour, minute: 30, count: secondHalfCount });
   }
 
-  // Prepare daily distribution (last 7 days for week view, last 30 for month view)
-  const dailyEntries = Object.entries(stats.dailyDistribution)
-    .map(([date, count]) => ({ date, count }))
-    .sort((a, b) => a.date.localeCompare(b.date))
-    .slice(-(timeframe === 'week' ? 7 : timeframe === 'month' ? 30 : 365));
+  // Build daily distribution from explicit Pacific calendar dates for the selected range
+  const dailyDateRange =
+    timeframe === 'today' ? getPacificDateRange(1)
+    : timeframe === 'week' ? getPacificDateRange(7)
+    : timeframe === 'month' ? getPacificDateRange(30)
+    : Object.keys(stats.dailyDistribution).sort();
 
-  // Calculate day of week distribution (weekdays only)
+  const dailyEntries = dailyDateRange.map((date) => ({
+    date,
+    count: stats.dailyDistribution[date] || 0
+  }));
+
+  // Calculate day of week distribution (weekdays only) using Pacific calendar dates
   const dayOfWeekData: Record<string, number> = {};
-  Object.entries(stats.dailyDistribution).forEach(([date, count]) => {
-    const dayOfWeek = new Date(date).toLocaleDateString('en-US', { weekday: 'long' });
-    // Only include weekdays
+  dailyEntries.forEach(({ date, count }) => {
+    const dayOfWeek = getPacificWeekday(date);
     if (['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].includes(dayOfWeek)) {
       dayOfWeekData[dayOfWeek] = (dayOfWeekData[dayOfWeek] || 0) + count;
     }
@@ -309,10 +315,10 @@ export default async function StatisticsPage({ searchParams }: StatisticsPagePro
       </div>
 
       {/* Daily Distribution */}
-      {dailyEntries.length > 0 && (
+      {(timeframe !== 'today' || stats.totalOrders > 0) && (
         <div className="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
           <h2 className="text-xl font-black text-white mb-4">
-            Daily Distribution {timeframe === 'week' ? '(Last 7 Days)' : timeframe === 'month' ? '(Last 30 Days)' : ''}
+            Daily Distribution {timeframe === 'week' ? '(Last 7 Days)' : timeframe === 'month' ? '(Last 30 Days)' : timeframe === 'today' ? '(Today)' : ''}
           </h2>
           <DailyDistributionChart data={dailyEntries} timeframe={timeframe} />
         </div>

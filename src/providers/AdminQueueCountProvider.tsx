@@ -3,23 +3,14 @@
 import {
   createContext,
   useContext,
-  useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
-  useState,
 } from "react";
 import { usePathname } from "next/navigation";
-import { socket } from "@/lib/socket";
 import { formatAdminTabTitle } from "@/lib/admin-tab-title";
-import {
-  getLastKnownQueueCount,
-  setLastKnownQueueCount,
-} from "@/lib/queue-count-client";
-
-interface RefreshQueuePayload {
-  drinkCount?: number;
-}
+import { getLastKnownQueueCount } from "@/lib/queue-count-client";
+import { useQueueDrinkCount } from "@/hooks/useQueueDrinkCount";
 
 interface AdminQueueCountContextValue {
   drinkCount: number;
@@ -43,44 +34,12 @@ export function AdminQueueCountProvider({
   children,
 }: AdminQueueCountProviderProps) {
   const pathname = usePathname();
-  const [drinkCount, setDrinkCount] = useState(
-    () => getLastKnownQueueCount() ?? initialCount
-  );
+  const drinkCount = useQueueDrinkCount(initialCount);
   const drinkCountRef = useRef(drinkCount);
   const pathnameRef = useRef(pathname);
 
   drinkCountRef.current = drinkCount;
   pathnameRef.current = pathname;
-
-  useEffect(() => {
-    const knownCount = getLastKnownQueueCount();
-    if (knownCount !== null) {
-      setDrinkCount(knownCount);
-      return;
-    }
-
-    setLastKnownQueueCount(initialCount);
-    setDrinkCount(initialCount);
-  }, [initialCount]);
-
-  useEffect(() => {
-    const onRefresh = (data: RefreshQueuePayload) => {
-      if (typeof data?.drinkCount === "number") {
-        setLastKnownQueueCount(data.drinkCount);
-        setDrinkCount(data.drinkCount);
-      }
-    };
-
-    if (!socket.connected) {
-      socket.connect();
-    }
-
-    socket.on("refresh-queue", onRefresh);
-
-    return () => {
-      socket.off("refresh-queue", onRefresh);
-    };
-  }, []);
 
   useLayoutEffect(() => {
     const applyTitle = () => {
@@ -94,11 +53,6 @@ export function AdminQueueCountProvider({
     };
 
     const onVisible = () => {
-      const knownCount = getLastKnownQueueCount();
-      if (document.visibilityState === "visible" && knownCount !== null) {
-        setDrinkCount(knownCount);
-        drinkCountRef.current = knownCount;
-      }
       applyTitle();
     };
 
